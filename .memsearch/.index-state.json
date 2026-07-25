@@ -1,0 +1,16 @@
+{
+  "collection": "ms_kt_xnk_738155f7",
+  "failed_files": [],
+  "indexed_chunks": 0,
+  "indexed_files": 1,
+  "last_completed_at": "2026-07-25T03:35:24.805996Z",
+  "last_started_at": "2026-07-25T03:35:23.073396Z",
+  "last_success_at": "2026-07-25T03:35:24.805996Z",
+  "milvus_uri": "http://localhost:19530",
+  "operation": "watch",
+  "paths": ["E:/VIBE CODE/dainghiagroup/kt-xnk/.memsearch/memory"],
+  "schema_version": 1,
+  "status": "ok",
+  "total_files": 1,
+  "updated_at": "2026-07-25T03:35:24.805996Z"
+}
