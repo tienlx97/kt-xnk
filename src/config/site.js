@@ -6,6 +6,4 @@ export const site = {
 };
 
 /** @type {NavLink[]} */
-export const navLinks = [
-  { label: 'Trang chủ', href: '/' },
-];
+export const navLinks = [{ label: 'Trang chủ', href: '/' }];
