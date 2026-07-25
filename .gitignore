@@ -1,0 +1,17 @@
+node_modules/
+dist/
+build/
+.next/
+.env
+.env.*
+!.env.example
+
+# Verification evidence (per-run logs/screenshots) — keep out of git
+harness/runs/
+
+# memsearch (ADR-0002): memory markdown IS tracked (review before commit!);
+# local state and indexes are not.
+# .memsearch/*
+# !.memsearch/memory/
+*.milvus.db
+milvus.db

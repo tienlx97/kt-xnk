@@ -1,0 +1,42 @@
+# Verification gate on every PR — makes ./harness/verify.sh mandatory,
+# not agent-optional. Cleanup PRs (see harness/ENTROPY.md) may auto-merge
+# when this workflow is green.
+name: verify
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Audit harness integrity
+        run: ./harness/audit-harness.sh
+      - name: Full verification gate
+        run: ./harness/verify.sh
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verification-evidence
+          path: harness/runs/
+          if-no-files-found: ignore
+
+  # Periodic entropy management (harness/ENTROPY.md). Fails on stale project
+  # placeholders after the distributable-template marker has been removed.
+  entropy-scan:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for stale-doc markers
+        run: ./harness/checks/project-readiness.sh
