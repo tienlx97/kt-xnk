@@ -1,6 +1,7 @@
-import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { site, navLinks } from './site.js';
+import { test } from 'node:test';
+
+import { navLinks, site } from './site.js';
 
 test('site config has a name and description', () => {
   assert.ok(site.name.length > 0);

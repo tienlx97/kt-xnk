@@ -1,7 +1,8 @@
 import './globals.css';
-import { Header } from '../ui/header.js';
+
+import { navLinks, site } from '../config/site.js';
 import { Footer } from '../ui/footer.js';
-import { site, navLinks } from '../config/site.js';
+import { Header } from '../ui/header.js';
 
 export const metadata = {
   title: site.name,

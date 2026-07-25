@@ -1,7 +1,8 @@
-import Link from 'next/link';
 import * as stylex from '@stylexjs/stylex';
-import { colors, spacing } from './tokens.stylex.js';
+import Link from 'next/link';
+
 import { Container } from './container.js';
+import { colors, spacing } from './tokens.stylex.js';
 
 /** @typedef {import('../types/index.js').NavLink} NavLink */
 
@@ -51,7 +52,11 @@ export function Header({ siteName, navLinks }) {
           </Link>
           <nav {...stylex.props(styles.nav)}>
             {navLinks.map((link) => (
-              <Link key={link.href} href={link.href} {...stylex.props(styles.link)}>
+              <Link
+                key={link.href}
+                href={link.href}
+                {...stylex.props(styles.link)}
+              >
                 {link.label}
               </Link>
             ))}
