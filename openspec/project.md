@@ -39,6 +39,10 @@ build with messages that explain the fix.
 - Errors: handled at boundaries (`src/runtime`, `src/app`); no empty catch
 - Styling: StyleX only — no inline `style`/`className`, no top-level media
   queries/pseudo-classes (see `docs/stylex-authoring.md` antipatterns)
+- Color: all colors come from `colors` in `src/ui/tokens.stylex.js` — no
+  hardcoded hex in components. Palette is derived from the brand logo
+  (`public/images/logo-dn-group.png`: primary red `#c2252a`, secondary teal
+  `#247768`); adding a new hue requires updating that file, not inlining one
 - Every convention here must map to a lint/structural rule. A convention that
   cannot be checked mechanically goes to `harness/GOLDEN_RULES.md` with a plan
   to make it checkable.
