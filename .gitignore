@@ -16,8 +16,10 @@ src/shared/components/theme.built.css
 harness/runs/
 
 # memsearch (ADR-0002): memory markdown IS tracked (review before commit!);
-# local state and indexes are not.
-# .memsearch/*
-# !.memsearch/memory/
+# local state and indexes are not — .index-state.json/.watch.pid are
+# machine-specific (collection name is derived from the absolute project
+# path) and must never travel with the repo across machines.
+.memsearch/*
+!.memsearch/memory/
 *.milvus.db
 milvus.db
