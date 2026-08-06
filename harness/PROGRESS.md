@@ -11,6 +11,59 @@ This file is the handoff between sessions/agents — write for a reader with zer
 
 ---
 
+## 2026-08-06 23:36 — Claude Code
+
+- **Active change:** finish wiring MD3 brand colors into Astryx's core
+  token set + build a `/design-system` showcase page (no
+  `openspec/changes/` entry — direct per user request "làm nốt... rồi tạo
+  1 page có full component")
+- **Task worked:**
+  1. Expanded `src/ui/theme.js` tokens from 7 → 18: added
+     `--color-accent-muted`/`--color-on-accent` (MD3 primaryContainer/
+     onPrimary), `--color-text-accent`/`--color-icon-accent` (MD3 primary —
+     these were silently defaulting to theme-neutral's dark gray, not our
+     brand red, for Link text and accent icons), `--color-background-popover`
+     (MD3 surfaceContainerHigh), `--color-icon-primary`/`--color-icon-secondary`
+     (MD3 onSurface/onSurfaceVariant), `--color-border-emphasized` (MD3
+     outline), and `--color-error`/`--color-on-error`/`--color-error-muted`
+     (MD3 error/onError/errorContainer — this is what `Button
+     variant="destructive"` actually reads, confirmed via
+     `node_modules/@astryxdesign/core/dist/astryx.css`).
+     Deliberately did NOT touch `--color-success`/`--color-warning` (kept
+     universal green/amber), the 10 categorical tag colors
+     (`--color-*-blue/cyan/.../yellow`), or structural tokens
+     (`--color-neutral`, `--color-overlay*`, `--color-skeleton`,
+     `--color-track`, `--color-shadow`, `--color-tint-hover`) — none of
+     these are brand identity; overriding them would just be surprising.
+  2. New page `src/app/design-system/page.js` — a live component
+     reference, not content: Heading (all 6 levels), Text (5 types × 4
+     colors), Button (4 variants × sizes/disabled/loading), Badge (5
+     semantic + 9 category variants), Card (default/muted/transparent),
+     Link (internal + external). Added to nav
+     (`src/config/site.js` → `navLinks`) as "Design System" so it's
+     reachable, not just a dev-only route.
+  3. `jsconfig.json`'s `tsc --noEmit --checkJs` needed the variant arrays
+     annotated with `/** @type {('a'|'b'|...)[]} */` JSDoc — Astryx's
+     prop types are string-literal unions, and mapping over a bare
+     `string[]` fails typecheck (caught by `./harness/verify.sh`, not
+     guessed).
+- **Verification:** `./harness/verify.sh` — full pass. Also ran `pnpm dev`
+  in the background and curled `/design-system`: confirmed all 6
+  `<h1>`–`<h6>` render, and `astryx-button {primary,secondary,ghost,
+  destructive}` / `astryx-badge {neutral,info,success,warning,error,blue,
+  cyan,green,orange,pink,purple,red,teal,yellow}` classes all present in
+  the HTML. See `harness/runs/20260806-233604-14883/`.
+- **Decisions made:** none beyond what's in "Task worked" above.
+- **Next step:** if a future page needs Form components (Input, Select,
+  Checkbox, etc.) or Layout/AppShell, check `node_modules/@astryxdesign/core`
+  + `xds` MCP the same way before adding to the showcase page — don't
+  assume a component exists without checking its export path first (bit
+  us twice already: `LinkProvider` wasn't at the path the docs implied,
+  and `Theme`/`defineTheme` live at `./theme`, not `./Theme`).
+- **Blockers:** none
+
+---
+
 ## 2026-08-06 22:19 — Claude Code
 
 - **Active change:** wire MD3 `secondary` brand color into Astryx `Button`
