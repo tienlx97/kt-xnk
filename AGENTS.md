@@ -95,7 +95,7 @@ Writing the same fix twice by hand is a harness failure.
 ```
 
 <!-- ASTRYX:START -->
-Astryx v0.2.0 · 154 components
+Astryx v0.3.0 · 155 components
 CLI: run every command as `pnpm exec astryx <cmd>` (shown below as `astryx ...`).
 
 SETUP (once, in your app entry e.g. main.tsx) — without these, components render unstyled:
@@ -118,7 +118,7 @@ RULES:
 
 MORE CLI:
   search "<query>"   find any component / hook / doc / template / block
-  component --list   154 components by category
+  component --list   155 components by category
   template --list    page + block recipes
   docs <topic>       color, elevation, icons, illustrations, internationalization, layout, migration, motion, principles, shape, spacing, styling, theme, tokens, typography
   swizzle <Name>     eject component source for deep customization

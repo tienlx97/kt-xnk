@@ -25,6 +25,38 @@ This file is the handoff between sessions/agents — write for a reader with zer
 
 ---
 
+## 2026-08-07 00:14 — Claude Code
+
+- **Active change:** upgrade `@astryxdesign/core`/`theme-neutral`/`cli`
+  0.2.0 → 0.3.0 (no `openspec/changes/` entry — direct per user request)
+- **Task worked:** `pnpm add @astryxdesign/core@0.3.0
+  @astryxdesign/theme-neutral@0.3.0` then `@astryxdesign/cli@0.3.0`
+  (`@latest` silently kept resolving 0.2.0 — pinned the exact version
+  instead of digging into why). Approved `@astryxdesign/cli`'s postinstall
+  build script in `pnpm-workspace.yaml` after reading it first (same
+  print-only nudge pattern as `core`'s, verified 2026-08-06 — never
+  mutates files). Ran the sanctioned migration path instead of assuming
+  compatibility: `pnpm exec astryx upgrade --from 0.2.0` (dry run) listed
+  10 codemods spanning v0.2.1→v0.3.0 and reported "No changes needed —
+  your code is already up to date!"; `--apply` confirmed the same and
+  additionally refreshed the `<!-- ASTRYX:START/END -->` version stamp in
+  `AGENTS.md`/`CLAUDE.md` (154→155 components, v0.2.0→v0.3.0) — diffed
+  before committing, only the stamp changed.
+- **Result:** done. `package.json` bumped to `^0.3.0` for all three
+  packages; `pnpm-lock.yaml` updated; no application code changed (the
+  codemods had nothing to do).
+- **Verification:** `pnpm theme:build` (rebuilt cleanly on 0.3.0),
+  `./harness/verify.sh` — full pass. Also ran `pnpm dev` and curled both
+  `/` and `/design-system`, grepping for `astryx-button`/`astryx-dialog`/
+  `astryx-table`/`astryx-heading` classes and scanning for error markers
+  in the response — confirmed real runtime output on 0.3.0, not just a
+  passing build. See `harness/runs/20260807-001356-26089/`.
+- **Decisions made:** none beyond what's in "Task worked" above.
+- **Next step:** none pending.
+- **Blockers:** none
+
+---
+
 ## 2026-08-07 00:08 — Claude Code
 
 - **Active change:** swap which brand hue is MD3 `primary` vs `secondary`

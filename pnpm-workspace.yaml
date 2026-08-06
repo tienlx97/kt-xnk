@@ -2,6 +2,12 @@ packages:
   - '.'
 
 allowBuilds:
+  '@astryxdesign/cli': true
   '@astryxdesign/core': true
   sharp: true
   unrs-resolver: true
+
+minimumReleaseAgeExclude:
+  - '@astryxdesign/core@0.3.0'
+  - '@astryxdesign/theme-neutral@0.3.0'
+  - '@astryxdesign/cli@0.3.0'
