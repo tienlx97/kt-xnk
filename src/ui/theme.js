@@ -18,4 +18,19 @@ export const ktxnkTheme = defineTheme({
     '--color-text-secondary': '#544340', // MD3 onSurfaceVariant
     '--color-border': '#d7c2bf', // MD3 outlineVariant
   },
+  // Astryx's Button `variant` prop is an emphasis level, not a brand hue —
+  // `variant="primary"` already resolves to --color-accent above, but
+  // `variant="secondary"` defaults to a neutral gray (--color-neutral), not
+  // our brand teal. Override it to MD3's secondaryContainer/
+  // onSecondaryContainer pairing — the same tonal-button pattern MD3 itself
+  // uses for a "secondary but still branded, lower emphasis than primary"
+  // button — instead of writing a custom Button component.
+  components: {
+    button: {
+      'variant:secondary': {
+        backgroundColor: '#a1f2df', // MD3 secondaryContainer
+        color: '#00201a', // MD3 onSecondaryContainer
+      },
+    },
+  },
 });

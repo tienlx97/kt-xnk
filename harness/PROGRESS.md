@@ -11,6 +11,41 @@ This file is the handoff between sessions/agents — write for a reader with zer
 
 ---
 
+## 2026-08-06 22:19 — Claude Code
+
+- **Active change:** wire MD3 `secondary` brand color into Astryx `Button`
+  (no `openspec/changes/` entry — small follow-up, done directly per user
+  question "if I have a primary/secondary button, what happens?")
+- **Task worked:** verified (by reading `node_modules/@astryxdesign/core`
+  source, not guessing) that Astryx's `Button` `variant` prop is an
+  emphasis level, not a brand hue: `variant="primary"` resolves to
+  `--color-accent` (our brand red, already wired), but `variant="secondary"`
+  resolves to `--color-neutral` (a generic gray) — our brand teal
+  (`#247768` / MD3 `secondary`) was not connected to anything.
+- **Result:** done. Added a `components.button` override to
+  `src/ui/theme.js`'s `defineTheme()` call:
+  `'variant:secondary': { backgroundColor: '#a1f2df', color: '#00201a' }`
+  (MD3 `secondaryContainer`/`onSecondaryContainer` — the same tonal-button
+  pairing MD3 itself uses for "branded but lower emphasis than primary").
+  Confirmed the compiled `theme.built.css` contains
+  `.astryx-button.secondary { background-color: #a1f2df; ... }` — no
+  Button component code touched.
+- **Verification:** `./harness/verify.sh` — full pass after
+  `pnpm theme:build`. See `harness/runs/20260806-221857-12220/`.
+- **Decisions made:** used `secondaryContainer`/`onSecondaryContainer`
+  (light tonal fill) rather than solid `secondary`/`onSecondary` — matches
+  Astryx's own intent that `variant="secondary"` stays lower-emphasis than
+  `variant="primary"`; a solid teal would read as equally weighted.
+- **Next step:** if `tertiary`/`error` MD3 roles need a home later,
+  Astryx's own token vocabulary is much richer than the 7 tokens in
+  `theme.js` (grep `node_modules/@astryxdesign/core/dist/astryx.css` for
+  `--color-success`, `--color-warning`, `--color-error`,
+  `--color-background-teal`, etc.) — check there before inventing a new
+  `components` override.
+- **Blockers:** none
+
+---
+
 ## 2026-08-06 22:10 — Claude Code
 
 - **Active change:** switch from runtime `defineTheme()` to a pre-built
