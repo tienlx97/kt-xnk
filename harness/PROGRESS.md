@@ -25,6 +25,40 @@ This file is the handoff between sessions/agents — write for a reader with zer
 
 ---
 
+## 2026-08-06 23:49 — Claude Code
+
+- **Active change:** revert the `turbopack.root` pin from the entry below —
+  it fixed a cosmetic warning but caused a fatal Turbopack crash (no
+  `openspec/changes/` entry — direct per user request, pasted a crash log)
+- **Task worked:** user hit, after a few successful requests then an HMR
+  update: `FATAL: An unexpected Turbopack error occurred` /
+  `Resource path "projects/work/code/kt-xnk/src/app/layout.js" needs to be
+  on project filesystem ""` (missing the `/home/capybara/` prefix — a
+  path-resolution bug). Trace pointed at `WebpackLoadersProcessedAsset`,
+  i.e. Babel-loader-processed files specifically (this project uses
+  `babel.config.js` for the StyleX plugin, so every file StyleX touches
+  goes through that path). Traced it to the previous session's
+  `turbopack.root: import.meta.dirname` pin in `next.config.mjs`.
+- **Result:** reverted that one line. The Turbopack root-inference warning
+  is back (harmless, cosmetic) — chose it over a crash that broke HMR for
+  any Babel-processed file.
+- **Verification:** deleted `.next`, ran `pnpm dev`, confirmed clean
+  `200`s. Specifically re-tested the exact failure mode: edited
+  `src/app/layout.js` (the file named in the panic) while dev was running,
+  confirmed `✓ Compiled in 14ms` with no panic, reverted the edit, same
+  result again on the second HMR cycle. `./harness/verify.sh` — full pass.
+  See `harness/runs/20260806-234938-20047/`.
+- **Decisions made:** don't re-attempt pinning `turbopack.root` without
+  first confirming Next.js/Turbopack has actually fixed this interaction —
+  it's a known-bad combination in `v16.2.11`, not something to retry as-is.
+- **Next step:** none pending. If the warning becomes annoying enough to
+  revisit, the safer fix is probably removing the stray
+  `/home/capybara/pnpm-lock.yaml` (outside this repo) rather than touching
+  `turbopack.root` again.
+- **Blockers:** none
+
+---
+
 ## 2026-08-06 23:43 — Claude Code
 
 - **Active change:** commit the `astryx init` agent-doc block + fix a
