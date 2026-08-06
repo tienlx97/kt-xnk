@@ -25,6 +25,41 @@ This file is the handoff between sessions/agents — write for a reader with zer
 
 ---
 
+## 2026-08-07 00:08 — Claude Code
+
+- **Active change:** swap which brand hue is MD3 `primary` vs `secondary`
+  (no `openspec/changes/` entry — direct per user request: red as the
+  dominant accent read too harsh/glaring across filled surfaces like
+  inputs and primary buttons)
+- **Task worked:** regenerated the MD3 tonal palette with the seeds
+  swapped — teal `#247768` is now the `primary` seed, red `#c2252a` is now
+  `secondary` (tertiary re-derived at +60° from the new primary hue;
+  error stays its own standalone seed, unaffected). Same CIE Lab
+  generation method as before, all AA contrast pairs re-verified.
+  - `src/ui/theme.js`: `--color-accent` (and accent-muted/on-accent/
+    text-accent/icon-accent) now `#126a5c` (teal, was `#b91a24` red). The
+    `variant:secondary` Button override now uses the *new* secondary
+    (red) container pair (`#fddbd5`/`#3e0500`, was the old teal
+    container).
+  - Updated copy that named the old mapping: `/design-system` intro text,
+    the Button and Link section descriptions in
+    `src/app/design-system/sections/actions.js`, and the Color convention
+    bullet in `openspec/project.md`.
+- **Result:** done.
+- **Verification:** `pnpm theme:build` then `./harness/verify.sh` — full
+  pass. Rebuilt CSS confirmed to contain `#126a5c`/`#fddbd5`, and curled
+  the running `/design-system` page's compiled CSS to confirm the same
+  values ship in what actually renders (not just what's in source). See
+  `harness/runs/20260807-000807-24222/`.
+- **Decisions made:** kept `--color-error` as its own standalone red seed
+  (`#b3261e`) rather than aliasing it to the new secondary red — error
+  states shouldn't move if someone later re-tunes the secondary brand hue
+  independently.
+- **Next step:** none pending.
+- **Blockers:** none
+
+---
+
 ## 2026-08-07 00:01 — Claude Code
 
 - **Active change:** expand `/design-system` from a 6-component sample into

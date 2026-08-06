@@ -24,9 +24,9 @@ export function ActionsSection() {
       <ShowcaseSection
         title="Button"
         description={
-          'variant là mức nhấn mạnh, không phải màu brand: primary = đỏ (--color-accent), ' +
-          'secondary = teal nhạt (override MD3 secondaryContainer), ghost = trong suốt, ' +
-          'destructive = đỏ lỗi MD3 (--color-error), tách riêng khỏi đỏ thương hiệu.'
+          'variant là mức nhấn mạnh, không phải màu brand: primary = teal (--color-accent), ' +
+          'secondary = đỏ nhạt (override MD3 secondaryContainer), ghost = trong suốt, ' +
+          'destructive = đỏ lỗi MD3 (--color-error) — trùng hướng màu với secondary nhưng là seed riêng.'
         }
       >
         <VStack gap={3}>
@@ -98,7 +98,7 @@ export function ActionsSection() {
 
       <ShowcaseSection
         title="Link"
-        description="Link màu accent (đỏ thương hiệu) — trước khi nối --color-text-accent, link từng ra màu xám mặc định của theme-neutral."
+        description="Link màu accent (teal thương hiệu) — trước khi nối --color-text-accent, link từng ra màu xám mặc định của theme-neutral."
       >
         <HStack gap={4} wrap="wrap">
           <Link href="/" isStandalone>

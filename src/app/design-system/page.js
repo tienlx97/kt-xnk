@@ -21,8 +21,9 @@ export default function DesignSystemPage() {
           </Heading>
           <Text type="large" color="secondary">
             Component thật từ <code>@astryxdesign/core</code>, đã nối màu
-            thương hiệu kt-xnk (đỏ #c2252a, teal #247768, theo tên role
-            Material Design 3) qua <code>src/ui/theme.js</code>. Trang này
+            thương hiệu kt-xnk (teal #247768 làm primary, đỏ #c2252a làm
+            secondary — theo tên role Material Design 3) qua{' '}
+            <code>src/ui/theme.js</code>. Trang này
             không phải trang nội dung — dùng để soi màu/typo/variant khi
             thêm component mới. Chưa demo: Chat, PowerSearch, Calendar,
             DateInput, Carousel, Lightbox, TreeList, ContextMenu, MoreMenu,

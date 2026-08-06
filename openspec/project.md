@@ -59,8 +59,10 @@ build with messages that explain the fix.
   (`primary`/`onPrimary`/`primaryContainer`/..., `surfaceVariant`,
   `outline` — see https://m3.material.io/styles/color/roles) before being
   mapped onto Astryx's CSS-custom-property token names. Palette is derived
-  from the brand logo (`public/images/logo-dn-group.png`: primary red
-  `#c2252a`, secondary teal `#247768`) expanded into MD3 tonal palettes;
+  from the brand logo (`public/images/logo-dn-group.png`: primary teal
+  `#247768`, secondary red `#c2252a` — red reads too harsh/glaring as the
+  dominant accent across filled surfaces like inputs and primary buttons)
+  expanded into MD3 tonal palettes;
   adding a new hue requires updating `src/ui/theme.js`, not inlining one
 - Every convention here must map to a lint/structural rule. A convention that
   cannot be checked mechanically goes to `harness/GOLDEN_RULES.md` with a plan
