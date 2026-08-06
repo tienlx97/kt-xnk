@@ -21,7 +21,62 @@ This file is the handoff between sessions/agents — write for a reader with zer
   of needing a new carve-out per tool. (Note for future edits to this very
   log: avoid reproducing the literal placeholder tokens themselves here —
   this file is one of the ones the scan covers, and literal examples in
-  the write-up will trip it, as happened while drafting this entry.)
+  the write-up will trip it, as happened while drafting that entry.)
+
+---
+
+## 2026-08-07 00:01 — Claude Code
+
+- **Active change:** expand `/design-system` from a 6-component sample into
+  a broad Astryx component showcase (no `openspec/changes/` entry — direct
+  per user request "tạo tất cả các component có thể")
+- **Task worked:** Astryx ships 154 components (`pnpm exec astryx
+  component --list`). Looked up real prop signatures for ~55 of them via
+  the `xds` MCP server (not guessed) and split the single `page.js` into
+  `src/app/design-system/sections/*.js` (one file per category:
+  typography, actions, forms, selection, feedback, overlays,
+  data-display, content) plus a shared `showcase-section.js` wrapper, so
+  no single file got unmanageable. `page.js` now just composes the 8
+  section components.
+  - Covered: Heading, Text, Button/ButtonGroup/IconButton/ToggleButton,
+    Link, TextInput/TextArea/NumberInput/Selector/MultiSelector/RadioList/
+    FileInput/Slider, CheckboxInput/CheckboxList/Switch, TabList/
+    SegmentedControl, Banner/Toast/ProgressBar/Skeleton/Spinner/StatusDot/
+    EmptyState, Dialog/AlertDialog/Popover/Tooltip/HoverCard/DropdownMenu,
+    Badge/Card/ClickableCard/SelectableCard/Avatar/AvatarGroup/Table/List/
+    Pagination/Token/Timestamp/Citation/Kbd, Divider/Breadcrumbs/Icon/
+    Blockquote/CodeBlock/AspectRatio/Collapsible.
+  - Explicitly NOT covered (noted in the page's own intro text, not
+    silently dropped): Chat family, PowerSearch, Calendar, DateInput
+    family, Carousel, Lightbox, TreeList, ContextMenu, MoreMenu, Markdown
+    — each needs either external data/backend wiring or enough surface
+    area to warrant its own follow-up rather than a rushed demo.
+  - Overlay demos (Dialog/AlertDialog/Popover) are real controlled
+    open/close via `useState`, not the docs' `isInline` preview escape
+    hatch — clicking the trigger buttons actually opens a modal.
+  - `AspectRatio`'s example uses the project's real
+    `public/images/logo-dn-group.png` instead of a placeholder/remote
+    image.
+- **Result:** done.
+- **Verification:** `./harness/verify.sh` — full pass after fixing 3 real
+  issues caught by the gate (not guessed): `AvatarGroup` is exported from
+  `@astryxdesign/core/AvatarGroup`, not bundled into `.../Avatar` as the
+  groupMembers listing implied; `Selector`'s `value` type is `string |
+  null`, not `string | undefined`; ESLint's `react-hooks/purity` rule
+  correctly flagged a `Date.now()` call inside JSX render (non-deterministic
+  during render) — replaced with a fixed ISO timestamp. Also ran `pnpm dev`
+  and curled `/design-system`, grepping the HTML for `astryx-*` class names
+  across every section to confirm real DOM output, not just a passing
+  build (`DropdownMenu`'s popup class legitimately doesn't appear
+  server-rendered — it's portal-based and only mounts on open).
+- **Decisions made:** organized sections by Astryx's own component
+  grouping (Actions/Forms/Feedback/Overlays/Data display/Content) rather
+  than alphabetically — matches how someone would actually look something
+  up.
+- **Next step:** if the excluded components (Chat, Calendar, etc.) are
+  needed later, look them up fresh via `xds` the same way — this entry's
+  list of what's missing may drift as Astryx ships new versions.
+- **Blockers:** none
 
 ---
 
