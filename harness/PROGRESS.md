@@ -13,6 +13,44 @@ This file is the handoff between sessions/agents — write for a reader with zer
 
 - No `src/repo`/`src/service` code yet — the site is fully static. Add real
   structural tests for those layers once a first feature needs them.
+
+---
+
+## 2026-08-06 21:44 — Claude Code
+
+- **Active change:** rename/expand color tokens to Material Design 3 roles
+  (no `openspec/changes/` entry — small token-only edit done directly per
+  user request)
+- **Task worked:** replace the ad-hoc `colors` token set in
+  `src/ui/tokens.stylex.js` with the full Material Design 3 light-scheme
+  role set (`primary`/`onPrimary`/`primaryContainer`/`onPrimaryContainer`,
+  same pattern for secondary/tertiary/error, plus `surface*`,
+  `outline`/`outlineVariant`, `inverse*`, `shadow`/`scrim`); update the 3
+  components that consumed the old names (`hero.js`, `footer.js`,
+  `header.js`: `colors.text`→`onSurface`, `colors.textMuted`→
+  `onSurfaceVariant`, `colors.border`→`outlineVariant`).
+- **Result:** done. Tonal palettes generated in CIE Lab space (tone = L*,
+  hue/chroma held from seed) from the existing brand seeds (`#c2252a` red,
+  `#247768` teal) plus a derived tertiary (`#7d6a02`, +60° hue rotation) and
+  a standalone error seed (`#b3261e`). All on-color pairings verified ≥
+  4.5:1 (WCAG AA). Dark-scheme values were also generated for reference but
+  NOT added to the codebase — project stays light-only per existing
+  convention; dark values live only in the reference artifact from this
+  session.
+- **Verification:** `./harness/verify.sh` — full pass (lint, typecheck,
+  structure, harness-tests, unit-tests, build, quality-thresholds). See
+  `harness/runs/20260806-214453-7411/`.
+- **Decisions made:** dropped the old `primaryHover`/`primaryActive`/
+  `primarySurface`/`secondaryHover`/`secondaryActive`/`secondarySurface`/
+  `success`/`warning`/`danger`/`info`/`borderStrong`/`textOnPrimary`/
+  `textOnSecondary` tokens — grepped first, confirmed none were referenced
+  anywhere in `src/`, so no aliasing/back-compat shim was needed. Updated
+  the "Color" convention bullet in `openspec/project.md` to point at the
+  MD3 role-naming rule instead of the old ad-hoc names.
+- **Next step:** none pending. If a future component needs elevation
+  (cards, sheets), the `surfaceContainer*` roles are already defined but
+  unused — reach for those before inventing a new surface tone.
+- **Blockers:** none
 - `verify:quality` only checks bundle size; no p95 latency metric yet (no
   backend to measure).
 

@@ -8,13 +8,13 @@ const styles = stylex.create({
     textAlign: 'center',
   },
   title: {
-    color: colors.text,
+    color: colors.onSurface,
     fontSize: 40,
     fontWeight: 800,
     margin: 0,
   },
   subtitle: {
-    color: colors.textMuted,
+    color: colors.onSurfaceVariant,
     fontSize: 18,
     marginTop: spacing.sm,
   },

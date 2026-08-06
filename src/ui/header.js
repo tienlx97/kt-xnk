@@ -9,7 +9,7 @@ import { colors, spacing } from './tokens.stylex.js';
 const styles = stylex.create({
   header: {
     backgroundColor: colors.background,
-    borderBottomColor: colors.border,
+    borderBottomColor: colors.outlineVariant,
     borderBottomStyle: 'solid',
     borderBottomWidth: 1,
   },
@@ -20,7 +20,7 @@ const styles = stylex.create({
     paddingBlock: spacing.md,
   },
   brand: {
-    color: colors.text,
+    color: colors.onSurface,
     fontSize: 18,
     fontWeight: 700,
     textDecoration: 'none',
@@ -31,8 +31,8 @@ const styles = stylex.create({
   },
   link: {
     color: {
-      default: colors.textMuted,
-      ':hover': colors.text,
+      default: colors.onSurfaceVariant,
+      ':hover': colors.onSurface,
     },
     fontSize: 14,
     textDecoration: 'none',

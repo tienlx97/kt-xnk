@@ -5,14 +5,14 @@ import { colors, spacing } from './tokens.stylex.js';
 
 const styles = stylex.create({
   footer: {
-    borderTopColor: colors.border,
+    borderTopColor: colors.outlineVariant,
     borderTopStyle: 'solid',
     borderTopWidth: 1,
     marginTop: spacing.xl,
     paddingBlock: spacing.lg,
   },
   text: {
-    color: colors.textMuted,
+    color: colors.onSurfaceVariant,
     fontSize: 13,
   },
 });
