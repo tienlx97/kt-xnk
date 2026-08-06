@@ -25,6 +25,66 @@ This file is the handoff between sessions/agents — write for a reader with zer
 
 ---
 
+## 2026-08-07 01:56 — Claude Code
+
+- **Active change:** `openspec/changes/feature-based-architecture/` —
+  replace the 6-layer backend-shaped architecture
+  (`types→config→repo→service→runtime→ui`) with a feature-based front-end
+  architecture, per explicit user direction: this repo is confirmed
+  front-end only, backend lives in a separate project.
+- **Task worked:** all 5 milestones in `tasks.md`. Moved
+  `src/ui/hero.js` → `src/features/home/components/hero.js`;
+  `src/app/design-system/{showcase-section.js,sections/*.js}` →
+  `src/features/design-system/components/`; `src/ui/{header,footer,theme,
+  theme-provider}.js`, `src/config/{site.js,site.test.js}`,
+  `src/types/index.js` → `src/shared/{components,config,types}/`. Added a
+  public `index.js` per feature. Rewrote `harness/structure.rules.cjs`
+  around `types→config→api→hooks→components` (per-tree, feature or
+  shared), plus new rules `no-feature-to-feature` (isolation),
+  `no-shared-to-feature`, `no-deep-feature-imports` — same
+  backreference technique the old `no-deep-domain-imports` rule already
+  used. Rewrote `harness/tests/structure-rules.test.cjs` fixtures to
+  exercise every rule (old fixtures hardcoded the dead layer names, would
+  have silently stopped testing anything meaningful). Updated
+  `docs/architecture.md`, `openspec/project.md`, `AGENTS.md` (trimmed, not
+  re-duplicated — matches its own "map not manual" rule),
+  `harness/GOLDEN_RULES.md` (v1→v2), `harness/quality-grades.json`; added
+  `docs/adr/0003-feature-based-architecture.md`. Fixed the theme
+  build/gitignore wiring for the new `src/shared/components/theme.js`
+  path and the two remaining `src/ui/theme.js` text references inside the
+  design-system showcase page's own Blockquote/CodeBlock copy.
+- **Result:** done. `pnpm run structure` and `pnpm test:harness` pass
+  against both the real migrated `src/` and the new violation fixtures.
+- **Verification:** `./harness/verify.sh` — full pass (project-readiness,
+  memory-secrets, theme-build, lint, typecheck, structure, harness-tests,
+  unit-tests, build, quality-thresholds). See
+  `harness/runs/20260807-015558-33202/`. Also ran `pnpm dev` and curled
+  `/` and `/design-system` directly — both 200, both contain real
+  rendered content ("KT-XNK", "Design system"), not an error boundary.
+- **Decisions made:** dropped `repo`/`service`/`runtime` entirely rather
+  than renaming them — they're backend concepts with no backend in this
+  repo. `api`/`hooks` replace them (client calls to the external backend
+  project / client-side state) — see decision log in `proposal.md` and
+  ADR-0003. Features are **fully isolated** (no cross-feature imports at
+  all, not just "public-surface only") since neither current feature
+  (`home`, `design-system`) has a legitimate reason to depend on the
+  other; revisit if a future feature genuinely needs another's public
+  surface. Did not create empty `api/`/`hooks/` folders anywhere — same
+  placeholder-free philosophy the old `repo/service` had, add on first
+  real need. Did not touch the hardcoded example hex colors in
+  `content.js`'s `THEME_SNIPPET` (a pre-existing, separately-flagged
+  issue from an earlier session — only its file-path references were
+  updated since the file itself moved). Left the change in
+  `openspec/changes/` rather than archiving it.
+- **Next step:** none pending for this change. First feature that needs
+  to call the separate backend project should add `api/` (and `hooks/` if
+  it needs client state) under that feature — or `src/shared/api|hooks`
+  if more than one feature needs it — following the pattern in
+  `docs/architecture.md`.
+- **Blockers:** none
+
+---
+
 ## 2026-08-07 00:14 — Claude Code
 
 - **Active change:** upgrade `@astryxdesign/core`/`theme-neutral`/`cli`

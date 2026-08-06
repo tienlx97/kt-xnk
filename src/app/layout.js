@@ -1,9 +1,9 @@
 import './globals.css';
 
-import { navLinks, site } from '../config/site.js';
-import { Footer } from '../ui/footer.js';
-import { Header } from '../ui/header.js';
-import { ThemeProvider } from '../ui/theme-provider.js';
+import { Footer } from '../shared/components/footer.js';
+import { Header } from '../shared/components/header.js';
+import { ThemeProvider } from '../shared/components/theme-provider.js';
+import { navLinks, site } from '../shared/config/site.js';
 
 export const metadata = {
   title: site.name,

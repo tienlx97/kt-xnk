@@ -35,33 +35,58 @@ async function runCruise(files) {
 
 test("accepts imports declared in the layer allowlist", async () => {
   const violations = await runCruise({
-    "src/types/id.ts": "export const id = 1;\n",
-    "src/repo/users/index.ts": "import { id } from '../../types/id'; export { id };\n",
-    "src/service/users/index.ts": "import { id } from '../../repo/users'; export { id };\n",
-    "src/runtime/users.ts": "import { id } from '../service/users'; export { id };\n",
-    "src/ui/users.ts": "import { id } from '../runtime/users'; export { id };\n",
+    // src/shared/* — types → config → api → hooks → components
+    "src/shared/types/id.ts": "export const id = 1;\n",
+    "src/shared/config/index.ts": "import { id } from '../types/id'; export { id };\n",
+    "src/shared/api/index.ts": "import { id } from '../config'; export { id };\n",
+    "src/shared/hooks/index.ts": "import { id } from '../api'; export { id };\n",
+    "src/shared/components/index.ts": "import { id } from '../hooks'; export { id };\n",
+    // src/features/<feature>/* — same layer order, scoped per feature
+    "src/features/demo/types/id.ts": "export const id = 1;\n",
+    "src/features/demo/config/index.ts": "import { id } from '../types/id'; export { id };\n",
+    "src/features/demo/api/index.ts": "import { id } from '../config'; export { id };\n",
+    "src/features/demo/hooks/index.ts": "import { id } from '../api'; export { id };\n",
+    "src/features/demo/components/index.ts": "import { id } from '../hooks'; export { id };\n",
+    "src/features/demo/index.ts": "import { id } from './components'; export { id };\n",
+    // src/app/ (routing/wiring) consumes the feature only via its public index.ts
+    "src/app/page.ts": "import { id } from '../features/demo/index'; export { id };\n",
   });
   assert.deepEqual(violations, []);
 });
 
-test("accepts the allowlist and reports every protected boundary", async () => {
+test("reports every protected boundary", async () => {
   const violations = await runCruise({
-    "src/types/id.ts": "export const id = 1;\n",
-    "src/repo/valid/index.ts": "import { id } from '../../types/id'; export { id };\n",
-    "src/service/valid/index.ts": "import { id } from '../../repo/valid'; export { id };\n",
-    "src/runtime/valid.ts": "import { id } from '../service/valid'; export { id };\n",
-    "src/ui/valid.ts": "import { id } from '../runtime/valid'; export { id };\n",
-    "src/service/users/index.ts": "export const user = 1;\n",
-    "src/repo/users/index.ts": "import { user } from '../../service/users'; export { user };\n",
-    "src/ui/users.ts": "import { user } from '../repo/users'; export { user };\n",
-    "src/service/a.ts": "import { b } from './b'; export const a = b;\n",
-    "src/service/b.ts": "import { a } from './a'; export const b = a;\n",
-    "src/service/billing/internal.ts": "export const charge = 1;\n",
-    "src/service/orders/index.ts": "import { charge } from '../billing/internal'; export { charge };\n",
+    // shared layer-order violation: types (allows nothing) importing config
+    "src/shared/config/index.ts": "export const x = 1;\n",
+    "src/shared/types/bad.ts": "import { x } from '../config'; export const y = x;\n",
+
+    // feature layer-order violation: same shape, scoped to one feature
+    "src/features/other/config/index.ts": "export const x = 1;\n",
+    "src/features/other/types/bad.ts": "import { x } from '../config'; export const y = x;\n",
+    "src/features/other/components/widget.ts": "export const x = 1;\n",
+
+    // feature-to-feature isolation violation
+    "src/features/beta/components/widget.ts": "export const x = 1;\n",
+    "src/features/alpha/components/widget.ts":
+      "import { x } from '../../beta/components/widget'; export const y = x;\n",
+
+    // shared must not depend on a feature
+    "src/shared/components/bad.ts":
+      "import { x } from '../../features/other/config'; export const y = x;\n",
+
+    // deep import into a feature's internals, bypassing its public index.ts
+    "src/app/direct.ts":
+      "import { x } from '../features/other/components/widget'; export const y = x;\n",
+
+    // circular dependency within the same layer
+    "src/shared/hooks/a.ts": "import { b } from './b'; export const a = b;\n",
+    "src/shared/hooks/b.ts": "import { a } from './a'; export const b = a;\n",
   });
   const details = JSON.stringify(violations);
-  assert.ok(violations.includes("no-repo-to-service"), details);
-  assert.ok(violations.includes("no-ui-to-repo"), details);
+  assert.ok(violations.includes("no-shared-types-to-config"), details);
+  assert.ok(violations.includes("no-feature-types-to-config"), details);
+  assert.ok(violations.includes("no-feature-to-feature"), details);
+  assert.ok(violations.includes("no-shared-to-feature"), details);
+  assert.ok(violations.includes("no-deep-feature-imports"), details);
   assert.ok(violations.includes("no-circular"), details);
-  assert.ok(violations.includes("no-deep-domain-imports"), details);
 });

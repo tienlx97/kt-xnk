@@ -1,12 +1,9 @@
 {
   "$comment": "Quality grades per directory. A = canonical (copy patterns), B = acceptable, C = debt (do not replicate; improve on touch). See harness/ENTROPY.md.",
   "grades": {
-    "src/types": "A",
-    "src/config": "A",
-    "src/repo": "A",
-    "src/service": "A",
-    "src/runtime": "A",
-    "src/ui": "A"
+    "src/shared": "A",
+    "src/features/home": "A",
+    "src/features/design-system": "A"
   },
-  "updated": "2026-07-24"
+  "updated": "2026-08-07"
 }

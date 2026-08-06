@@ -6,9 +6,10 @@
 ## What this project is
 
 KT-XNK is a Next.js (App Router, JavaScript) marketing/informational website
-styled with StyleX. It follows the OpenSpec x Harness Engineering template:
-layered `src/` architecture, mechanically enforced structure and quality
-gates, and change-tracked work under `openspec/changes/`.
+styled with StyleX. **Front-end only** — the backend lives in a separate
+project. It follows the OpenSpec x Harness Engineering template:
+feature-based `src/` architecture, mechanically enforced structure and
+quality gates, and change-tracked work under `openspec/changes/`.
 
 ## Map of truth
 
@@ -27,18 +28,12 @@ gates, and change-tracked work under `openspec/changes/`.
 
 ## Architectural constraints (mechanically enforced)
 
-Dependencies flow ONE direction. A layer may import only layers to its left:
-
-```
-types → config → repo → service → runtime → ui
-```
-
-- `src/types/`   — pure types/schemas. Imports nothing.
-- `src/config/`  — configuration. Imports: types.
-- `src/repo/`    — data access. Imports: types, config.
-- `src/service/` — business logic. Imports: types, config, repo.
-- `src/runtime/` — API/entrypoints/wiring. Imports: everything except ui.
-- `src/ui/`      — presentation. Imports: types and runtime contracts only.
+Feature-based: `src/features/<feature>/{types,config,api,hooks,components}`
+and `src/shared/{types,config,api,hooks,components}`. Within each tree,
+dependencies flow one direction — `types → config → api → hooks →
+components`. Features are isolated (no importing another feature directly;
+share via `src/shared/`) and reachable from outside only through their
+`index.js`. Full detail: `docs/architecture.md`.
 
 `./harness/verify.sh` runs structural tests that FAIL the build on violations.
 Error messages tell you how to fix them — read them; do not work around them.

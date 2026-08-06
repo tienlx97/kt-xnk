@@ -8,13 +8,13 @@ A rule with enforcement "manual" is a harness gap — plan to automate it.
 Raising the version creates cleanup work: see harness/ENTROPY.md.
 -->
 
-## v1 — 2026-07-24
+## v2 — 2026-08-07
 
 | # | Rule | Enforcement |
 |---|---|---|
 | 1 | No task is done without passing `./harness/verify.sh` | verify.sh exit code |
-| 2 | Dependencies flow types → config → repo → service → runtime → ui; no upward imports, no cycles | structural test (dependency-cruiser) |
-| 3 | Cross-domain imports only via the domain's `index.ts` | structural test |
+| 2 | Front-end only (backend is a separate project); within each of `src/features/<feature>/` and `src/shared/`, dependencies flow types → config → api → hooks → components; no upward imports, no cycles | structural test (dependency-cruiser) |
+| 3 | Features are isolated (no direct cross-feature imports) and reachable from outside only via their `index.js`; `src/shared/` must not import a feature | structural test |
 | 4 | No dead or commented-out code; delete it, git remembers | lint |
 | 5 | Every spec scenario has a corresponding test | manual → TODO: coverage-map script |
 | 6 | Errors handled at boundaries; no empty catch | lint |
@@ -26,4 +26,10 @@ Raising the version creates cleanup work: see harness/ENTROPY.md.
 
 ## Changelog
 
+- v2 (2026-08-07): dropped the backend-oriented repo/service/runtime layers
+  (backend now lives in a separate project) in favor of a feature-based
+  front-end structure — `src/features/<feature>/` and `src/shared/`, each
+  with `types → config → api → hooks → components`, plus feature isolation
+  (rule #3). See `docs/adr/0003-feature-based-architecture.md`. All existing
+  code migrated in the same change, so nothing was graded C.
 - v1 (2026-07-24): initial rules.

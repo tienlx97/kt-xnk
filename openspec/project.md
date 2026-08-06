@@ -4,9 +4,11 @@
 
 ## Purpose
 
-KT-XNK website — a static/informational Next.js site. Target users: visitors
-looking up company/product info. Success criteria: fast, light-themed, easy
-to extend with new pages via the layered `src/` structure.
+KT-XNK website — a static/informational Next.js site. **Front-end only** —
+the backend (data access, business logic) lives in a separate project; this
+repo never talks to a database directly. Target users: visitors looking up
+company/product info. Success criteria: fast, light-themed, easy to extend
+with new pages via the feature-based `src/` structure.
 
 ## Tech stack
 
@@ -14,7 +16,7 @@ to extend with new pages via the layered `src/` structure.
 - Framework: Next.js (latest, App Router) — UI built from real
   `@astryxdesign/core` components (looked up via the Astryx MCP server
   `xds`, https://astryx.atmeta.com/mcp), not hand-rolled markup
-- Style: Astryx theme tokens (`src/ui/theme.js`) drive all color/spacing;
+- Style: Astryx theme tokens (`src/shared/components/theme.js`) drive all color/spacing;
   StyleX is the sanctioned escape hatch for one-off layout overrides via the
   `xstyle` prop only — see `docs/stylex-installation.md` (build tool setup)
   and `docs/stylex-authoring.md` (style APIs, antipatterns)
@@ -24,21 +26,26 @@ to extend with new pages via the layered `src/` structure.
 
 ## Architecture
 
-Layered per OpenAI harness standard — see `docs/architecture.md` for the full map:
+Feature-based, front-end only — see `docs/architecture.md` for the full map:
 
 ```
-types → config → repo → service → runtime → ui
+src/features/<feature>/{types,config,api,hooks,components}
+src/shared/{types,config,api,hooks,components}
 ```
 
-Enforced mechanically by structural tests in `./harness/verify.sh`
+Layer order inside each tree: `types → config → api → hooks → components`.
+Features are isolated (may not import each other directly) and are only
+reachable from outside via their `index.js`; `src/shared/` cannot depend on
+a feature. Enforced mechanically by structural tests in `./harness/verify.sh`
 (dependency-cruiser config: `harness/structure.rules.cjs`). Violations fail the
 build with messages that explain the fix.
 
 ## Conventions (linted, not aspirational)
 
 - Naming: kebab-case files, camelCase functions, PascalCase React components
-- Module boundaries: cross-domain imports only via each domain's `index.js`
-- Errors: handled at boundaries (`src/runtime`, `src/app`); no empty catch
+- Module boundaries: features only via their `index.js`; no cross-feature
+  imports; `src/shared/` may not depend on a feature
+- Errors: handled at boundaries (`src/app`, each tree's `api`/`hooks`); no empty catch
 - Components: build UI from `@astryxdesign/core` primitives (`Section`,
   `TopNav`, `Text`, `Heading`, ...) — no hand-rolled `<div>`/`<nav>` markup
   where an Astryx component covers the case. Look up props/examples via the
@@ -47,15 +54,16 @@ build with messages that explain the fix.
   queries/pseudo-classes. Use StyleX (`xstyle` prop, see
   `docs/stylex-authoring.md` antipatterns) only for layout overrides Astryx
   props don't cover — never to re-implement colors or component chrome.
-- Color: all colors come from Astryx theme tokens in `src/ui/theme.js`
-  (`defineTheme` — `--color-accent`, `--color-text-primary`, etc.) — no
-  hardcoded hex in components. `src/ui/theme.js` is the editable source;
-  `pnpm theme:build` (runs automatically before `dev`/`build`/`verify`)
-  compiles it via `astryx theme build` into gitignored, do-not-edit
-  artifacts (`src/ui/kt-xnk.js`, `src/ui/kt-xnk.d.ts`,
-  `src/ui/theme.built.css`) for static, non-runtime-injected CSS — see
-  `theme-provider.js` for how they're wired into `<Theme>`. Token values
-  follow Material Design 3 role naming/tone mapping internally
+- Color: all colors come from Astryx theme tokens in
+  `src/shared/components/theme.js` (`defineTheme` — `--color-accent`,
+  `--color-text-primary`, etc.) — no hardcoded hex in components.
+  `src/shared/components/theme.js` is the editable source; `pnpm theme:build`
+  (runs automatically before `dev`/`build`/`verify`) compiles it via
+  `astryx theme build` into gitignored, do-not-edit artifacts
+  (`src/shared/components/kt-xnk.js`, `src/shared/components/kt-xnk.d.ts`,
+  `src/shared/components/theme.built.css`) for static, non-runtime-injected
+  CSS — see `theme-provider.js` for how they're wired into `<Theme>`. Token
+  values follow Material Design 3 role naming/tone mapping internally
   (`primary`/`onPrimary`/`primaryContainer`/..., `surfaceVariant`,
   `outline` — see https://m3.material.io/styles/color/roles) before being
   mapped onto Astryx's CSS-custom-property token names. Palette is derived
@@ -63,7 +71,7 @@ build with messages that explain the fix.
   `#247768`, secondary red `#c2252a` — red reads too harsh/glaring as the
   dominant accent across filled surfaces like inputs and primary buttons)
   expanded into MD3 tonal palettes;
-  adding a new hue requires updating `src/ui/theme.js`, not inlining one
+  adding a new hue requires updating `src/shared/components/theme.js`, not inlining one
 - Every convention here must map to a lint/structural rule. A convention that
   cannot be checked mechanically goes to `harness/GOLDEN_RULES.md` with a plan
   to make it checkable.

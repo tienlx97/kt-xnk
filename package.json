@@ -14,7 +14,7 @@
     "structure": "depcruise src --config harness/structure.rules.cjs",
     "test": "node --test 'src/**/*.test.js'",
     "test:harness": "node --test harness/tests/*.test.cjs",
-    "theme:build": "astryx theme build src/ui/theme.js -o src/ui/theme.built.css",
+    "theme:build": "astryx theme build src/shared/components/theme.js -o src/shared/components/theme.built.css",
     "typecheck": "tsc --noEmit -p jsconfig.json",
     "verify": "./harness/verify.sh",
     "verify:quality": "node harness/checks/quality.mjs"

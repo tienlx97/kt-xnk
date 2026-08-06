@@ -49,13 +49,14 @@ export function ContentSection() {
       <ShowcaseSection title="Blockquote / CodeBlock">
         <VStack gap={5}>
           <Blockquote cite="AGENTS.md">
-            Mọi màu đều lấy từ Astryx theme token trong src/ui/theme.js — không
-            hardcode hex trong component.
+            Mọi màu đều lấy từ Astryx theme token trong
+            src/shared/components/theme.js — không hardcode hex trong
+            component.
           </Blockquote>
           <CodeBlock
             code={THEME_SNIPPET}
             language="typescript"
-            title="src/ui/theme.js"
+            title="src/shared/components/theme.js"
             hasLineNumbers
           />
         </VStack>
