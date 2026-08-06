@@ -41,6 +41,14 @@ SRC_FILE_COUNT=$(find src -type f \( -name '*.ts' -o -name '*.tsx' -o -name '*.j
 step "project-readiness" ./harness/checks/project-readiness.sh
 step "memory-secrets" ./harness/checks/memory-secrets.sh
 
+# ── 0. Generated sources ──────────────────────────────────────────
+# src/ui/kt-xnk.{js,d.ts} + theme.built.css are `astryx theme build` output
+# (gitignored — regenerated from src/ui/theme.js). lint/typecheck/structure
+# below all resolve imports of these files, so they must exist first.
+if has_pkg_script theme:build; then
+  step "theme-build" pnpm run theme:build
+fi
+
 # ── 1. Static checks ─────────────────────────────────────────────
 if [ "$SRC_FILE_COUNT" -gt 0 ]; then
   require_step "lint" lint

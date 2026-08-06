@@ -49,14 +49,19 @@ build with messages that explain the fix.
   props don't cover — never to re-implement colors or component chrome.
 - Color: all colors come from Astryx theme tokens in `src/ui/theme.js`
   (`defineTheme` — `--color-accent`, `--color-text-primary`, etc.) — no
-  hardcoded hex in components. Token values follow Material Design 3 role
-  naming/tone mapping internally (`primary`/`onPrimary`/`primaryContainer`/
-  ..., `surfaceVariant`, `outline` — see
-  https://m3.material.io/styles/color/roles) before being mapped onto Astryx's
-  CSS-custom-property token names. Palette is derived from the brand logo
-  (`public/images/logo-dn-group.png`: primary red `#c2252a`, secondary teal
-  `#247768`) expanded into MD3 tonal palettes; adding a new hue requires
-  updating `src/ui/theme.js`, not inlining one
+  hardcoded hex in components. `src/ui/theme.js` is the editable source;
+  `pnpm theme:build` (runs automatically before `dev`/`build`/`verify`)
+  compiles it via `astryx theme build` into gitignored, do-not-edit
+  artifacts (`src/ui/kt-xnk.js`, `src/ui/kt-xnk.d.ts`,
+  `src/ui/theme.built.css`) for static, non-runtime-injected CSS — see
+  `theme-provider.js` for how they're wired into `<Theme>`. Token values
+  follow Material Design 3 role naming/tone mapping internally
+  (`primary`/`onPrimary`/`primaryContainer`/..., `surfaceVariant`,
+  `outline` — see https://m3.material.io/styles/color/roles) before being
+  mapped onto Astryx's CSS-custom-property token names. Palette is derived
+  from the brand logo (`public/images/logo-dn-group.png`: primary red
+  `#c2252a`, secondary teal `#247768`) expanded into MD3 tonal palettes;
+  adding a new hue requires updating `src/ui/theme.js`, not inlining one
 - Every convention here must map to a lint/structural rule. A convention that
   cannot be checked mechanically goes to `harness/GOLDEN_RULES.md` with a plan
   to make it checkable.

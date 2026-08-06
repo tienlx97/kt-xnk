@@ -6,6 +6,12 @@ build/
 .env.*
 !.env.example
 
+# `astryx theme build` output — generated from src/ui/theme.js, see
+# `pnpm theme:build` (runs automatically before dev/build/verify)
+src/ui/kt-xnk.js
+src/ui/kt-xnk.d.ts
+src/ui/theme.built.css
+
 # Verification evidence (per-run logs/screenshots) — keep out of git
 harness/runs/
 

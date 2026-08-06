@@ -5,8 +5,8 @@
   "description": "OpenSpec x Harness Engineering project. Next.js (App Router, JavaScript) + StyleX.",
   "scripts": {
     "audit": "./harness/audit-harness.sh",
-    "build": "next build",
-    "dev": "next dev",
+    "build": "pnpm theme:build && next build",
+    "dev": "pnpm theme:build && next dev",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
@@ -14,6 +14,7 @@
     "structure": "depcruise src --config harness/structure.rules.cjs",
     "test": "node --test 'src/**/*.test.js'",
     "test:harness": "node --test harness/tests/*.test.cjs",
+    "theme:build": "astryx theme build src/ui/theme.js -o src/ui/theme.built.css",
     "typecheck": "tsc --noEmit -p jsconfig.json",
     "verify": "./harness/verify.sh",
     "verify:quality": "node harness/checks/quality.mjs"

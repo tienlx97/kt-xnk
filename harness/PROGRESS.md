@@ -9,6 +9,46 @@ This file is the handoff between sessions/agents — write for a reader with zer
 
 (none yet)
 
+---
+
+## 2026-08-06 22:10 — Claude Code
+
+- **Active change:** switch from runtime `defineTheme()` to a pre-built
+  Astryx theme (no `openspec/changes/` entry — small follow-up to the
+  Astryx migration above, done directly per user request after they pasted
+  a `pnpm dev` log showing Astryx's own perf warning)
+- **Task worked:** `pnpm dev` was logging: `Theme: "kt-xnk" is using
+  runtime style injection. For better performance, use the pre-built
+  theme... run 'npx @astryxdesign/cli theme build <file>'`. Ran
+  `astryx theme build src/ui/theme.js -o src/ui/theme.built.css`, which
+  generates `src/ui/kt-xnk.js` (built theme object), `src/ui/kt-xnk.d.ts`,
+  and `src/ui/theme.built.css` (static CSS) next to the source file.
+- **Result:** done. `src/ui/theme-provider.js` now imports the built
+  `ktXnkTheme` from `./kt-xnk.js` + `./theme.built.css` instead of calling
+  runtime `defineTheme()` directly (`src/ui/theme.js` stays as the
+  hand-edited *source* the build command reads — not deleted).
+  - Generated files are gitignored (`.gitignore`), not committed — they're
+    fully deterministic output of `src/ui/theme.js`.
+  - Added `"theme:build"` npm script (the exact `astryx theme build`
+    command) and made `dev`/`build` run it first
+    (`"dev": "pnpm theme:build && next dev"`, same for `build`).
+  - `harness/verify.sh` runs `theme:build` as its own step, before
+    `lint`/`typecheck`/`structure` — those all resolve the `./kt-xnk.js`
+    import, so on a fresh clone (gitignored files absent) they'd fail
+    without this step running first.
+- **Verification:** deleted the generated files, ran
+  `./harness/verify.sh` clean from that state — full pass (theme-build
+  step regenerated them before lint/typecheck ran). Also ran `pnpm dev` in
+  the background and grepped its log: no more "runtime style injection"
+  warning. See `harness/runs/20260806-221048-11148/`.
+- **Decisions made:** gitignore + rebuild-on-every-run over committing the
+  generated files — keeps `src/ui/theme.js` the single source of truth and
+  makes staleness (someone edits `theme.js`, forgets to rebuild, commits
+  mismatched CSS) mechanically impossible instead of relying on a reviewer
+  to notice.
+- **Next step:** none pending.
+- **Blockers:** none
+
 ## Discovered (backlog — do NOT act on these mid-task)
 
 - No `src/repo`/`src/service` code yet — the site is fully static. Add real
