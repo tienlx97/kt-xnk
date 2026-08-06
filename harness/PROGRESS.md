@@ -7,7 +7,56 @@ This file is the handoff between sessions/agents — write for a reader with zer
 
 ## Harness gaps (mistakes that need a mechanical rule, not a manual fix)
 
-(none yet)
+- `harness/checks/project-readiness.sh`'s placeholder scan (angle-bracket
+  CLI-argument tokens, an unfilled date-format token, etc. — see the script
+  for the exact pattern) didn't account for tool-generated content blocks —
+  `astryx init`'s `<!-- ASTRYX:START/END -->` cheat sheet in `AGENTS.md`
+  contains angle-bracket CLI usage syntax that happens to match the
+  placeholder pattern, and failed `verify.sh` on an otherwise clean repo.
+  Fixed 2026-08-06: the check now strips `ASTRYX:START`/`ASTRYX:END` blocks
+  before scanning. Any other tool that appends a marked block to these
+  files (AGENTS.md, docs/architecture.md, GOLDEN_RULES.md, PROGRESS.md,
+  quality-grades.json, project.md) should use a similar
+  `<!-- TOOL:START/END -->` convention so this stays generalizable instead
+  of needing a new carve-out per tool. (Note for future edits to this very
+  log: avoid reproducing the literal placeholder tokens themselves here —
+  this file is one of the ones the scan covers, and literal examples in
+  the write-up will trip it, as happened while drafting this entry.)
+
+---
+
+## 2026-08-06 23:43 — Claude Code
+
+- **Active change:** commit the `astryx init` agent-doc block + fix a
+  Turbopack root-inference warning (no `openspec/changes/` entry — direct
+  per user request)
+- **Task worked:**
+  1. User ran `pnpm exec astryx init` themselves (I'd deliberately avoided
+     running it earlier — see 2026-08-06 22:02 entry). It appended a
+     `<!-- ASTRYX:START/END -->` CLI cheat sheet to both `AGENTS.md` and
+     `CLAUDE.md`, purely additive, nothing existing removed — reviewed the
+     diff before committing.
+  2. `pnpm dev` was warning on every run: "Next.js inferred your workspace
+     root... Detected additional lockfiles: /home/capybara/pnpm-lock.yaml".
+     This repo sits inside `/home/capybara`, which has its own unrelated
+     pnpm lockfile one level up, confusing Turbopack's root inference. Set
+     `turbopack.root: import.meta.dirname` in `next.config.mjs` to pin it
+     explicitly.
+  3. Running `verify.sh` after the `astryx init` commit surfaced a real
+     harness bug (see "Harness gaps" above): `project-readiness.sh`'s
+     placeholder regex matched an angle-bracket CLI-argument token in the
+     Astryx cheat sheet's `astryx template ... [--skeleton]` line. Fixed
+     the check rather than editing the tool-generated block (which would
+     just get overwritten by a future `astryx upgrade`/re-init).
+- **Verification:** `./harness/verify.sh` — full pass. Sanity-checked the
+  `project-readiness.sh` fix didn't just neuter the whole check: temporarily
+  added one of the scanner's real placeholder tokens to
+  `openspec/project.md` and confirmed the script still caught it (exit 1)
+  before reverting. Confirmed the Turbopack warning is gone by re-running
+  `pnpm dev` and reading the log. See `harness/runs/20260806-234349-17147/`.
+- **Decisions made:** none beyond what's in "Task worked" above.
+- **Next step:** none pending.
+- **Blockers:** none
 
 ---
 

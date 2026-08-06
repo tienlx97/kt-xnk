@@ -17,8 +17,20 @@ if [ -f .harness-template ]; then
 fi
 
 PLACEHOLDER_PATTERN='PROJECT_DESCRIPTION|YYYY-MM-DD|\[What |\[Describe |\[e\.g\.|\[x\]|<name>|<timestamp>'
-if grep -En "$PLACEHOLDER_PATTERN" AGENTS.md docs/architecture.md harness/GOLDEN_RULES.md \
-  harness/PROGRESS.md harness/quality-grades.json openspec/project.md; then
+FOUND=0
+for f in AGENTS.md docs/architecture.md harness/GOLDEN_RULES.md \
+  harness/PROGRESS.md harness/quality-grades.json openspec/project.md; do
+  [ -f "$f" ] || continue
+  # Strip tool-generated blocks (e.g. `astryx init`'s <!-- ASTRYX:START/END -->
+  # cheat sheet) before scanning — their CLI usage syntax (`<name>`, `<timestamp>`)
+  # collides with this placeholder pattern but isn't an unfilled template field.
+  MATCHES=$(sed '/<!-- ASTRYX:START -->/,/<!-- ASTRYX:END -->/d' "$f" | grep -En "$PLACEHOLDER_PATTERN" || true)
+  if [ -n "$MATCHES" ]; then
+    echo "$MATCHES" | sed "s|^|$f:|"
+    FOUND=1
+  fi
+done
+if [ "$FOUND" -eq 1 ]; then
   echo "Project placeholders remain. Replace them before verification can pass."
   exit 1
 fi
