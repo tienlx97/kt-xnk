@@ -11,11 +11,13 @@ to extend with new pages via the layered `src/` structure.
 ## Tech stack
 
 - Language/runtime: JavaScript
-- Framework: Next.js (latest, App Router) — UI built via the Astryx MCP
-  server (`xds`, https://astryx.atmeta.com/mcp)
-- Style: StyleX — see `docs/stylex-installation.md` (build tool setup: Vite,
-  Next.js, Webpack, Rspack, esbuild) and `docs/stylex-authoring.md` (style
-  APIs, theming, antipatterns)
+- Framework: Next.js (latest, App Router) — UI built from real
+  `@astryxdesign/core` components (looked up via the Astryx MCP server
+  `xds`, https://astryx.atmeta.com/mcp), not hand-rolled markup
+- Style: Astryx theme tokens (`src/ui/theme.js`) drive all color/spacing;
+  StyleX is the sanctioned escape hatch for one-off layout overrides via the
+  `xstyle` prop only — see `docs/stylex-installation.md` (build tool setup)
+  and `docs/stylex-authoring.md` (style APIs, antipatterns)
 - Theme: light only (no dark mode)
 - Database: none yet — static site
 - Testing: Node's built-in test runner (`node --test`)
@@ -37,16 +39,24 @@ build with messages that explain the fix.
 - Naming: kebab-case files, camelCase functions, PascalCase React components
 - Module boundaries: cross-domain imports only via each domain's `index.js`
 - Errors: handled at boundaries (`src/runtime`, `src/app`); no empty catch
-- Styling: StyleX only — no inline `style`/`className`, no top-level media
-  queries/pseudo-classes (see `docs/stylex-authoring.md` antipatterns)
-- Color: all colors come from `colors` in `src/ui/tokens.stylex.js` — no
-  hardcoded hex in components. Role names and tone mapping follow Material
-  Design 3 (`primary`/`onPrimary`/`primaryContainer`/..., `surfaceVariant`,
-  `outline`, etc. — see https://m3.material.io/styles/color/roles). Palette
-  is derived from the brand logo (`public/images/logo-dn-group.png`: primary
-  red `#c2252a`, secondary teal `#247768`) expanded into MD3 tonal palettes;
-  adding a new hue requires updating that file's tonal palette, not inlining
-  one
+- Components: build UI from `@astryxdesign/core` primitives (`Section`,
+  `TopNav`, `Text`, `Heading`, ...) — no hand-rolled `<div>`/`<nav>` markup
+  where an Astryx component covers the case. Look up props/examples via the
+  `xds` MCP server before writing a component from scratch.
+- Styling: no inline `style`/`className`, no top-level media
+  queries/pseudo-classes. Use StyleX (`xstyle` prop, see
+  `docs/stylex-authoring.md` antipatterns) only for layout overrides Astryx
+  props don't cover — never to re-implement colors or component chrome.
+- Color: all colors come from Astryx theme tokens in `src/ui/theme.js`
+  (`defineTheme` — `--color-accent`, `--color-text-primary`, etc.) — no
+  hardcoded hex in components. Token values follow Material Design 3 role
+  naming/tone mapping internally (`primary`/`onPrimary`/`primaryContainer`/
+  ..., `surfaceVariant`, `outline` — see
+  https://m3.material.io/styles/color/roles) before being mapped onto Astryx's
+  CSS-custom-property token names. Palette is derived from the brand logo
+  (`public/images/logo-dn-group.png`: primary red `#c2252a`, secondary teal
+  `#247768`) expanded into MD3 tonal palettes; adding a new hue requires
+  updating `src/ui/theme.js`, not inlining one
 - Every convention here must map to a lint/structural rule. A convention that
   cannot be checked mechanically goes to `harness/GOLDEN_RULES.md` with a plan
   to make it checkable.

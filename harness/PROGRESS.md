@@ -16,6 +16,74 @@ This file is the handoff between sessions/agents — write for a reader with zer
 
 ---
 
+## 2026-08-06 22:02 — Claude Code
+
+- **Active change:** migrate UI to real `@astryxdesign/core` components (no
+  `openspec/changes/` entry — direct per user request; project.md already
+  said "UI built via the Astryx MCP server" but the app had never actually
+  installed/used the package, only hand-rolled markup — user flagged this
+  gap)
+- **Task worked:** install `@astryxdesign/core` + `@astryxdesign/theme-neutral`
+  (deps) and `@astryxdesign/cli` (devDep); wire the MD3 palette from the
+  previous entry into Astryx via `defineTheme`; replace hand-written
+  `header.js`/`footer.js`/`hero.js` with real Astryx components
+  (`TopNav`/`TopNavHeading`/`TopNavItem`, `Section`, `Heading`/`Text`).
+- **Result:** done.
+  - `src/ui/theme.js` — `defineTheme({name: 'kt-xnk', tokens: {...}})`
+    mapping our MD3 role values onto Astryx's CSS-custom-property token
+    names (`--color-accent`, `--color-background-body`,
+    `--color-background-surface`, `--color-background-card`,
+    `--color-text-primary`, `--color-text-secondary`, `--color-border`).
+    Single string values only (no `[light, dark]` tuples) since the project
+    stays light-only.
+  - `src/ui/theme-provider.js` — client component wrapping the app in
+    `<LinkProvider component={NextLink}>` (so Astryx `href`s route through
+    `next/link`) and `<Theme theme={ktxnkTheme} mode="light">`. Wired into
+    `src/app/layout.js` around `<Header>`/`{children}`/`<Footer>`.
+  - `src/app/globals.css` — added `@import` for
+    `@astryxdesign/core/reset.css`, `@astryxdesign/core/astryx.css`, and
+    `@astryxdesign/theme-neutral/theme.css` (baseline before our
+    `defineTheme` override); removed the hand-rolled `box-sizing`/`body`
+    reset now that Astryx's reset owns it (avoids unlayered CSS silently
+    overriding `astryx-base`, per Astryx's Cascade Layer Safety guidance).
+  - Deleted `src/ui/container.js` and `src/ui/tokens.stylex.js` — both had
+    zero remaining consumers once header/footer/hero moved to Astryx
+    components (verified with grep before deleting, same as the
+    `colors`-token cleanup in the previous entry).
+  - Package install needed one manual step: `pnpm-workspace.yaml` had a
+    stub `allowBuilds: '@astryxdesign/core': set this to true or false` —
+    read `@astryxdesign/core`'s postinstall script first (it only prints a
+    "run `astryx init`" nudge when no agent-doc marker is found; never
+    mutates files) before setting it to `true`.
+  - Did **not** run `npx astryx init` — it can rewrite `AGENTS.md`/
+    `CLAUDE.md`, which this repo treats as the curated single operating
+    manual; a human should review that separately before letting the CLI
+    touch those files.
+  - Updated `openspec/project.md` (Tech stack + Conventions): components
+    now come from `@astryxdesign/core`, not hand-rolled markup; StyleX is
+    scoped to the `xstyle` escape hatch for one-off layout only; colors
+    are sourced from `src/ui/theme.js`, not a StyleX token file.
+- **Verification:** `./harness/verify.sh` — full pass. Also ran `pnpm dev`
+  against the actual page and inspected the rendered HTML/CSS: confirmed
+  `data-astryx-theme="kt-xnk" data-theme="light"` on the root wrapper,
+  `<header><nav aria-label="Điều hướng chính">` from `TopNav`, and
+  `#b91a24` (MD3 `primary`) present in the compiled CSS chunk. See
+  `harness/runs/20260806-220202-9426/`.
+- **Decisions made:** used Astryx's simpler common token set
+  (`--color-accent`/`--color-background-*`/`--color-text-*`/`--color-border`)
+  rather than trying to force all ~30 MD3 roles into Astryx CSS vars —
+  Astryx's own token vocabulary is coarser than MD3's; mapped only the
+  tokens Astryx actually documents. `Section`/`TopNav` don't expose an `as`
+  prop, so kept native `<header>`/`<footer>` wrappers around them for
+  landmark semantics.
+- **Next step:** if a future page needs Buttons, Cards, or form fields,
+  pull them from Astryx (`xds` MCP) the same way — don't hand-roll. If the
+  team decides they do want `astryx init`'s AGENTS.md/CLAUDE.md agent
+  prompt, run it in its own reviewed change, not bundled with UI work.
+- **Blockers:** none
+
+---
+
 ## 2026-08-06 21:44 — Claude Code
 
 - **Active change:** rename/expand color tokens to Material Design 3 roles

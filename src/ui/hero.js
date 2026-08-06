@@ -1,33 +1,22 @@
-import * as stylex from '@stylexjs/stylex';
+'use client';
 
-import { colors, spacing } from './tokens.stylex.js';
-
-const styles = stylex.create({
-  hero: {
-    paddingBlock: spacing.xl,
-    textAlign: 'center',
-  },
-  title: {
-    color: colors.onSurface,
-    fontSize: 40,
-    fontWeight: 800,
-    margin: 0,
-  },
-  subtitle: {
-    color: colors.onSurfaceVariant,
-    fontSize: 18,
-    marginTop: spacing.sm,
-  },
-});
+import { Section } from '@astryxdesign/core/Section';
+import { Heading, Text } from '@astryxdesign/core/Text';
 
 /**
  * @param {{ title: string, subtitle?: string }} props
  */
 export function Hero({ title, subtitle }) {
   return (
-    <section {...stylex.props(styles.hero)}>
-      <h1 {...stylex.props(styles.title)}>{title}</h1>
-      {subtitle ? <p {...stylex.props(styles.subtitle)}>{subtitle}</p> : null}
-    </section>
+    <Section variant="transparent" paddingBlock={10}>
+      <Heading level={1} type="display-2" justify="center">
+        {title}
+      </Heading>
+      {subtitle ? (
+        <Text type="large" color="secondary" justify="center" display="block">
+          {subtitle}
+        </Text>
+      ) : null}
+    </Section>
   );
 }
