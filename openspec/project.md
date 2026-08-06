@@ -22,6 +22,10 @@ with new pages via the feature-based `src/` structure.
   and `docs/stylex-authoring.md` (style APIs, antipatterns)
 - Theme: light only (no dark mode)
 - Database: none yet — static site
+- Data fetching: `@tanstack/react-query` for any client-side fetching/caching
+  against the separate backend project; provider goes in
+  `src/shared/components` per the layer rules, hooks live in each feature's
+  `hooks/` (never call `fetch`/`useQuery` directly from `components/`)
 - Testing: Node's built-in test runner (`node --test`)
 
 ## Architecture

@@ -1,7 +1,11 @@
 import './globals.css';
 
+import { AppShell } from '@astryxdesign/core/AppShell';
+
 import { Footer } from '../shared/components/footer.js';
 import { Header } from '../shared/components/header.js';
+import { QueryProvider } from '../shared/components/query-provider.js';
+import { AppSideNav } from '../shared/components/side-nav.js';
 import { ThemeProvider } from '../shared/components/theme-provider.js';
 import { navLinks, site } from '../shared/config/site.js';
 
@@ -17,11 +21,19 @@ export default function RootLayout({ children }) {
   return (
     <html lang="vi">
       <body>
-        <ThemeProvider>
-          <Header siteName={site.name} navLinks={navLinks} />
-          {children}
-          <Footer siteName={site.name} year={new Date().getFullYear()} />
-        </ThemeProvider>
+        <QueryProvider>
+          <ThemeProvider>
+            <AppShell
+              height="auto"
+              variant="elevated"
+              contentPadding={6}
+              topNav={<Header siteName={site.name} navLinks={[]} />}
+              sideNav={<AppSideNav navLinks={navLinks} />}>
+              {children}
+              <Footer siteName={site.name} year={new Date().getFullYear()} />
+            </AppShell>
+          </ThemeProvider>
+        </QueryProvider>
       </body>
     </html>
   );
