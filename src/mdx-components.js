@@ -8,6 +8,14 @@ import { Text } from '@astryxdesign/core/Text';
 import { spacingVars } from '@astryxdesign/core/theme/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
 
+import { DeepDive } from './shared/components/mdx/deep-dive.js';
+import { Figure } from './shared/components/mdx/figure.js';
+import { imageStyles } from './shared/components/mdx/image-styles.js';
+import { Note } from './shared/components/mdx/note.js';
+import { Pitfall } from './shared/components/mdx/pitfall.js';
+import { YouWillLearn } from './shared/components/mdx/you-will-learn.js';
+import { YouTubeEmbed } from './shared/components/mdx/youtube-embed.js';
+
 // List/ListItem require a string `label`, not arbitrary rich children, so
 // they don't cover free-form MDX content — ul/ol/li stay native elements,
 // just restyled: the Astryx reset strips default markers/spacing, so
@@ -111,6 +119,22 @@ export function useMDXComponents(components) {
     ol: ({ children }) => <ol {...stylex.props(listStyles.ol)}>{children}</ol>,
     /** @param {{ children: import('react').ReactNode }} props */
     li: ({ children }) => <li {...stylex.props(listStyles.li)}>{children}</li>,
+    // Plain markdown images (`![]()`) — a raw `<img>` slips through the
+    // no-raw-markup rule otherwise. Same treatment as the opt-in `Figure`
+    // component below, minus the caption.
+    /** @param {{ src?: string, alt?: string }} props */
+    img: ({ src, alt }) => (
+      // eslint-disable-next-line @next/next/no-img-element -- see comment above
+      <img src={src} alt={alt} {...stylex.props(imageStyles.img)} />
+    ),
+    // Authoring components for callouts, expandable sections, captioned
+    // images, and video embeds — see src/shared/components/mdx/.
+    Note,
+    Pitfall,
+    DeepDive,
+    YouWillLearn,
+    Figure,
+    YouTubeEmbed,
     ...components,
   };
 }

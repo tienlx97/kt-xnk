@@ -14,10 +14,10 @@ const styles = stylex.create({
       default: 'block',
       '@media (max-width: 767px)': 'none',
     },
-    position: 'sticky',
-    top: 'calc(var(--appshell-header-height, 0px) + 24px)',
     maxHeight: 'calc(100vh - var(--appshell-header-height, 0px) - 48px)',
     overflowY: 'auto',
+    position: 'sticky',
+    top: 'calc(var(--appshell-header-height, 0px) + 24px)',
   },
 });
 

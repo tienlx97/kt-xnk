@@ -4,6 +4,14 @@ description: 'Hướng dẫn ngắn để làm quen với các trang trong KT-XN
 date: '2026-08-07'
 ---
 
+<YouWillLearn>
+
+- Component nào đang được dùng trong dự án
+- Cách chạy dự án ở local
+- Cách thêm một bài viết `.mdx` mới
+
+</YouWillLearn>
+
 ## Bước 1: Khám phá component
 
 Xem trang [Design System](/design-system) để biết các component
@@ -15,8 +23,23 @@ Xem trang [Design System](/design-system) để biết các component
 pnpm dev
 ```
 
+<Note title="Cổng mặc định">
+
+Dự án chạy ở `http://localhost:3000` theo mặc định của Next.js.
+
+</Note>
+
 ## Bước 3: Viết nội dung mới
 
 Thêm một slug vào registry (`config/posts.js`) và một file `.mdx` tương ứng
 trong `components/posts/` — trang danh sách và trang chi tiết sẽ tự nhận bài
 mới mà không cần sửa route.
+
+<DeepDive title="Vì sao lại cần khai báo slug trong registry thay vì quét thư mục?">
+
+`import()` với đường dẫn tĩnh giúp Turbopack/webpack phân tích và tách bundle
+được chắc chắn — quét thư mục bằng đường dẫn động (`` `./posts/${slug}.mdx` ``)
+không phải lúc nào cũng được các bundler hỗ trợ ổn định. Registry tường minh là
+đánh đổi hợp lý cho quy mô nội dung hiện tại.
+
+</DeepDive>

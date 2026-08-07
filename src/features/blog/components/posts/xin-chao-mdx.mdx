@@ -7,6 +7,13 @@ date: '2026-08-07'
 Đây là bài viết mẫu đầu tiên, viết bằng **MDX** — Markdown quen thuộc, cộng
 thêm khả năng nhúng component React ngay trong nội dung khi cần.
 
+<YouWillLearn>
+
+- MDX hỗ trợ frontmatter và nhúng component React
+- Cách dùng `Note`, `Pitfall`, `DeepDive` để soạn bài dễ đọc hơn
+
+</YouWillLearn>
+
 ## Vì sao dùng MDX?
 
 - Soạn nội dung bằng cú pháp Markdown quen thuộc
@@ -22,3 +29,26 @@ console.log('Xin chào MDX!');
 > Mọi thẻ mà MDX sinh ra (heading, paragraph, link, code, blockquote...) đều
 > được ánh xạ sang component Astryx tương ứng qua `src/mdx-components.js`,
 > thay vì render thẳng ra HTML thô.
+
+<Note>
+
+Các component như `Note` này không cần import thủ công trong từng bài — chúng
+được đăng ký sẵn trong `src/mdx-components.js` và dùng được ở mọi file `.mdx`.
+
+</Note>
+
+<Pitfall title="Cẩn thận khi đặt tên slug">
+
+Slug (`xin-chao-mdx`) vừa là tên file `.mdx`, vừa là URL — đổi tên file sau khi
+đã chia sẻ link sẽ làm link cũ chết (404).
+
+</Pitfall>
+
+<DeepDive title="MDX xử lý các component này như thế nào?">
+
+Khi biên dịch, MDX thay `<Note>`, `<Pitfall>`, `<DeepDive>`... bằng đúng
+component cùng tên được trả về từ `useMDXComponents()` — cùng cơ chế đang ánh
+xạ `h1`, `blockquote`, `code`... sang component Astryx. Không cần `import`
+trong từng file `.mdx`.
+
+</DeepDive>
