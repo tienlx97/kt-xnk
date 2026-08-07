@@ -5,7 +5,7 @@ import { Button } from '@astryxdesign/core/Button';
 import { Card } from '@astryxdesign/core/Card';
 import { Center } from '@astryxdesign/core/Center';
 import { CheckboxInput } from '@astryxdesign/core/CheckboxInput';
-import { Heading, Text } from '@astryxdesign/core/Text';
+import { Heading } from '@astryxdesign/core/Text';
 import { TextInput } from '@astryxdesign/core/TextInput';
 import { VStack } from '@astryxdesign/core/VStack';
 
@@ -33,10 +33,7 @@ export function LoginForm() {
           <form onSubmit={handleSubmit}>
             <VStack gap={4} hAlign="stretch">
               <VStack gap={1} hAlign="center">
-                <Heading level={2}>Đăng nhập</Heading>
-                <Text type="body" color="secondary" size="sm">
-                  Nhập số căn cước công dân và mật khẩu để tiếp tục
-                </Text>
+                <Heading level={2}>ĐĂNG NHẬP</Heading>
               </VStack>
 
               {submitError ? (
@@ -44,10 +41,10 @@ export function LoginForm() {
               ) : null}
 
               <TextInput
-                label="Căn cước công dân"
+                label="Tên đăng nhập"
                 value={username}
                 onChange={setUsername}
-                placeholder="Nhập 12 số căn cước công dân"
+                placeholder="Nhập tên đăng nhập"
                 size="lg"
                 isRequired
                 status={usernameStatus}

@@ -25,6 +25,44 @@ This file is the handoff between sessions/agents — write for a reader with zer
 
 ---
 
+## 2026-08-07 21:30 — Claude Code
+
+- **Active change:** stop the login form's copy from revealing the
+  username is a CCCD (branch `feature/login`, no `openspec/changes/`
+  entry — direct follow-up per user request: "username không cần biết đó
+  là căn cước công dân hay là tên đăng nhập"). User had already hand-edited
+  `components/login-form.js` (label → "Tên đăng nhập", placeholder →
+  "Nhập tên đăng nhập", dropped the subtitle text, heading → "ĐĂNG NHẬP")
+  before this session picked the task back up.
+- **Task worked:** the underlying rule is unchanged — the field still must
+  be a 12-digit CCCD (that requirement came from the very first ask in
+  this feature and wasn't revisited) — only the *copy* changed, so nobody
+  looking at the form can tell it's specifically a citizen-ID field:
+  - `config/login-schema.js`: renamed `CCCD_PATTERN` → `USERNAME_PATTERN`;
+    error messages "Vui lòng nhập số căn cước công dân" / "Số căn cước
+    công dân phải gồm đúng 12 chữ số" → generic "Vui lòng nhập tên đăng
+    nhập" / "Tên đăng nhập không hợp lệ". Left a comment noting the
+    12-digit regex is still CCCD-shaped internally, on purpose.
+  - `api/login.js`: failure message "Sai số căn cước công dân hoặc mật
+    khẩu" → "Sai tên đăng nhập hoặc mật khẩu".
+  - `components/login-form.js`: removed the now-unused `Text` import
+    (dead after the user's edit dropped the subtitle `<Text>` that used
+    it) — lint would have caught this on the next `verify.sh` run anyway.
+  - Left `config/test-users.js` as-is — its comments already don't
+    mention CCCD, and the sample values are just data.
+- **Result:** done.
+- **Verification:** `./harness/verify.sh` — full pass. `agent-browser`:
+  `/login` shows "Tên đăng nhập" (not CCCD wording) with a generic
+  required-field error on empty submit; logging in with an existing
+  `test-users.js` credential (still a 12-digit value, business rule
+  unchanged) still succeeds and redirects to `/`.
+- **Decisions made:** kept the actual 12-digit validation — the user asked
+  to hide *that it's a CCCD*, not to drop the CCCD requirement itself.
+- **Next step:** none pending.
+- **Blockers:** none
+
+---
+
 ## 2026-08-07 21:20 — Claude Code
 
 - **Active change:** move the app shell (top nav / side nav / footer) out
