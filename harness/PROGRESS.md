@@ -25,6 +25,63 @@ This file is the handoff between sessions/agents — write for a reader with zer
 
 ---
 
+## 2026-08-07 15:10 — Claude Code
+
+- **Active change:** login page (branch `feature/login`, no `openspec/changes/`
+  entry — direct per user request). Requirements: username (must be a
+  Vietnamese CCCD — citizen ID), password, "remember me" checkbox; no
+  registration; validate with `zod`; submit against test data only (no auth
+  backend exists yet).
+- **Task worked:** new `src/features/auth/` feature (`types`, `config`,
+  `api`, `hooks`, `components`, public `index.js`) per the feature-based
+  layer rules. `config/login-schema.js` — zod schema, CCCD regex `^\d{12}$`,
+  password min length 6 (placeholder pending a real backend policy).
+  `config/test-users.js` — 2 hardcoded test credentials, explicitly commented
+  as placeholder-only. `api/login.js` — mocked `login()` with a ~500ms
+  delay, checks against `test-users.js`; this is the seam to replace with a
+  real backend `fetch` call later. `hooks/use-login-form.js` — form state +
+  zod `safeParse` → per-field `status` for `TextInput`; on success, persists
+  username to `localStorage` when "remember me" is checked.
+  `components/login-form.js` — Astryx-only UI (`Center`/`VStack`/`Card`/
+  `Heading`/`Banner`/`TextInput`/`CheckboxInput`/`Button`), modeled on the
+  scaffolded `astryx template login` reference. New route
+  `src/app/login/page.js`; added "Đăng nhập" to `navLinks` in
+  `src/shared/config/site.js` for reachability. Added `zod` to
+  `dependencies` (`pnpm add zod`, none of the existing deps provided it).
+- **Result:** done.
+- **Verification:** `./harness/verify.sh` — full pass. Also ran `pnpm dev`
+  and drove the real page via `agent-browser` (not just curl): empty submit
+  shows both zod field errors, malformed CCCD/short password each show
+  their specific message, wrong-but-valid-format credentials show the error
+  `Banner`, and correct `test-users.js` credentials succeed. Screenshots in
+  this session's scratchpad.
+- **Decisions made:** hit a real hydration bug while browser-testing
+  "remember me": seeding `useState` from `localStorage` via a lazy
+  initializer (guarded by `typeof window`) is fine for the username *text*
+  value (React silently corrects `value` mismatches) but Astryx's
+  `CheckboxInput` checked state is not corrected — Next.js logged "A tree
+  hydrated but some attributes... This won't be patched up" and the box
+  stayed visually unchecked even though local state was `true`. Fixed by
+  switching to `useSyncExternalStore` (server snapshot `''`, client snapshot
+  reads `localStorage`) as the source of the remembered username, with
+  separate local override state for `username`/`rememberMe` so the user can
+  still freely edit the fields — this is the React-sanctioned pattern for
+  values that legitimately differ between server and client and avoids both
+  the hydration mismatch and the `react-hooks/set-state-in-effect` lint
+  error a plain `useEffect` + `setState` approach hit first. Worth
+  remembering for any future "prefill a controlled input from
+  browser-only storage" work in this repo.
+  Deliberately did not add `react-hook-form` or any form library — the form
+  is small enough that zod + a single hook covers it, and no other feature
+  uses one yet.
+- **Next step:** when a real auth backend exists, replace `api/login.js`'s
+  body with a real call (keep the same `login(values): Promise<LoginResult>`
+  signature so `hooks/`/`components/` don't need to change) and delete
+  `config/test-users.js`.
+- **Blockers:** none
+
+---
+
 ## 2026-08-07 01:56 — Claude Code
 
 - **Active change:** `openspec/changes/feature-based-architecture/` —

@@ -11,4 +11,5 @@ export const navLinks = [
   { label: 'Tutorial', href: '/tutorial' },
   { label: 'Blog', href: '/blog' },
   { label: 'Design System', href: '/design-system' },
+  { label: 'Đăng nhập', href: '/login' },
 ];

@@ -56,6 +56,9 @@ importers:
       unified:
         specifier: ^11.0.5
         version: 11.0.5
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
     devDependencies:
       '@astryxdesign/cli':
         specifier: ^0.3.0

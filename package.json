@@ -35,7 +35,8 @@
     "remark-frontmatter": "^5.0.0",
     "remark-mdx-frontmatter": "^5.2.0",
     "remark-parse": "^11.0.0",
-    "unified": "^11.0.5"
+    "unified": "^11.0.5",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@astryxdesign/cli": "^0.3.0",
