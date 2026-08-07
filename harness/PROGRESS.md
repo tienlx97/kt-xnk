@@ -25,6 +25,37 @@ This file is the handoff between sessions/agents — write for a reader with zer
 
 ---
 
+## 2026-08-07 21:20 — Claude Code
+
+- **Active change:** move the app shell (top nav / side nav / footer) out
+  of the root layout and into `src/app/(protected)/layout.js` (branch
+  `feature/login`, no `openspec/changes/` entry — direct follow-up per
+  user request: "layout app shell cũng tương tự, chỉ xuất hiện khi đã
+  login" — the shell was rendering on `/login` too, which shouldn't have
+  any site chrome).
+- **Task worked:** `src/app/layout.js` now only does `html`/`body` +
+  `QueryProvider`/`ThemeProvider` + `{children}` — no `AppShell`, `Header`,
+  `AppSideNav`, `Footer`, or `UserMenu` left in it. All of that moved into
+  `src/app/(protected)/layout.js`, alongside the existing session-cookie
+  redirect check from the 17:20 entry: on a valid session, it now renders
+  `<AppShell topNav={<Header .../>} sideNav={<AppSideNav .../>}>{children}
+  <Footer /></AppShell>` instead of returning `children` bare. `/login`
+  stays outside this route group, so it renders directly under the root
+  layout with zero chrome — just `LoginForm`'s own centered card.
+- **Result:** done.
+- **Verification:** `./harness/verify.sh` — full pass. `agent-browser`:
+  `/login` now renders with no header/sidenav/footer at all (screenshot:
+  just the centered login card on a blank page); logging in redirects to
+  `/` and the full shell (top nav with avatar, side nav, footer) appears;
+  clicking "Đăng xuất" clears the session and lands back on the bare
+  `/login` page with the shell gone again.
+- **Decisions made:** none beyond what's in "Task worked" above — this was
+  a straightforward move of existing JSX, no new logic.
+- **Next step:** none pending.
+- **Blockers:** none
+
+---
+
 ## 2026-08-07 17:20 — Claude Code
 
 - **Active change:** make the login gate a *real* server-side block, not

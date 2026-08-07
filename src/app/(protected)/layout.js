@@ -1,7 +1,12 @@
+import { AppShell } from '@astryxdesign/core/AppShell';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-import { ACCESS_TOKEN_KEY } from '../../features/auth/index.js';
+import { ACCESS_TOKEN_KEY, UserMenu } from '../../features/auth/index.js';
+import { Footer } from '../../shared/components/footer.js';
+import { Header } from '../../shared/components/header.js';
+import { AppSideNav } from '../../shared/components/side-nav.js';
+import { navLinks, site } from '../../shared/config/site.js';
 
 /**
  * Server-side gate for every route in this group (everything except
@@ -10,6 +15,10 @@ import { ACCESS_TOKEN_KEY } from '../../features/auth/index.js';
  * Server Component body ever runs — so, unlike a client-side check, a
  * logged-out visitor's protected page content is never generated at all,
  * not just hidden after the fact (verified with `curl`, no JS).
+ *
+ * The app shell (top nav / side nav / footer) also lives here rather than
+ * the root layout, so `/login` renders on a bare page with no chrome —
+ * the shell is part of what "being logged in" means, not site-wide chrome.
  * @param {{ children: import('react').ReactNode }} props
  */
 export default async function ProtectedLayout({ children }) {
@@ -18,5 +27,15 @@ export default async function ProtectedLayout({ children }) {
     redirect('/login');
   }
 
-  return children;
+  return (
+    <AppShell
+      height="auto"
+      variant="elevated"
+      contentPadding={6}
+      topNav={<Header siteName={site.name} navLinks={[]} endContent={<UserMenu />} />}
+      sideNav={<AppSideNav navLinks={navLinks} />}>
+      {children}
+      <Footer siteName={site.name} year={new Date().getFullYear()} />
+    </AppShell>
+  );
 }
