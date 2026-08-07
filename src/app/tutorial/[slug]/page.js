@@ -1,14 +1,11 @@
-import { Heading } from '@astryxdesign/core/Heading';
 import { Section } from '@astryxdesign/core/Section';
-import { Text } from '@astryxdesign/core/Text';
-import { VStack } from '@astryxdesign/core/VStack';
 import { notFound } from 'next/navigation';
 
 import {
   loadPost,
   tutorialPostSlugs,
 } from '../../../features/tutorial/index.js';
-import { TableOfContents } from '../../../shared/components/table-of-contents.js';
+import { MdxArticle } from '../../../shared/components/mdx-article.js';
 
 export function generateStaticParams() {
   return tutorialPostSlugs.map((slug) => ({ slug }));
@@ -35,20 +32,13 @@ export default async function TutorialPostPage({ params }) {
   const post = await loadPost(slug);
   if (!post) notFound();
 
-  const { Content, frontmatter, toc } = post;
-
   return (
     <Section variant="transparent" paddingBlock={8}>
-      <VStack gap={4}>
-        <VStack gap={1}>
-          <Heading level={1}>{frontmatter.title}</Heading>
-          {frontmatter.date ? (
-            <Text type="supporting">{frontmatter.date}</Text>
-          ) : null}
-        </VStack>
-        <TableOfContents items={toc} />
-        <Content />
-      </VStack>
+      <MdxArticle
+        frontmatter={post.frontmatter}
+        toc={post.toc}
+        Content={post.Content}
+      />
     </Section>
   );
 }
