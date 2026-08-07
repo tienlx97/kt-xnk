@@ -55,26 +55,31 @@ export const ktxnkTheme = defineTheme({
   // Astryx's Button `variant` prop is an emphasis level, not a brand hue —
   // `variant="primary"` already resolves to --color-accent above, but
   // `variant="secondary"` defaults to a neutral gray (--color-neutral), not
-  // our brand red. Override it to MD3's secondaryContainer/
-  // onSecondaryContainer pairing — the same tonal-button pattern MD3 itself
-  // uses for a "secondary but still branded, lower emphasis than primary"
-  // button — instead of writing a custom Button component.
+  // our brand red. Override it to MD3's *solid* secondary/onSecondary pair
+  // (tone 40/100 — same tone as --color-accent's primary tone) rather than
+  // the pale secondaryContainer/onSecondaryContainer tones (90/10) used
+  // before: secondaryContainer read as washed-out next to the solid teal
+  // primary button, undermining the two brand colors' intended equal
+  // visual weight. Red still only surfaces here (lower-frequency than
+  // primary), so this doesn't reintroduce the "red as dominant surface"
+  // problem that moved it off --color-accent in the first place — it's
+  // just bolder where it does appear.
   components: {
     button: {
       'variant:secondary': {
-        backgroundColor: '#fddbd5', // MD3 secondaryContainer
-        color: '#3e0500', // MD3 onSecondaryContainer
+        backgroundColor: '#b91a24', // MD3 secondary (tone 40)
+        color: '#ffffff', // MD3 onSecondary
         // Astryx's built-in variants derive :hover/:active automatically via
         // color-mix(base, --color-tint-hover); a flat component override
         // like this one doesn't inherit that, so it must be declared
         // explicitly or the button has no press/hover feedback at all.
         ':hover': {
           backgroundColor:
-            'color-mix(in srgb, #fddbd5, var(--color-tint-hover) 15%)',
+            'color-mix(in srgb, #b91a24, var(--color-tint-hover) 15%)',
         },
         ':active': {
           backgroundColor:
-            'color-mix(in srgb, #fddbd5, var(--color-tint-hover) 25%)',
+            'color-mix(in srgb, #b91a24, var(--color-tint-hover) 25%)',
         },
       },
     },

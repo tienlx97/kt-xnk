@@ -25,8 +25,9 @@ export function ActionsSection() {
         title="Button"
         description={
           'variant là mức nhấn mạnh, không phải màu brand: primary = teal (--color-accent), ' +
-          'secondary = đỏ nhạt (override MD3 secondaryContainer), ghost = trong suốt, ' +
-          'destructive = đỏ lỗi MD3 (--color-error) — trùng hướng màu với secondary nhưng là seed riêng.'
+          'secondary = đỏ đậm (override MD3 secondary, cùng tone với primary để cân bằng thị giác), ' +
+          'ghost = trong suốt, destructive = đỏ lỗi MD3 (--color-error) — trùng hướng màu với ' +
+          'secondary nhưng là seed riêng.'
         }
       >
         <VStack gap={3}>
