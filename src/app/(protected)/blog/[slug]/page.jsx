@@ -2,7 +2,7 @@ import { Section } from '@astryxdesign/core/Section';
 import { notFound } from 'next/navigation';
 
 import { blogPostSlugs, loadPost } from '../../../../features/blog/index.js';
-import { MdxArticle } from '../../../../shared/components/mdx-article.js';
+import { MdxArticle } from '../../../../shared/components/mdx-article.jsx';
 
 export function generateStaticParams() {
   return blogPostSlugs.map((slug) => ({ slug }));

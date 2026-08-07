@@ -10,7 +10,7 @@ import { ToggleButton } from '@astryxdesign/core/ToggleButton';
 import { VStack } from '@astryxdesign/core/VStack';
 import { useState } from 'react';
 
-import { ShowcaseSection } from '../showcase-section.js';
+import { ShowcaseSection } from '../showcase-section.jsx';
 
 /** @type {('primary' | 'secondary' | 'ghost' | 'destructive')[]} */
 const BUTTON_VARIANTS = ['primary', 'secondary', 'ghost', 'destructive'];

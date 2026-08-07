@@ -4,7 +4,7 @@ import { HStack } from '@astryxdesign/core/HStack';
 import { Heading, Text } from '@astryxdesign/core/Text';
 import { VStack } from '@astryxdesign/core/VStack';
 
-import { ShowcaseSection } from '../showcase-section.js';
+import { ShowcaseSection } from '../showcase-section.jsx';
 
 /** @type {(1 | 2 | 3 | 4 | 5 | 6)[]} */
 const HEADING_LEVELS = [1, 2, 3, 4, 5, 6];

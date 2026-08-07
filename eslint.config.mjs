@@ -74,6 +74,20 @@ const config = [
     },
   },
   {
+    // Convention: React components (files containing JSX) live in `.jsx`,
+    // plain logic (hooks without JSX, config, api clients, zod schemas,
+    // types) stays `.js` — makes the split mechanically enforced instead of
+    // relying on someone remembering it. `page.js`/`layout.js` are Next.js
+    // routing-convention filenames resolved by framework config
+    // (`next.config.mjs`'s `pageExtensions`), not by this rule, so a
+    // `.jsx` page/layout is still required to actually be named that way,
+    // but nothing here special-cases the name.
+    files: ['src/**/*.js'],
+    rules: {
+      'react/jsx-filename-extension': ['error', { extensions: ['.jsx'] }],
+    },
+  },
+  {
     // openspec/project.md's Color convention says every color comes from a
     // theme token and no raw hex lives outside src/shared/components/theme.js
     // — but nothing enforced it, which is how a /design-system code sample

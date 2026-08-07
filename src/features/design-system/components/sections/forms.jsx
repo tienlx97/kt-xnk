@@ -15,7 +15,7 @@ import { TextInput } from '@astryxdesign/core/TextInput';
 import { VStack } from '@astryxdesign/core/VStack';
 import { useState } from 'react';
 
-import { ShowcaseSection } from '../showcase-section.js';
+import { ShowcaseSection } from '../showcase-section.jsx';
 
 export function FormsSection() {
   const [name, setName] = useState('');

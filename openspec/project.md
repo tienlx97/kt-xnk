@@ -46,7 +46,13 @@ build with messages that explain the fix.
 
 ## Conventions (linted, not aspirational)
 
-- Naming: kebab-case files, camelCase functions, PascalCase React components
+- Naming: kebab-case files, camelCase functions, PascalCase React components.
+  File extension: `.jsx` for any file containing JSX, plain `.js` for logic
+  with none (hooks without JSX, `config`/`api`/`types`) — enforced by
+  `eslint.config.mjs`'s `react/jsx-filename-extension` rule. `page.js`/
+  `layout.js` are Next.js routing-convention names (resolved by
+  `next.config.mjs`'s `pageExtensions`, not this rule) — use `.jsx` for
+  those too since they render JSX, just don't rename the base filename.
 - Module boundaries: features only via their `index.js`; no cross-feature
   imports; `src/shared/` may not depend on a feature
 - Errors: handled at boundaries (`src/app`, each tree's `api`/`hooks`); no empty catch

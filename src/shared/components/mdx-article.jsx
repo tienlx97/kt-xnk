@@ -4,7 +4,7 @@ import { Text } from '@astryxdesign/core/Text';
 import { VStack } from '@astryxdesign/core/VStack';
 import * as stylex from '@stylexjs/stylex';
 
-import { TableOfContents } from './table-of-contents.js';
+import { TableOfContents } from './table-of-contents.jsx';
 
 /** @typedef {import('../api/toc.js').TocItem} TocItem */
 

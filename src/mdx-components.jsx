@@ -8,13 +8,13 @@ import { Text } from '@astryxdesign/core/Text';
 import { spacingVars } from '@astryxdesign/core/theme/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
 
-import { DeepDive } from './shared/components/mdx/deep-dive.js';
-import { Figure } from './shared/components/mdx/figure.js';
+import { DeepDive } from './shared/components/mdx/deep-dive.jsx';
+import { Figure } from './shared/components/mdx/figure.jsx';
 import { imageStyles } from './shared/components/mdx/image-styles.js';
-import { Note } from './shared/components/mdx/note.js';
-import { Pitfall } from './shared/components/mdx/pitfall.js';
-import { YouWillLearn } from './shared/components/mdx/you-will-learn.js';
-import { YouTubeEmbed } from './shared/components/mdx/youtube-embed.js';
+import { Note } from './shared/components/mdx/note.jsx';
+import { Pitfall } from './shared/components/mdx/pitfall.jsx';
+import { YouWillLearn } from './shared/components/mdx/you-will-learn.jsx';
+import { YouTubeEmbed } from './shared/components/mdx/youtube-embed.jsx';
 
 // List/ListItem require a string `label`, not arbitrary rich children, so
 // they don't cover free-form MDX content — ul/ol/li stay native elements,

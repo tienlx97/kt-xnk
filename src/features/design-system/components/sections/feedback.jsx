@@ -12,7 +12,7 @@ import { StatusDot } from '@astryxdesign/core/StatusDot';
 import { Toast, useToast } from '@astryxdesign/core/Toast';
 import { VStack } from '@astryxdesign/core/VStack';
 
-import { ShowcaseSection } from '../showcase-section.js';
+import { ShowcaseSection } from '../showcase-section.jsx';
 
 /** @type {('info' | 'success' | 'warning' | 'error')[]} */
 const BANNER_STATUSES = ['info', 'success', 'warning', 'error'];

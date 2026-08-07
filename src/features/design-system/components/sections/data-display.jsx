@@ -18,7 +18,7 @@ import { Token } from '@astryxdesign/core/Token';
 import { VStack } from '@astryxdesign/core/VStack';
 import { useState } from 'react';
 
-import { ShowcaseSection } from '../showcase-section.js';
+import { ShowcaseSection } from '../showcase-section.jsx';
 
 /** @type {('neutral' | 'info' | 'success' | 'warning' | 'error')[]} */
 const SEMANTIC_BADGES = ['neutral', 'info', 'success', 'warning', 'error'];

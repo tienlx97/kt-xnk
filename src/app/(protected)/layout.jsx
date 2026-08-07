@@ -3,9 +3,9 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 import { ACCESS_TOKEN_KEY, UserMenu } from '../../features/auth/index.js';
-import { Footer } from '../../shared/components/footer.js';
-import { Header } from '../../shared/components/header.js';
-import { AppSideNav } from '../../shared/components/side-nav.js';
+import { Footer } from '../../shared/components/footer.jsx';
+import { Header } from '../../shared/components/header.jsx';
+import { AppSideNav } from '../../shared/components/side-nav.jsx';
 import { navLinks, site } from '../../shared/config/site.js';
 
 /**

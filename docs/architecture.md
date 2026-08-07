@@ -75,11 +75,12 @@ Enforced by `harness/structure.rules.cjs` (dependency-cruiser), run via
 
 ## Current inventory
 
-- `src/features/home/` — `components/hero.js`, the homepage hero.
-- `src/features/design-system/` — `components/{showcase-section.js,sections/*.js}`,
+- `src/features/home/` — `components/hero.jsx`, the homepage hero.
+- `src/features/design-system/` — `components/{showcase-section.jsx,sections/*.jsx}`,
   the internal component showcase at `/design-system`.
-- `src/shared/components/` — site chrome (`header.js`, `footer.js`) and theme
-  wiring (`theme.js`, `theme-provider.js`, plus `astryx theme build` output).
+- `src/shared/components/` — site chrome (`header.jsx`, `footer.jsx`) and theme
+  wiring (`theme.js` — no JSX, hence `.js` — plus `theme-provider.jsx` and
+  `astryx theme build` output).
 - `src/shared/config/` — `site.js` (site name, nav links).
 - `src/shared/types/` — shared domain types (`NavLink`).
 - `src/shared/api/`, `src/shared/hooks/`, and any feature's `api/`/`hooks/` —

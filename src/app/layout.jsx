@@ -1,7 +1,7 @@
 import './globals.css';
 
-import { QueryProvider } from '../shared/components/query-provider.js';
-import { ThemeProvider } from '../shared/components/theme-provider.js';
+import { QueryProvider } from '../shared/components/query-provider.jsx';
+import { ThemeProvider } from '../shared/components/theme-provider.jsx';
 import { site } from '../shared/config/site.js';
 
 export const metadata = {

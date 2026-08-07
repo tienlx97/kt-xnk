@@ -5,7 +5,7 @@ import {
   loadPost,
   tutorialPostSlugs,
 } from '../../../../features/tutorial/index.js';
-import { MdxArticle } from '../../../../shared/components/mdx-article.js';
+import { MdxArticle } from '../../../../shared/components/mdx-article.jsx';
 
 export function generateStaticParams() {
   return tutorialPostSlugs.map((slug) => ({ slug }));

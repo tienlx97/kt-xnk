@@ -5,7 +5,7 @@ import { Tab, TabList } from '@astryxdesign/core/TabList';
 import { VStack } from '@astryxdesign/core/VStack';
 import { useState } from 'react';
 
-import { ShowcaseSection } from '../showcase-section.js';
+import { ShowcaseSection } from '../showcase-section.jsx';
 
 export function SelectionSection() {
   const [tab, setTab] = useState('overview');

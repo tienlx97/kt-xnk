@@ -25,6 +25,85 @@ This file is the handoff between sessions/agents — write for a reader with zer
 
 ---
 
+## 2026-08-07 21:45 — Claude Code
+
+- **Active change:** repo-wide, not scoped to the login feature — (1) React
+  component files renamed `.js` → `.jsx`, (2) VSCode ESLint auto-fix-on-save
+  config fixed (branch `feature/login`, no `openspec/changes/` entry —
+  direct per user request: "Fix eslint khi dùng vscode save không auto fix
+  và react component phải dùng *.jsx").
+- **Task worked:**
+  1. **`.jsx` rename**: scanned every `.js` under `src/` for actual JSX
+     syntax (not JSDoc generics like `Record<string, string>`, which false-
+     positive on a naive `<[A-Za-z]` grep — e.g. `use-login-form.js` and
+     `theme.js` have angle-bracket JSDoc/comments but no real JSX, so they
+     stayed `.js`). 37 files genuinely render JSX and got `git mv`'d to
+     `.jsx`: every `page.js`/`layout.js` under `src/app/` (Next.js resolves
+     these by filename convention regardless of extension — no import
+     references anywhere needed updating for those), plus every component
+     under `src/features/*/components/` and `src/shared/components/`
+     (including the `mdx/*.js` callouts and `src/mdx-components.js`, also
+     convention-resolved by `@next/mdx`, not imported). Then fixed every
+     *explicit* `import .../.js'` reference to a renamed file (barrels like
+     `features/*/index.js`, cross-component imports like `showcase-
+     section.js` from the design-system sections, `mdx-components.js`'s
+     imports of the mdx callouts) — found via a targeted grep per renamed
+     basename, not a blind sed, since several basenames collide across
+     directories (`post-list.js` exists in both `features/blog/` and
+     `features/tutorial/`; every `page.js` collides across routes) and a
+     naive global rename would have silently pointed one feature's import
+     at the wrong file.
+     - **Made it mechanical, not just a one-time cleanup**: added a new
+       `eslint.config.mjs` rule block (`react/jsx-filename-extension`,
+       `{extensions: ['.jsx']}`, scoped to `src/**/*.js`) so a future PR
+       that adds JSX to a `.js` file fails lint instead of silently
+       reintroducing the mix — matches `AGENTS.md`'s "every convention
+       must map to a lint rule" requirement. Documented the convention in
+       `openspec/project.md` (Naming bullet) and refreshed the stale `.js`
+       filenames in `docs/architecture.md`'s inventory section.
+  2. **VSCode ESLint config**: removed `"eslint.useFlatConfig": true` from
+     `.vscode/settings.json` — deprecated now that flat config
+     (`eslint.config.mjs`) is auto-detected by the ESLint extension;
+     leaving it set is a plausible source of the extension silently
+     misbehaving depending on installed extension version. Changed
+     `"editor.codeActionsOnSave"`'s `"source.fixAll.eslint"` value from
+     `"explicit"` to `true` for broader VSCode-version compatibility
+     (`"explicit"` needs VSCode ≥ 1.74; `true` degrades everywhere).
+     Left `eslint.validate: ["javascript", "javascriptreact"]` as-is — it
+     was already correct (VSCode maps `.jsx` files to the
+     `javascriptreact` languageId by built-in association regardless of
+     what extension a file used before, so this wasn't actually broken by
+     the old `.js`-for-everything convention).
+- **Result:** done for what's fixable from repo files. Could NOT verify
+  the actual "does autosave now fix" behavior — that requires a live
+  VSCode session with the ESLint extension installed and enabled, which
+  isn't available in this environment. If it's still not firing after
+  these changes, the next things to check are outside repo config: the
+  ESLint extension installed/enabled for this specific workspace (VSCode
+  can have it disabled per-workspace independent of `extensions.json`
+  recommendations), and the "ESLint" output channel (View → Output →
+  ESLint) for a startup error.
+- **Verification:** `./harness/verify.sh` — full pass, including a real
+  `next build` (confirms every renamed `page.jsx`/`layout.jsx` still
+  resolves as a route and every fixed import resolves). Also ran `pnpm dev`
+  and drove the app with `agent-browser`: `/login` renders and validates,
+  logging in redirects to `/` with the full shell + avatar, and `/blog`,
+  `/tutorial`, `/design-system` all still render their real content — not
+  just a passing build.
+- **Decisions made:** kept `page.js`/`layout.js` base filenames but with
+  `.jsx` extension (`page.jsx`, `layout.jsx`) rather than inventing
+  alternate names — matches Next.js's own convention (`pageExtensions` in
+  `next.config.mjs` already listed `'jsx'`) and needed zero config changes
+  there. Did not rename `src/shared/components/theme.js` despite the
+  grep false-positive (`<Note>` in a comment) — confirmed by hand it has
+  no real JSX.
+- **Next step:** none pending. Ask the user to confirm autosave-fix now
+  works in their actual VSCode session — the repo-side fix is done but
+  unverifiable from here.
+- **Blockers:** none
+
+---
+
 ## 2026-08-07 21:30 — Claude Code
 
 - **Active change:** stop the login form's copy from revealing the

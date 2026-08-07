@@ -11,7 +11,7 @@ import { Icon } from '@astryxdesign/core/Icon';
 import { Text } from '@astryxdesign/core/Text';
 import { VStack } from '@astryxdesign/core/VStack';
 
-import { ShowcaseSection } from '../showcase-section.js';
+import { ShowcaseSection } from '../showcase-section.jsx';
 
 // The one sanctioned exception to the no-hardcoded-hex rule: this is a
 // CodeBlock sample *of* theme.js, so the hex values are the subject matter.
