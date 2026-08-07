@@ -64,6 +64,18 @@ export const ktxnkTheme = defineTheme({
       'variant:secondary': {
         backgroundColor: '#fddbd5', // MD3 secondaryContainer
         color: '#3e0500', // MD3 onSecondaryContainer
+        // Astryx's built-in variants derive :hover/:active automatically via
+        // color-mix(base, --color-tint-hover); a flat component override
+        // like this one doesn't inherit that, so it must be declared
+        // explicitly or the button has no press/hover feedback at all.
+        ':hover': {
+          backgroundColor:
+            'color-mix(in srgb, #fddbd5, var(--color-tint-hover) 15%)',
+        },
+        ':active': {
+          backgroundColor:
+            'color-mix(in srgb, #fddbd5, var(--color-tint-hover) 25%)',
+        },
       },
     },
   },
