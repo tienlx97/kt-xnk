@@ -1,14 +1,11 @@
 import { Section } from '@astryxdesign/core/Section';
 import { notFound } from 'next/navigation';
 
-import {
-  loadPost,
-  tutorialPostSlugs,
-} from '../../../features/tutorial/index.js';
-import { MdxArticle } from '../../../shared/components/mdx-article.js';
+import { blogPostSlugs, loadPost } from '../../../../features/blog/index.js';
+import { MdxArticle } from '../../../../shared/components/mdx-article.js';
 
 export function generateStaticParams() {
-  return tutorialPostSlugs.map((slug) => ({ slug }));
+  return blogPostSlugs.map((slug) => ({ slug }));
 }
 
 /**
@@ -27,7 +24,7 @@ export async function generateMetadata({ params }) {
 /**
  * @param {{ params: Promise<{ slug: string }> }} props
  */
-export default async function TutorialPostPage({ params }) {
+export default async function BlogPostPage({ params }) {
   const { slug } = await params;
   const post = await loadPost(slug);
   if (!post) notFound();

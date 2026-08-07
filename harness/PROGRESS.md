@@ -25,6 +25,99 @@ This file is the handoff between sessions/agents — write for a reader with zer
 
 ---
 
+## 2026-08-07 17:20 — Claude Code
+
+- **Active change:** make the login gate a *real* server-side block, not
+  just a client-side redirect (branch `feature/login`, no `openspec/
+  changes/` entry — direct follow-up). User verified independently that
+  unauthenticated visitors could still read protected pages ("người dùng
+  chưa đăng nhập vẫn có thể xem được các route khác") and confirmed via
+  `curl` (this session, before fixing) that raw HTML — no JS needed — still
+  contained full page content (e.g. `/blog`'s "Xin chào MDX" post). Root
+  cause: the previous `AuthGuard` (2026-08-07 15:40 entry) only ran after
+  React hydrated; Next.js Server Components render full protected-page HTML
+  regardless of client auth state, so it was always sent, just hidden late.
+- **Task worked:** the only way to stop protected HTML from ever being
+  generated, without `middleware.js` (still off the table per the earlier
+  explicit rejection), is a server-side check in a layout using
+  `cookies()`/`redirect()` — confirmed this is acceptable with the user
+  first (`AskUserQuestion`) since it's still Next-specific server code, just
+  not the dedicated middleware feature.
+  - Moved every route except `/login` into a route group:
+    `src/app/(protected)/{page.js, blog/, tutorial/, design-system/}` (was
+    directly under `src/app/`). Route groups don't affect the URL — `/`,
+    `/blog`, etc. are unchanged — they just let `/login` opt out of the new
+    layout. Fixed each moved file's relative import depth (+1 level).
+  - New `src/app/(protected)/layout.js` — `async`, `await cookies()`, and
+    `redirect('/login')` if the access-token cookie is missing, before
+    `{children}` (the actual page) ever renders. This is what makes it
+    real: `redirect()` during server rendering means the child Server
+    Component's body — and therefore the data/markup it would produce —
+    never executes at all.
+  - **Session storage moved from `localStorage` to cookies**
+    (`src/features/auth/api/session.js`, `config/session-keys.js` +
+    `SESSION_COOKIE_MAX_AGE_SECONDS`) — `cookies()` in
+    `next/headers` can only read what the browser sends with the request;
+    localStorage is invisible server-side. Cookies are plain (non-httpOnly,
+    client-`document.cookie`-written) since there's still no backend to
+    issue a real `Set-Cookie` — same mock-only caveat as before, now
+    documented directly on `writeSession`.
+  - **Removed `AuthGuard`** entirely (component + its export from
+    `index.js`) — with the server layout blocking unauthenticated requests
+    before any protected route ever renders, the old client-side redirect
+    (and the spinner-flash / hydration-race workaround it needed, see the
+    15:40 entry) is now dead weight, not defense in depth: Next.js reruns
+    the dynamic `(protected)/layout.js` check on every navigation to a
+    route under it (calling `cookies()` forces dynamic rendering for that
+    whole subtree), including client-side `<Link>` navigations, so the
+    server check alone covers hard reloads *and* in-app navigation.
+    `src/app/layout.js` now renders `{children}` directly.
+  - `src/features/auth/index.js` now exports the plain `ACCESS_TOKEN_KEY`
+    string constant (not a function) for the protected layout to import —
+    kept the cookie-reading/redirect logic itself inline in
+    `(protected)/layout.js` rather than in a feature `api/` helper, since a
+    helper re-exported through the feature's public `index.js` risks
+    pulling `next/headers` (server-only) into the same module graph
+    `UserMenu` (a Client Component) imports from — a plain string constant
+    is safe in any bundle.
+  - `hooks/use-session.js` — dropped the now-meaningless `storage` event
+    listener (that event only ever fired for `localStorage`, which nothing
+    uses anymore); kept only the custom `kt-xnk-session-change` same-tab
+    signal from `api/session.js`.
+- **Result:** done.
+- **Verification:** `./harness/verify.sh` — full pass (route-group
+  restructure didn't break `structure`/`typecheck`/`build`). Then the
+  actual regression check that mattered: `curl` (no JS, no browser) against
+  every protected route with no cookie — `/`, `/blog`, `/tutorial`,
+  `/design-system` all `307` to `/login` with **no page content in the
+  body** (confirmed `/login`'s own page reads `HTTP/1.1 200` with no
+  cookie). Then `agent-browser`: fresh session, direct nav to `/blog` →
+  server-redirected to `/login` before any content painted; logged in with
+  a `test-users.js` credential → redirected to `/blog`, cookies present;
+  hard reload stayed on `/blog` (no flash, since there's no client guard
+  left to race); avatar menu → "Đăng xuất" → cookies cleared, redirected to
+  `/login`; re-requesting `/blog` after logout → `307` again, both via
+  `agent-browser` and a follow-up `curl`.
+- **Decisions made:**
+  - Cookie value is only checked for *presence*, not verified (no
+    signature/expiry check) — matches the mock/test-data phase (the login
+    mock itself doesn't issue real JWTs yet, so there's nothing to verify
+    against). Confirmed via `curl -H "Cookie: kt-xnk-access-token=fake"` —
+    any value currently passes. Flagged here, not fixed, since real
+    verification needs a real backend-issued token; noted in "Next step"
+    below along with the other JWT-integration seams from the 15:40 entry.
+  - Left `/login` outside any route group (didn't create a `(public)`
+    group for symmetry) — only routes that need the extra layout benefit
+    from being grouped; `/login` needs nothing extra beyond the root
+    layout, so adding a group for it would just be an empty wrapper.
+- **Next step:** when a real backend exists, `(protected)/layout.js`'s
+  presence-only check should become a real verification (signature +
+  expiry, or a call to a backend "whoami"/introspection endpoint) — same
+  seam noted in the 15:40 entry for `api/login.js`/`api/session.js`.
+- **Blockers:** none
+
+---
+
 ## 2026-08-07 15:40 — Claude Code
 
 - **Active change:** gate every route behind login (branch `feature/login`,

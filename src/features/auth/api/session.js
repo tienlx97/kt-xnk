@@ -1,4 +1,9 @@
-import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, SESSION_USERNAME_KEY } from '../config/session-keys.js';
+import {
+  ACCESS_TOKEN_KEY,
+  REFRESH_TOKEN_KEY,
+  SESSION_COOKIE_MAX_AGE_SECONDS,
+  SESSION_USERNAME_KEY,
+} from '../config/session-keys.js';
 
 // The native `storage` event only fires in *other* tabs, never the tab that
 // made the write — so components subscribed via useSyncExternalStore (e.g.
@@ -7,37 +12,52 @@ import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, SESSION_USERNAME_KEY } from '../co
 // same-tab signal after login/logout.
 export const SESSION_CHANGE_EVENT = 'kt-xnk-session-change';
 
-export function readAccessToken() {
-  if (typeof window === 'undefined') {
+/** @param {string} name */
+function readCookie(name) {
+  if (typeof document === 'undefined') {
     return null;
   }
-  return window.localStorage.getItem(ACCESS_TOKEN_KEY);
+  const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+/** @param {string} name @param {string} value */
+function writeCookie(name, value) {
+  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${SESSION_COOKIE_MAX_AGE_SECONDS}; samesite=lax`;
+}
+
+/** @param {string} name */
+function deleteCookie(name) {
+  document.cookie = `${name}=; path=/; max-age=0; samesite=lax`;
+}
+
+export function readAccessToken() {
+  return readCookie(ACCESS_TOKEN_KEY);
 }
 
 export function readSessionUsername() {
-  if (typeof window === 'undefined') {
-    return '';
-  }
-  return window.localStorage.getItem(SESSION_USERNAME_KEY) ?? '';
+  return readCookie(SESSION_USERNAME_KEY) ?? '';
 }
 
 /**
- * Persists a session after a successful login. `refreshToken` is written to
- * localStorage here only because there is no backend yet — a real backend
+ * Persists a session after a successful login, as cookies rather than
+ * localStorage so `src/app/(protected)/layout.js` can read it server-side
+ * and block rendering entirely for a logged-out visitor. The refresh token
+ * is written here only because there is no backend yet — a real backend
  * should set it as an `httpOnly` cookie itself (via `Set-Cookie` on the
  * login response) so client JS never touches it.
  * @param {import('../types/index.js').Session} session
  */
 export function writeSession({ accessToken, refreshToken, username }) {
-  window.localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
-  window.localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-  window.localStorage.setItem(SESSION_USERNAME_KEY, username);
+  writeCookie(ACCESS_TOKEN_KEY, accessToken);
+  writeCookie(REFRESH_TOKEN_KEY, refreshToken);
+  writeCookie(SESSION_USERNAME_KEY, username);
   window.dispatchEvent(new Event(SESSION_CHANGE_EVENT));
 }
 
 export function clearSession() {
-  window.localStorage.removeItem(ACCESS_TOKEN_KEY);
-  window.localStorage.removeItem(REFRESH_TOKEN_KEY);
-  window.localStorage.removeItem(SESSION_USERNAME_KEY);
+  deleteCookie(ACCESS_TOKEN_KEY);
+  deleteCookie(REFRESH_TOKEN_KEY);
+  deleteCookie(SESSION_USERNAME_KEY);
   window.dispatchEvent(new Event(SESSION_CHANGE_EVENT));
 }

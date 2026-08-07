@@ -11,13 +11,9 @@ import {
 } from '../api/session.js';
 
 /** @param {() => void} callback */
-function subscribeToStorage(callback) {
-  window.addEventListener('storage', callback);
+function subscribeToSessionChange(callback) {
   window.addEventListener(SESSION_CHANGE_EVENT, callback);
-  return () => {
-    window.removeEventListener('storage', callback);
-    window.removeEventListener(SESSION_CHANGE_EVENT, callback);
-  };
+  return () => window.removeEventListener(SESSION_CHANGE_EVENT, callback);
 }
 
 function getIsAuthenticated() {
@@ -39,11 +35,11 @@ function getUsernameServerSnapshot() {
 export function useSession() {
   const router = useRouter();
   const isAuthenticated = useSyncExternalStore(
-    subscribeToStorage,
+    subscribeToSessionChange,
     getIsAuthenticated,
     getIsAuthenticatedServerSnapshot,
   );
-  const username = useSyncExternalStore(subscribeToStorage, getUsername, getUsernameServerSnapshot);
+  const username = useSyncExternalStore(subscribeToSessionChange, getUsername, getUsernameServerSnapshot);
 
   function logout() {
     clearSession();
