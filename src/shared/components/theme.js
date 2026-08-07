@@ -70,6 +70,17 @@ export const ktxnkTheme = defineTheme({
   // problem that moved it off --color-accent in the first place — it's
   // just bolder where it does appear.
   components: {
+    // SideNavItem's selected state defaults to --color-neutral (a generic
+    // blue-gray tint, not our brand) — the active section in the sidebar
+    // carried no brand color at all. react.dev's docs nav highlights the
+    // active item in its brand blue; same idea here with our teal.
+    'side-nav-item': {
+      selected: {
+        backgroundColor: 'var(--color-accent-muted)',
+        color: 'var(--color-text-accent)',
+        fontWeight: '600',
+      },
+    },
     button: {
       'variant:secondary': {
         backgroundColor: '#b91a24', // MD3 secondary (tone 40)

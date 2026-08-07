@@ -4,6 +4,8 @@ import { TopNav, TopNavHeading, TopNavItem } from '@astryxdesign/core/TopNav';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 
+import { isNavLinkActive } from '../api/nav.js';
+
 /** @typedef {import('../types/index.js').NavLink} NavLink */
 
 /**
@@ -34,7 +36,7 @@ export function Header({ siteName, navLinks }) {
           key={link.href}
           label={link.label}
           href={link.href}
-          isSelected={pathname === link.href}
+          isSelected={isNavLinkActive(pathname, link.href)}
         />
       ))}
     />

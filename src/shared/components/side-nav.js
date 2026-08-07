@@ -7,6 +7,8 @@ import {
 } from '@astryxdesign/core/SideNav';
 import { usePathname } from 'next/navigation';
 
+import { isNavLinkActive } from '../api/nav.js';
+
 /** @typedef {import('../types/index.js').NavLink} NavLink */
 
 /**
@@ -23,7 +25,7 @@ export function AppSideNav({ navLinks }) {
             key={link.href}
             label={link.label}
             href={link.href}
-            isSelected={pathname === link.href}
+            isSelected={isNavLinkActive(pathname, link.href)}
           />
         ))}
       </SideNavSection>
