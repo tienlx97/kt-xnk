@@ -21,11 +21,16 @@ export const ktxnkTheme = defineTheme({
     '--color-text-accent': '#126a5c', // MD3 primary — was defaulting to theme-neutral's dark gray, not the brand teal, for accent-colored text/links
     '--color-icon-accent': '#126a5c', // MD3 primary — same gap as text-accent
 
-    // Surfaces
-    '--color-background-body': '#f1fcf9', // MD3 background
-    '--color-background-surface': '#ebf6f3', // MD3 surfaceContainerLow
-    '--color-background-card': '#e6f0ed', // MD3 surfaceContainer
-    '--color-background-popover': '#e0eae8', // MD3 surfaceContainerHigh — popovers/menus sit above cards
+    // Surfaces — neutral (chroma 0) instead of teal-tinted: a mint-tinted
+    // page background read as dated/"not modern" against solid brand-color
+    // buttons; MD3 surfaces are meant to carry a hue tint, but plain white
+    // + neutral gray steps is the more contemporary choice here. Tone
+    // spacing (100/97.9/95.9/93.8) kept from the old tinted values so the
+    // body → surface → card → popover hierarchy still reads at a glance.
+    '--color-background-body': '#ffffff', // MD3 background, tone 100
+    '--color-background-surface': '#f9f9f9', // MD3 surfaceContainerLow, tone 97.9
+    '--color-background-card': '#f3f3f3', // MD3 surfaceContainer, tone 95.9
+    '--color-background-popover': '#ededed', // MD3 surfaceContainerHigh, tone 93.8 — popovers/menus sit above cards
 
     // Text & icons
     '--color-text-primary': '#151d1b', // MD3 onSurface
