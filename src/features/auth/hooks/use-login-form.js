@@ -1,8 +1,10 @@
 'use client';
 
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useSyncExternalStore } from 'react';
 
 import { login } from '../api/login.js';
+import { writeSession } from '../api/session.js';
 import { loginSchema } from '../config/login-schema.js';
 
 const REMEMBERED_USERNAME_KEY = 'kt-xnk:remembered-username';
@@ -25,6 +27,9 @@ function getServerRememberedUsername() {
 }
 
 export function useLoginForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   // useSyncExternalStore reads localStorage as '' during SSR/hydration (so
   // the server and first client render match, no hydration-mismatch
   // warning) and React itself re-renders with the real client value right
@@ -50,13 +55,11 @@ export function useLoginForm() {
   const [fieldErrors, setFieldErrors] = useState(/** @type {Record<string, string>} */ ({}));
   const [submitError, setSubmitError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
 
   /** @param {import('react').FormEvent<HTMLFormElement>} event */
   async function handleSubmit(event) {
     event.preventDefault();
     setSubmitError('');
-    setIsSuccess(false);
 
     const result = loginSchema.safeParse({ username, password, rememberMe });
     if (!result.success) {
@@ -87,7 +90,13 @@ export function useLoginForm() {
     } else {
       window.localStorage.removeItem(REMEMBERED_USERNAME_KEY);
     }
-    setIsSuccess(true);
+
+    writeSession({
+      accessToken: loginResult.accessToken,
+      refreshToken: loginResult.refreshToken,
+      username,
+    });
+    router.replace(searchParams.get('next') || '/');
   }
 
   return {
@@ -101,7 +110,6 @@ export function useLoginForm() {
     passwordStatus: fieldStatus(fieldErrors.password),
     submitError,
     isSubmitting,
-    isSuccess,
     handleSubmit,
   };
 }

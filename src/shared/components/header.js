@@ -9,14 +9,15 @@ import { isNavLinkActive } from '../api/nav.js';
 /** @typedef {import('../types/index.js').NavLink} NavLink */
 
 /**
- * @param {{ siteName: string, navLinks: NavLink[] }} props
+ * @param {{ siteName: string, navLinks: NavLink[], endContent?: import('react').ReactNode }} props
  */
-export function Header({ siteName, navLinks }) {
+export function Header({ siteName, navLinks, endContent }) {
   const pathname = usePathname();
 
   return (
     <TopNav
       label="Điều hướng chính"
+      endContent={endContent}
       heading={
         <TopNavHeading
           headingHref="/"

@@ -23,7 +23,6 @@ export function LoginForm() {
     passwordStatus,
     submitError,
     isSubmitting,
-    isSuccess,
     handleSubmit,
   } = useLoginForm();
 
@@ -42,10 +41,6 @@ export function LoginForm() {
 
               {submitError ? (
                 <Banner status="error" title={submitError} container="card" />
-              ) : null}
-
-              {isSuccess ? (
-                <Banner status="success" title="Đăng nhập thành công" container="card" />
               ) : null}
 
               <TextInput

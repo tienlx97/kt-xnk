@@ -25,6 +25,117 @@ This file is the handoff between sessions/agents — write for a reader with zer
 
 ---
 
+## 2026-08-07 15:40 — Claude Code
+
+- **Active change:** gate every route behind login (branch `feature/login`,
+  no `openspec/changes/` entry — direct follow-up per user request "tất cả
+  các route đều yêu cầu đăng nhập mới có thể sử dụng"). User also asked for
+  an avatar + "Đăng xuất" (logout) menu in the top nav, explicitly rejected
+  a Next.js `middleware.js`-based gate ("I do not like nextjs middleware,
+  because I will depend to nextjs framework"), and flagged that the real
+  backend will eventually issue a JWT access + refresh token pair.
+- **Task worked:** client-side route gating (no `src/middleware.js`) —
+  `src/features/auth/components/auth-guard.js` wraps `{children}` in
+  `src/app/layout.js`; renders `children` unconditionally on `/login`,
+  otherwise a `Spinner` fallback + `router.replace('/login?next=...')` if
+  `api/session.js`'s `readAccessToken()` is `null`. Session storage is
+  `localStorage`, JWT-shaped ahead of the real backend:
+  `config/session-keys.js` (`kt-xnk-access-token`/`kt-xnk-refresh-token`/
+  `kt-xnk-session-username`), `api/session.js` (`readAccessToken`,
+  `readSessionUsername`, `writeSession`, `clearSession` — commented as the
+  seam a real backend replaces, with the refresh token specifically flagged
+  as needing to become an `httpOnly` cookie the backend sets, not something
+  client JS writes). `types/index.js`'s `LoginResult` is now a discriminated
+  union (`LoginSuccess | LoginFailure`) so `accessToken`/`refreshToken` are
+  required-when-`success`, not optional. `api/login.js`'s mock now returns
+  mock opaque tokens on success instead of a bare boolean.
+  `hooks/use-session.js` — `useSession()` via `useSyncExternalStore`
+  (`isAuthenticated`, `username`, `logout()`). `hooks/use-login-form.js` —
+  on success, `writeSession(...)` then `router.replace(next ?? '/')`
+  (dropped the old `isSuccess` banner state, since the page navigates away
+  immediately now). `components/user-menu.js` — `Popover` (custom `Avatar`
+  trigger, no built-in trigger slot on `DropdownMenu` for that) +
+  `DropdownMenuItem` "Đăng xuất"; renders `null` when logged out. Composed
+  in `src/app/layout.js` (not `src/shared/components/header.js`) because
+  `src/shared/` is structurally forbidden from importing `src/features/`
+  (`harness/structure.rules.cjs`) — `header.js` only grew a generic
+  `endContent` prop passed through to `TopNav`, staying feature-agnostic.
+  `src/app/login/page.js` wraps `LoginForm` in `<Suspense>` since
+  `useSearchParams()` (for reading `?next=`) now flows through it.
+- **Result:** done.
+- **Verification:** `./harness/verify.sh` — full pass, including
+  `structure` (confirms `header.js` has zero `src/features/` imports).
+  Browser-tested via `agent-browser`, not just curl: fresh session, `/` and
+  `/blog` both redirect to `/login?next=...`; logging in with a
+  `test-users.js` credential redirects straight to the original `next`
+  path; top nav shows an avatar; clicking it opens the "Đăng xuất" menu;
+  logging out clears the session and redirects to `/login`; revisiting `/`
+  redirects back to login again (confirms the guard re-engages, not just
+  that the click handler ran).
+- **Decisions made:**
+  - **Middleware pivot:** first drafted this with `src/middleware.js`
+    (server-side, no flash-before-redirect); the user explicitly rejected
+    it as unwanted framework coupling. Rebuilt as a pure client `AuthGuard`
+    instead. **Known, accepted tradeoff:** Next.js Server Components still
+    render full protected-page HTML regardless of client auth state — an
+    unauthenticated visitor's browser paints that HTML for a brief moment
+    before hydration/JS redirects. There is no server-side gate anymore;
+    this was a deliberate choice, not a missed bug.
+  - **Real bug caught by browser-testing, not by `verify.sh`:** the first
+    `AuthGuard` cut the redirect effect on the `isAuthenticated` value
+    captured at render time. On a hard reload of an *already-authenticated*
+    page, `useSyncExternalStore`'s first hydration-safe render always
+    returns the server-safe "logged out" default (it has to match the
+    server, which can't see `localStorage`) and only self-corrects on the
+    next render — but the effect tied to that first render already fired
+    and navigated to `/login` before the correction landed, permanently
+    bouncing a logged-in user. Fixed by having the effect re-read
+    `readAccessToken()` directly at the moment it runs, instead of trusting
+    the closed-over render-time value — decouples the "should I redirect"
+    decision from the transient hydration mismatch. `pnpm run
+    <lint/typecheck/structure>` never would have caught this; only
+    exercising an actual hard reload while logged in did.
+  - **Avatar popover, same-tab reactivity, and a click double-toggle bug**
+    (both also only caught by clicking through the real page, not by
+    `verify.sh`):
+    1. `DropdownMenu`'s trigger is always its own internal `Button` (no
+       custom-trigger slot per its `.d.ts`) — used `Popover` with a custom
+       `Avatar` trigger instead (`Avatar`'s `onClick` prop is documented to
+       render it as a real `<button>`, satisfying `Popover`'s "trigger must
+       contain a button" requirement) plus a standalone `DropdownMenuItem`
+       (confirmed via its `.d.ts`, not the possibly-stale printed docs
+       table, that it does accept `onClick`).
+    2. First pass: the avatar never appeared after login even though
+       `writeSession()` ran. Cause: `UserMenu`/`Header` live in the
+       persistent `layout.js` tree, which the Next.js App Router does not
+       re-render on a same-route-tree client navigation (`/login` →
+       `/blog`) — so its `useSyncExternalStore` subscription never got
+       asked again. The native `storage` DOM event only fires in *other*
+       tabs, never the tab that wrote the value. Fixed by having
+       `api/session.js` dispatch a custom `kt-xnk-session-change` window
+       event on every `writeSession`/`clearSession`, and `use-session.js`
+       subscribes to that alongside `storage`.
+    3. Second pass: clicking the avatar opened and closed the popover in
+       the same click (net no-op). Cause: `Popover` already
+       `addEventListener('click', ...)`s the trigger button it finds
+       inside `children` — my own `onClick={() => setIsOpen(...)}` on
+       `Avatar` was a *second*, independent listener on the same click, so
+       both toggles fired and canceled out. `Popover`'s own doc comment
+       ("the popover finds it and applies click/keydown handlers... 
+       automatically") says as much — should have trusted that instead of
+       also wiring a manual toggle. Fixed: `Avatar`'s `onClick` is now a
+       no-op (still needed so `Avatar` renders as a `<button>` at all —
+       required per its own props doc — but `Popover` owns all the actual
+       toggle logic).
+- **Next step:** none pending. When a real backend exists: replace
+  `api/login.js`'s body with a real `fetch`, add `api/refresh.js` for
+  token rotation, and change `writeSession`'s refresh-token write to
+  instead trust an `httpOnly` `Set-Cookie` from the backend (delete the
+  client-side write for that one field).
+- **Blockers:** none
+
+---
+
 ## 2026-08-07 15:10 — Claude Code
 
 - **Active change:** login page (branch `feature/login`, no `openspec/changes/`

@@ -6,9 +6,25 @@
  */
 
 /**
- * @typedef {Object} LoginResult
- * @property {boolean} success
- * @property {string} [message]
+ * @typedef {Object} LoginSuccess
+ * @property {true} success
+ * @property {string} accessToken
+ * @property {string} refreshToken
+ */
+
+/**
+ * @typedef {Object} LoginFailure
+ * @property {false} success
+ * @property {string} message
+ */
+
+/** @typedef {LoginSuccess | LoginFailure} LoginResult */
+
+/**
+ * @typedef {Object} Session
+ * @property {string} accessToken
+ * @property {string} refreshToken
+ * @property {string} username
  */
 
 export {};
