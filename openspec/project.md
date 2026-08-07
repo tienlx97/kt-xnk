@@ -60,22 +60,28 @@ build with messages that explain the fix.
   props don't cover — never to re-implement colors or component chrome.
 - Color: all colors come from Astryx theme tokens in
   `src/shared/components/theme.js` (`defineTheme` — `--color-accent`,
-  `--color-text-primary`, etc.) — no hardcoded hex in components.
+  `--color-text-primary`, etc.) — no hardcoded hex outside that file
+  (enforced by the `no-restricted-syntax` hex rule in `eslint.config.mjs`).
   `src/shared/components/theme.js` is the editable source; `pnpm theme:build`
   (runs automatically before `dev`/`build`/`verify`) compiles it via
   `astryx theme build` into gitignored, do-not-edit artifacts
   (`src/shared/components/kt-xnk.js`, `src/shared/components/kt-xnk.d.ts`,
   `src/shared/components/theme.built.css`) for static, non-runtime-injected
-  CSS — see `theme-provider.js` for how they're wired into `<Theme>`. Token
-  values follow Material Design 3 role naming/tone mapping internally
-  (`primary`/`onPrimary`/`primaryContainer`/..., `surfaceVariant`,
-  `outline` — see https://m3.material.io/styles/color/roles) before being
-  mapped onto Astryx's CSS-custom-property token names. Palette is derived
-  from the brand logo (`public/images/logo-dn-group.png`: primary teal
-  `#247768`, secondary red `#c2252a` — red reads too harsh/glaring as the
-  dominant accent across filled surfaces like inputs and primary buttons)
-  expanded into MD3 tonal palettes;
-  adding a new hue requires updating `src/shared/components/theme.js`, not inlining one
+  CSS — see `theme-provider.js` for how they're wired into `<Theme>`.
+  The palette follows the method react.dev uses
+  (github.com/reactjs/react.dev → `colors.js`), on three rules:
+  (1) the brand token IS the logo color, not a darkened variant — teal
+  `#247768` (accent) and red `#c2252a` (secondary button) are sampled from
+  `public/images/logo-dn-group.png`; (2) every neutral shares the brand hue
+  (178.4) with chroma shaped by tone — near-zero light, peaking mid, easing
+  off dark — so surfaces, text, and borders belong to one ramp instead of
+  drifting apart; (3) the page background stays pure white, the tint only
+  appears in mid-tones. Status hues (green/amber/red) stay conventional
+  rather than rebranded, retinted into the same soft band (chroma ~6, tone
+  ~95). Every value is contrast-checked with Astryx's own `contrastRatio`
+  before it lands (AA 4.5:1 for text, 3:1 for non-text boundaries per WCAG
+  1.4.11); adding a new hue means updating
+  `src/shared/components/theme.js`, not inlining one
 - Every convention here must map to a lint/structural rule. A convention that
   cannot be checked mechanically goes to `harness/GOLDEN_RULES.md` with a plan
   to make it checkable.

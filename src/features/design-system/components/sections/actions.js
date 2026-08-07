@@ -24,10 +24,10 @@ export function ActionsSection() {
       <ShowcaseSection
         title="Button"
         description={
-          'variant là mức nhấn mạnh, không phải màu brand: primary = teal (--color-accent), ' +
-          'secondary = đỏ đậm (override MD3 secondary, cùng tone với primary để cân bằng thị giác), ' +
-          'ghost = trong suốt, destructive = đỏ lỗi MD3 (--color-error) — trùng hướng màu với ' +
-          'secondary nhưng là seed riêng.'
+          'variant là mức nhấn mạnh, không phải màu brand: primary = teal logo (--color-accent), ' +
+          'secondary = đỏ logo (override, hai màu brand cân nhau về trọng lượng thị giác), ' +
+          'ghost = trong suốt, destructive = đỏ lỗi (--color-error) — trùng hướng màu với ' +
+          'secondary nhưng là seed riêng, để đổi màu brand không kéo theo màu cảnh báo.'
         }
       >
         <VStack gap={3}>

@@ -13,13 +13,20 @@ import { VStack } from '@astryxdesign/core/VStack';
 
 import { ShowcaseSection } from '../showcase-section.js';
 
+// The one sanctioned exception to the no-hardcoded-hex rule: this is a
+// CodeBlock sample *of* theme.js, so the hex values are the subject matter.
+// It drifted out of sync once already (documented --color-accent as the red
+// #b91a24 while the real accent was teal), which is what prompted the lint
+// rule — keep it in step with src/shared/components/theme.js by hand.
+/* eslint-disable no-restricted-syntax */
 const THEME_SNIPPET = `export const ktxnkTheme = defineTheme({
   name: 'kt-xnk',
   tokens: {
-    '--color-accent': '#b91a24', // MD3 primary
-    '--color-error': '#b4271f', // MD3 error
+    '--color-accent': '#247768', // teal, sampled from the logo
+    '--color-background-body': '#ffffff', // page stays pure white
   },
 });`;
+/* eslint-enable no-restricted-syntax */
 
 export function ContentSection() {
   return (

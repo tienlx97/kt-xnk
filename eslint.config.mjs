@@ -73,6 +73,33 @@ const config = [
       ],
     },
   },
+  {
+    // openspec/project.md's Color convention says every color comes from a
+    // theme token and no raw hex lives outside src/shared/components/theme.js
+    // — but nothing enforced it, which is how a /design-system code sample
+    // ended up documenting `--color-accent: '#b91a24'` (red) while the real
+    // accent was teal. TemplateElement is checked alongside Literal because
+    // that stale sample lived in a template literal.
+    files: ['src/**/*.js', 'src/**/*.jsx'],
+    ignores: ['src/shared/components/theme.js'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            'Literal[value=/#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\\b/]',
+          message:
+            'No hardcoded hex colors. Use an Astryx theme token (--color-*); define new values in src/shared/components/theme.js.',
+        },
+        {
+          selector:
+            'TemplateElement[value.raw=/#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\\b/]',
+          message:
+            'No hardcoded hex colors. Use an Astryx theme token (--color-*); define new values in src/shared/components/theme.js.',
+        },
+      ],
+    },
+  },
   eslintConfigPrettier,
   {
     ignores: [
@@ -81,6 +108,11 @@ const config = [
       'harness/**',
       'babel.config.js',
       'postcss.config.js',
+      // `astryx theme build` output — generated from
+      // src/shared/components/theme.js and gitignored. Linting build
+      // artifacts reports problems nobody can fix at the source.
+      'src/shared/components/kt-xnk.js',
+      'src/shared/components/kt-xnk.d.ts',
     ],
   },
 ];
