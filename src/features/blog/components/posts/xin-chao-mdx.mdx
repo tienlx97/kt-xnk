@@ -1,0 +1,24 @@
+---
+title: 'Xin chào MDX'
+description: 'Bài viết mẫu minh hoạ pipeline MDX + frontmatter dùng cho /blog.'
+date: '2026-08-07'
+---
+
+Đây là bài viết mẫu đầu tiên, viết bằng **MDX** — Markdown quen thuộc, cộng
+thêm khả năng nhúng component React ngay trong nội dung khi cần.
+
+## Vì sao dùng MDX?
+
+- Soạn nội dung bằng cú pháp Markdown quen thuộc
+- Vẫn nhúng được component React khi cần minh hoạ phức tạp hơn văn bản thuần
+- Frontmatter (`title`, `description`, `date`) được đọc qua `remark-frontmatter`
+  và `remark-mdx-frontmatter`, dùng để hiển thị ở trang danh sách mà không
+  cần mở từng bài
+
+```js
+console.log('Xin chào MDX!');
+```
+
+> Mọi thẻ mà MDX sinh ra (heading, paragraph, link, code, blockquote...) đều
+> được ánh xạ sang component Astryx tương ứng qua `src/mdx-components.js`,
+> thay vì render thẳng ra HTML thô.

@@ -8,5 +8,7 @@ export const site = {
 /** @type {NavLink[]} */
 export const navLinks = [
   { label: 'Trang chủ', href: '/' },
+  { label: 'Tutorial', href: '/tutorial' },
+  { label: 'Blog', href: '/blog' },
   { label: 'Design System', href: '/design-system' },
 ];

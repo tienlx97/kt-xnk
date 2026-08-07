@@ -2,6 +2,7 @@ import js from '@eslint/js';
 import stylexPlugin from '@stylexjs/eslint-plugin';
 import next from 'eslint-config-next';
 import eslintConfigPrettier from 'eslint-config-prettier';
+import * as mdx from 'eslint-plugin-mdx';
 import packageJsonPlugin from 'eslint-plugin-package-json';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import unusedImports from 'eslint-plugin-unused-imports';
@@ -9,6 +10,16 @@ import unusedImports from 'eslint-plugin-unused-imports';
 const config = [
   js.configs.recommended,
   ...next,
+  {
+    ...mdx.flat,
+    // JSX embedded in .mdx (custom components, {expressions}) is linted
+    // through the mdx parser's own JS handling — code fences are prose, not
+    // lint targets, so leave `mdx.flatCodeBlocks` out.
+    rules: {
+      ...mdx.flat.rules,
+      'react/react-in-jsx-scope': 'off',
+    },
+  },
   {
     ...packageJsonPlugin.configs.recommended,
     files: ['package.json'],
@@ -31,6 +42,7 @@ const config = [
     },
   },
   {
+    files: ['**/*.js', '**/*.jsx'],
     plugins: { '@stylexjs': stylexPlugin },
     rules: {
       '@stylexjs/valid-styles': 'error',
@@ -40,6 +52,7 @@ const config = [
     },
   },
   {
+    files: ['**/*.js', '**/*.jsx'],
     plugins: {
       'simple-import-sort': simpleImportSort,
       'unused-imports': unusedImports,
