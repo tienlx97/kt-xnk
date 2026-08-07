@@ -25,7 +25,10 @@ const nextConfig = {
 const withMDX = createMDX({
   options: {
     remarkPlugins: ['remark-frontmatter', 'remark-mdx-frontmatter'],
-    rehypePlugins: [],
+    // rehype-slug adds an `id` to every rendered heading, using the same
+    // github-slugger algorithm remark-flexible-toc uses to build TOC hrefs
+    // (see src/shared/api/toc.js) — so heading anchors and TOC links match.
+    rehypePlugins: ['rehype-slug'],
   },
 });
 

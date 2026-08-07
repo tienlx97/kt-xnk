@@ -56,18 +56,44 @@ function MdxLink({ href, children }) {
  */
 export function useMDXComponents(components) {
   return {
-    /** @param {{ children: import('react').ReactNode }} props */
-    h1: ({ children }) => <Heading level={1}>{children}</Heading>,
-    /** @param {{ children: import('react').ReactNode }} props */
-    h2: ({ children }) => <Heading level={2}>{children}</Heading>,
-    /** @param {{ children: import('react').ReactNode }} props */
-    h3: ({ children }) => <Heading level={3}>{children}</Heading>,
-    /** @param {{ children: import('react').ReactNode }} props */
-    h4: ({ children }) => <Heading level={4}>{children}</Heading>,
-    /** @param {{ children: import('react').ReactNode }} props */
-    h5: ({ children }) => <Heading level={5}>{children}</Heading>,
-    /** @param {{ children: import('react').ReactNode }} props */
-    h6: ({ children }) => <Heading level={6}>{children}</Heading>,
+    // `id` comes from rehype-slug (see next.config.mjs) — it's what TOC
+    // hrefs (src/shared/api/toc.js) anchor-link to.
+    /** @param {{ id?: string, children: import('react').ReactNode }} props */
+    h1: ({ id, children }) => (
+      <Heading level={1} id={id}>
+        {children}
+      </Heading>
+    ),
+    /** @param {{ id?: string, children: import('react').ReactNode }} props */
+    h2: ({ id, children }) => (
+      <Heading level={2} id={id}>
+        {children}
+      </Heading>
+    ),
+    /** @param {{ id?: string, children: import('react').ReactNode }} props */
+    h3: ({ id, children }) => (
+      <Heading level={3} id={id}>
+        {children}
+      </Heading>
+    ),
+    /** @param {{ id?: string, children: import('react').ReactNode }} props */
+    h4: ({ id, children }) => (
+      <Heading level={4} id={id}>
+        {children}
+      </Heading>
+    ),
+    /** @param {{ id?: string, children: import('react').ReactNode }} props */
+    h5: ({ id, children }) => (
+      <Heading level={5} id={id}>
+        {children}
+      </Heading>
+    ),
+    /** @param {{ id?: string, children: import('react').ReactNode }} props */
+    h6: ({ id, children }) => (
+      <Heading level={6} id={id}>
+        {children}
+      </Heading>
+    ),
     /** @param {{ children: import('react').ReactNode }} props */
     p: ({ children }) => (
       <Text as="p" type="body">

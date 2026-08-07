@@ -5,6 +5,7 @@ import { VStack } from '@astryxdesign/core/VStack';
 import { notFound } from 'next/navigation';
 
 import { blogPostSlugs, loadPost } from '../../../features/blog/index.js';
+import { TableOfContents } from '../../../shared/components/table-of-contents.js';
 
 export function generateStaticParams() {
   return blogPostSlugs.map((slug) => ({ slug }));
@@ -31,7 +32,7 @@ export default async function BlogPostPage({ params }) {
   const post = await loadPost(slug);
   if (!post) notFound();
 
-  const { Content, frontmatter } = post;
+  const { Content, frontmatter, toc } = post;
 
   return (
     <Section variant="transparent" paddingBlock={8}>
@@ -42,6 +43,7 @@ export default async function BlogPostPage({ params }) {
             <Text type="supporting">{frontmatter.date}</Text>
           ) : null}
         </VStack>
+        <TableOfContents items={toc} />
         <Content />
       </VStack>
     </Section>

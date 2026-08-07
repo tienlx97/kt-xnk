@@ -8,6 +8,7 @@ import {
   loadPost,
   tutorialPostSlugs,
 } from '../../../features/tutorial/index.js';
+import { TableOfContents } from '../../../shared/components/table-of-contents.js';
 
 export function generateStaticParams() {
   return tutorialPostSlugs.map((slug) => ({ slug }));
@@ -34,7 +35,7 @@ export default async function TutorialPostPage({ params }) {
   const post = await loadPost(slug);
   if (!post) notFound();
 
-  const { Content, frontmatter } = post;
+  const { Content, frontmatter, toc } = post;
 
   return (
     <Section variant="transparent" paddingBlock={8}>
@@ -45,6 +46,7 @@ export default async function TutorialPostPage({ params }) {
             <Text type="supporting">{frontmatter.date}</Text>
           ) : null}
         </VStack>
+        <TableOfContents items={toc} />
         <Content />
       </VStack>
     </Section>
