@@ -25,6 +25,21 @@ This file is the handoff between sessions/agents — write for a reader with zer
 
 ---
 
+## 2026-08-12 — Codex
+
+- **Active change:** harness documentation limits (direct user request).
+- **Task worked:** shortened the project summary in `AGENTS.md` without
+  removing any source-of-truth pointers or operating rules, bringing the file
+  from 121 to 119 lines and back under `audit-harness.sh`'s 120-line limit.
+- **Result:** done.
+- **Verification:** `./harness/audit-harness.sh` passed 25/25;
+  `./harness/verify.sh` passed all gates. Evidence:
+  `harness/runs/20260812-093643-6043/`.
+- **Harness gap:** none — the existing audit correctly detected the drift.
+- **Next step:** none.
+
+---
+
 ## 2026-08-07 23:15 — Claude Code
 
 - **Active change:** `openspec/changes/login-username-password/` — retroactively

@@ -5,11 +5,9 @@
 
 ## What this project is
 
-KT-XNK is a Next.js (App Router, JavaScript) marketing/informational website
-styled with StyleX. **Front-end only** — the backend lives in a separate
-project. It follows the OpenSpec x Harness Engineering template:
-feature-based `src/` architecture, mechanically enforced structure and
-quality gates, and change-tracked work under `openspec/changes/`.
+KT-XNK is a front-end-only Next.js App Router marketing site, written in
+JavaScript and styled with StyleX. It uses feature-based `src/` architecture,
+mechanical quality gates, and change tracking under `openspec/changes/`.
 
 ## Map of truth
 
