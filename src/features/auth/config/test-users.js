@@ -2,6 +2,6 @@
 // backend wired up yet. Replace `api/login.js` with a real backend call
 // once one exists, and delete this file.
 export const testUsers = [
-  { username: '001234567890', password: 'password123' },
-  { username: '079198765432', password: 'testpass1' },
+  { username: 'admin', password: 'password123' },
+  { username: 'testuser', password: 'testpass1' },
 ];

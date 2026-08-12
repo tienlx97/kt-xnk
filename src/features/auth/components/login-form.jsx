@@ -48,6 +48,7 @@ export function LoginForm() {
                 size="lg"
                 isRequired
                 status={usernameStatus}
+                statusVariant="tooltip"
               />
 
               <TextInput
@@ -59,9 +60,14 @@ export function LoginForm() {
                 size="lg"
                 isRequired
                 status={passwordStatus}
+                statusVariant="tooltip"
               />
 
-              <CheckboxInput label="Ghi nhớ đăng nhập" value={rememberMe} onChange={setRememberMe} />
+              <CheckboxInput
+                label="Ghi nhớ đăng nhập"
+                value={rememberMe}
+                onChange={setRememberMe}
+              />
 
               <Button
                 label="Đăng nhập"

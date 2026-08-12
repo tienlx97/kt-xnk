@@ -25,6 +25,64 @@ This file is the handoff between sessions/agents — write for a reader with zer
 
 ---
 
+## 2026-08-07 23:15 — Claude Code
+
+- **Active change:** `openspec/changes/login-username-password/` — retroactively
+  documents the login feature (shipped across 5 prior ad-hoc commits, none
+  of which went through the openspec proposal flow) and removes an
+  undocumented CCCD-specific constraint discovered while writing that
+  proposal.
+- **Task worked:**
+  1. **Removed the CCCD constraint**: `src/features/auth/config/login-schema.js`
+     had a hidden `USERNAME_PATTERN = /^\d{12}$/` regex (with a comment
+     explaining the "username" field was secretly a Vietnamese CCCD) even
+     though every visible label/copy presented it as a generic username.
+     Replaced the regex-based rule with a plain `.min(3, ...)` string
+     check — no format/charset restriction. Updated
+     `config/test-users.js`'s placeholder credentials from CCCD-shaped
+     digit strings (`001234567890`, `079198765432`) to plain usernames
+     (`admin`, `testuser`), keeping the existing passwords. Confirmed via
+     `grep -ri cccd src/features/auth/` (and repo-wide `src/`) that no
+     other file references CCCD — the constraint was fully isolated to
+     that one regex.
+  2. **Wrote the missing openspec change** at
+     `openspec/changes/login-username-password/` (status `done`, dated
+     today) with `proposal.md` (Why/What changes/Out of scope/Decision
+     log), `specs/login.md` (4 requirements — username/password auth,
+     server-side session gate, session display & logout, remember-me —
+     each with GIVEN/WHEN/THEN scenarios), `design.md` (approach, affected
+     layers & files table, verification plan), and `tasks.md` (all boxes
+     checked, matching the "already shipped" nature of the work it
+     documents).
+- **Result:** done.
+- **Verification:** `./harness/verify.sh` — full pass (structure, lint,
+  typecheck, harness tests, unit tests, build, quality thresholds).
+  Also ran `pnpm dev` and drove the app with `agent-browser`: logged in
+  with both new test users (`admin`/`password123`, `testuser`/`testpass1`)
+  — success, avatar shown, redirected off `/login`; logged out via the
+  avatar menu both times — session cleared, redirected to `/login`;
+  submitted a 2-character username — inline "Tên đăng nhập phải có ít
+  nhất 3 ký tự" validation error, no request sent; submitted the *old*
+  CCCD test value `001234567890`/`password123` — now rejected as "Sai tên
+  đăng nhập hoặc mật khẩu" (invalid credentials, not a format error),
+  confirming the CCCD-only constraint is genuinely gone and it's just an
+  arbitrary string that doesn't match a test user; visited `/` directly
+  with no session — redirected to `/login`.
+- **Decisions made:** kept the username rule at a plain `min(3)` rather
+  than inventing a new regex/charset restriction to replace the old one —
+  the point of the change was fewer constraints, not a differently-shaped
+  hidden one. Left `session-keys.js`, `api/login.js`, `api/session.js`,
+  `hooks/use-login-form.js`, `hooks/use-session.js`, `components/login-form.jsx`,
+  `components/user-menu.jsx`, and `src/app/(protected)/layout.jsx`
+  untouched — none contained CCCD-specific logic (already fully generic).
+- **Next step:** none pending. Known follow-ups intentionally left out of
+  scope (see `proposal.md`'s "Out of scope"): swapping the mock
+  `api/login.js`/`config/test-users.js` for a real backend once one
+  exists, and `components/user-menu.jsx`'s `Avatar name={username}`
+  showing the raw username rather than a derived display name.
+
+---
+
 ## 2026-08-07 21:45 — Claude Code
 
 - **Active change:** repo-wide, not scoped to the login feature — (1) React
