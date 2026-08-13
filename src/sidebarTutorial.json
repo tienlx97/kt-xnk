@@ -1,0 +1,20 @@
+{
+  "title": "Tutorial",
+  "path": "/tutorial",
+  "routes": [
+    {
+      "hasSectionHeader": false,
+      "sectionHeader": "HƯỚNG DẪN"
+    },
+    {
+      "title": "Tutorial",
+      "path": "/tutorial",
+      "routes": [
+        {
+          "title": "Bắt đầu",
+          "path": "/tutorial/bat-dau"
+        }
+      ]
+    }
+  ]
+}

@@ -12,11 +12,11 @@ import {
 import * as stylex from '@stylexjs/stylex';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 
 import { isNavLinkActive } from '../api/nav.js';
 
-/** @typedef {import('../types/index.js').NavLink} NavLink */
+/** @typedef {import('../types/index.js').SidebarRouteItem} SidebarRouteItem */
 
 const styles = stylex.create({
   nav: {
@@ -90,15 +90,6 @@ const styles = stylex.create({
   selectedChild: {
     fontSize: '0.8125rem',
   },
-  collectionHeader: {
-    color: colorVars['--color-text-primary'],
-    fontSize: '0.9375rem',
-    fontWeight: fontWeightVars['--font-weight-bold'],
-    lineHeight: 1.5,
-    marginBlockEnd: spacingVars['--spacing-2'],
-    marginBlockStart: 0,
-    marginInline: spacingVars['--spacing-5'],
-  },
   label: {
     minWidth: 0,
     overflow: 'hidden',
@@ -132,12 +123,13 @@ const styles = stylex.create({
 /**
  * React Docs-inspired expandable route group. The whole parent row is the
  * disclosure button, while article children remain real navigation links.
- * @param {{ link: NavLink, pathname: string }} props
+ * @param {{ route: SidebarRouteItem, pathname: string }} props
  */
-function SideNavGroup({ link, pathname }) {
-  const isRouteActive = isNavLinkActive(pathname, link.href);
+function SideNavGroup({ route, pathname }) {
+  const routePath = route.path ?? '/';
+  const isRouteActive = isNavLinkActive(pathname, routePath);
   const [isExpanded, setIsExpanded] = useState(isRouteActive);
-  const childrenId = `side-nav-${link.href.slice(1)}-children`;
+  const childrenId = `side-nav-${routePath.slice(1)}-children`;
 
   return (
     <li {...stylex.props(styles.item)}>
@@ -149,7 +141,7 @@ function SideNavGroup({ link, pathname }) {
         {...stylex.props(styles.row, isRouteActive && styles.selected)}
       >
         <Text type="inherit" xstyle={styles.label}>
-          {link.label}
+          {route.title}
         </Text>
         <Icon
           icon="chevronDown"
@@ -160,10 +152,10 @@ function SideNavGroup({ link, pathname }) {
       </button>
       {isExpanded && (
         <ul id={childrenId} {...stylex.props(styles.list, styles.nestedList)}>
-          {link.children?.map((child) => (
+          {route.routes?.map((child) => (
             <SideNavLink
-              key={child.href}
-              link={child}
+              key={child.path}
+              route={child}
               pathname={pathname}
               isChild
             />
@@ -175,16 +167,17 @@ function SideNavGroup({ link, pathname }) {
 }
 
 /**
- * @param {{ link: NavLink, pathname: string, isChild?: boolean }} props
+ * @param {{ route: SidebarRouteItem, pathname: string, isChild?: boolean }} props
  */
-function SideNavLink({ link, pathname, isChild = false }) {
-  const isSelected = pathname === link.href;
+function SideNavLink({ route, pathname, isChild = false }) {
+  const routePath = route.path ?? '/';
+  const isSelected = pathname === routePath;
   const { closeMobileNav } = useAppShellMobile();
 
   return (
     <li {...stylex.props(styles.item)}>
       <Link
-        href={link.href}
+        href={routePath}
         aria-current={isSelected ? 'page' : undefined}
         onClick={closeMobileNav}
         {...stylex.props(
@@ -195,7 +188,7 @@ function SideNavLink({ link, pathname, isChild = false }) {
         )}
       >
         <Text type="inherit" xstyle={styles.label}>
-          {link.label}
+          {route.title}
         </Text>
       </Link>
     </li>
@@ -205,48 +198,46 @@ function SideNavLink({ link, pathname, isChild = false }) {
 /**
  * Custom documentation sidebar based on react.dev's SidebarRouteTree and
  * SidebarLink structure, without Astryx SideNav components.
- * @param {{ navLinks: NavLink[], titles?: string[] }} props
+ * The registry schema intentionally matches react.dev's `sidebar*.json`
+ * files: a root route tree containing links, nested `routes`, and optional
+ * section-header records.
+ * @param {{ routeTrees: import('../types/index.js').SidebarRouteTree[], titles?: string[] }} props
  */
-export function AppSideNav({ navLinks, titles = [] }) {
+export function AppSideNav({ routeTrees, titles = [] }) {
   const pathname = usePathname();
-  const activeCollection = navLinks.find(
-    (link) => link.children && isNavLinkActive(pathname, link.href),
+  const activeRouteTree = routeTrees.find((routeTree) =>
+    isNavLinkActive(pathname, routeTree.path),
   );
+
+  if (!activeRouteTree) return null;
 
   return (
     <nav aria-label="Điều hướng tài liệu" {...stylex.props(styles.nav)}>
-      {activeCollection ? (
-        <>
-          <Text as="p" type="inherit" xstyle={styles.collectionHeader}>
-            {activeCollection.label}
-          </Text>
-          <ul {...stylex.props(styles.list)}>
-            <SideNavLink
-              link={{ label: 'Tổng quan', href: activeCollection.href }}
-              pathname={pathname}
-              isChild
-            />
-            {activeCollection.children?.map((child) => (
-              <SideNavLink
-                key={child.href}
-                link={child}
-                pathname={pathname}
-                isChild
-              />
-            ))}
-          </ul>
-        </>
-      ) : (
-        <ul {...stylex.props(styles.list)}>
-          {navLinks.map((link) =>
-            link.children ? (
-              <SideNavGroup key={link.href} link={link} pathname={pathname} />
-            ) : (
-              <SideNavLink key={link.href} link={link} pathname={pathname} />
-            ),
-          )}
-        </ul>
-      )}
+      <ul {...stylex.props(styles.list)}>
+        {activeRouteTree.routes.map((route, index) => {
+          const routeKey =
+            route.path ??
+            route.sectionHeader ??
+            route.title ??
+            `route-${index}`;
+
+          return (
+            <Fragment key={`${routeKey}-${index}`}>
+              {route.hasSectionHeader === true ? (
+                <li role="presentation">
+                  <Text as="h3" type="inherit" xstyle={styles.sectionHeader}>
+                    {route.sectionHeader}
+                  </Text>
+                </li>
+              ) : !route.path ? null : route.routes ? (
+                <SideNavGroup route={route} pathname={pathname} />
+              ) : (
+                <SideNavLink route={route} pathname={pathname} />
+              )}
+            </Fragment>
+          );
+        })}
+      </ul>
       {titles.map((title) => (
         <Text
           key={title}

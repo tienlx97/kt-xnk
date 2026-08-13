@@ -9,12 +9,12 @@ export const site = {
 export const navLinks = [
   { label: 'Trang chủ', href: '/' },
   { label: 'Tutorial', href: '/tutorial' },
-  { label: 'Blog', href: '/blog' },
+  { label: 'Docs', href: '/docs' },
   { label: 'Design System', href: '/design-system' },
   { label: 'Đăng nhập', href: '/login' },
 ];
 
 /** @type {NavLink[]} */
 export const topNavLinks = navLinks.filter(({ href }) =>
-  ['/tutorial', '/blog'].includes(href),
+  ['/tutorial', '/docs'].includes(href),
 );

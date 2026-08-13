@@ -16,12 +16,12 @@ test('navLinks each have a label and href', () => {
   }
 });
 
-test('topNavLinks exposes Tutorial and Blog in order', () => {
+test('topNavLinks exposes Tutorial and Docs in order', () => {
   assert.deepEqual(
     topNavLinks.map(({ label, href }) => ({ label, href })),
     [
       { label: 'Tutorial', href: '/tutorial' },
-      { label: 'Blog', href: '/blog' },
+      { label: 'Docs', href: '/docs' },
     ],
   );
 });

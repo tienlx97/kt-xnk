@@ -11,7 +11,7 @@ import { AppSideNav } from './side-nav.jsx';
 
 /** @typedef {import('../types/index.js').NavLink} NavLink */
 
-const SIDE_NAV_ROUTES = ['/tutorial', '/blog'];
+const SIDE_NAV_ROUTES = ['/tutorial', '/docs'];
 
 /**
  * Route-aware application frame. AppShell must receive `undefined` for
@@ -22,7 +22,7 @@ const SIDE_NAV_ROUTES = ['/tutorial', '/blog'];
  *   children: import('react').ReactNode,
  *   endContent?: import('react').ReactNode,
  *   navLinks: NavLink[],
- *   sideNavLinks: NavLink[],
+ *   sideNavRouteTrees: import('../types/index.js').SidebarRouteTree[],
  *   site: { name: string },
  *   year: number,
  * }} props
@@ -31,7 +31,7 @@ export function ProtectedAppShell({
   children,
   endContent,
   navLinks,
-  sideNavLinks,
+  sideNavRouteTrees,
   site,
   year,
 }) {
@@ -40,7 +40,7 @@ export function ProtectedAppShell({
     isNavLinkActive(pathname, href),
   );
   const sideNav = hasSideNav ? (
-    <AppSideNav navLinks={sideNavLinks} />
+    <AppSideNav routeTrees={sideNavRouteTrees} />
   ) : undefined;
 
   return (

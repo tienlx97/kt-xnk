@@ -1,0 +1,20 @@
+{
+  "title": "Docs",
+  "path": "/docs",
+  "routes": [
+    {
+      "hasSectionHeader": false,
+      "sectionHeader": "TÀI LIỆU"
+    },
+    {
+      "title": "Docs",
+      "path": "/docs",
+      "routes": [
+        {
+          "title": "Xin chào MDX",
+          "path": "/docs/xin-chao-mdx"
+        }
+      ]
+    }
+  ]
+}
