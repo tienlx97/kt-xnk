@@ -7,15 +7,16 @@ The user CAN expand Tutorial and Blog to access their registered MDX articles.
 ### Scenario: Browse a collection
 
 - **GIVEN** the sidebar is visible
-- **WHEN** the user expands Tutorial or Blog
-- **THEN** links for every registered article appear using its frontmatter title
-- **AND** the entire parent navigation row toggles the collection
+- **WHEN** the user opens Tutorial or Blog from the top navigation
+- **THEN** the sidebar switches to that collection
+- **AND** it shows a collection overview followed by every registered article using its frontmatter title
+- **AND** links from the other collection are not shown
 
 ### Scenario: Read an article
 
 - **GIVEN** the user is on a Tutorial or Blog article route
 - **WHEN** the sidebar renders
-- **THEN** the containing collection is expanded and the current article is selected
+- **THEN** the containing collection is shown and the current article is selected
 
 ### Scenario: Show optional reference headings
 
@@ -23,3 +24,16 @@ The user CAN expand Tutorial and Blog to access their registered MDX articles.
 - **WHEN** the sidebar renders
 - **THEN** each heading appears with a divider after the navigation links
 - **AND** no heading or divider is rendered when the configuration is omitted or empty
+
+### Scenario: Reach content collections from the top navigation
+
+- **GIVEN** the protected application shell is visible
+- **WHEN** the top navigation renders
+- **THEN** Tutorial and Blog appear as top-level pill links
+- **AND** the link containing the current route is highlighted
+
+### Scenario: Hide content navigation outside collections
+
+- **GIVEN** the current route is not Tutorial, Blog, or one of their descendants
+- **WHEN** the application shell renders
+- **THEN** no sidebar column or sidebar mobile drawer is rendered

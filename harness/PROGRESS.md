@@ -27,6 +27,152 @@ This file is the handoff between sessions/agents — write for a reader with zer
 
 ## 2026-08-13 — Codex
 
+- **Active change:** route-scoped sidebar frame.
+- **Task worked:** moved sidebar visibility to a route-aware AppShell wrapper.
+  Only `/tutorial`, `/tutorial/*`, `/blog`, and `/blog/*` receive a desktop
+  sidebar and mobile drawer. Home, Design System, and every other route pass
+  no sidebar slot and disable mobile navigation, so the content uses the full
+  frame width.
+- **Result:** done.
+- **Verification:** authenticated SSR checks found no documentation navigation
+  landmark on Home or Design System, and exactly one on Tutorial and Blog
+  article routes. All quality gates passed. Evidence:
+  `harness/runs/20260813-152643-36678/`.
+- **Harness gap:** none.
+- **Next step:** none.
+
+---
+
+## 2026-08-13 — Codex
+
+- **Active change:** route-contextual content sidebar.
+- **Task worked:** changed the custom sidebar from showing both expandable
+  content collections at once to a React Docs-style section tree selected by
+  the current route. Blog routes now show Blog, its overview, and Blog article
+  links only; Tutorial routes show the equivalent Tutorial content only.
+  Non-collection routes retain the general navigation tree.
+- **Result:** done.
+- **Verification:** lint, typecheck, unit tests, build, formatting, and all
+  quality gates passed. Evidence: `harness/runs/20260813-152323-35042/`.
+- **Harness gap:** none.
+- **Next step:** none.
+
+---
+
+## 2026-08-13 — Codex
+
+- **Active change:** React Docs navigation typography calibration.
+- **Task worked:** decoupled navigation UI typography from the 17px article
+  body scale. Top navigation and top-level sidebar rows now use 15px; nested
+  sidebar links and the table of contents use 13px. Top-nav default/active
+  weights are 400/500, nested links remain 400, and bold is limited to
+  top-level sidebar hierarchy, selected sidebar links, and the TOC heading.
+  Replaced the Astryx List-based TOC with the semantic structure and compact
+  sizing used by React Docs.
+- **Result:** done.
+- **Verification:** lint, typecheck, unit tests, build, formatting, and all
+  quality gates passed. Evidence: `harness/runs/20260813-150930-31092/`.
+- **Harness gap:** none.
+- **Next step:** none.
+
+---
+
+## 2026-08-13 — Codex
+
+- **Active change:** React Docs source-derived navigation frame.
+- **Task worked:** replaced the remaining Astryx TopNav implementation with a
+  custom semantic header derived from React Docs' `TopNav.tsx`: 64px desktop
+  height, logo at start, right-aligned pill navigation and user actions,
+  pressed/hover/active/focus states, and a hamburger below 1024px. AppShell now
+  uses a surface frame and a custom 320px mobile drawer containing the same
+  custom route tree; the desktop sidebar remains 320px and sticky.
+- **Result:** done.
+- **Verification:** authenticated SSR contains one custom primary navigation,
+  no `astryx-top-nav` markup, one custom documentation sidebar, a current-page
+  Tutorial pill on its article route, and no optional reference headings.
+  `./harness/verify.sh` passed all gates. Evidence:
+  `harness/runs/20260813-144616-25396/`.
+- **Harness gap:** visual screenshot automation is unavailable in the current
+  environment; markup, breakpoint CSS, SSR, and interaction contracts were
+  checked mechanically.
+- **Next step:** none.
+
+---
+
+## 2026-08-13 — Codex
+
+- **Active change:** `openspec/changes/mdx-sidebar-navigation/` top navigation.
+- **Task worked:** added Tutorial and Blog to the protected top navigation as
+  centered, rounded pill links modeled on React Docs' Learn/Blog navigation.
+  Selection uses prefix route matching, so article detail routes retain the
+  correct active collection highlight.
+- **Result:** done.
+- **Verification:** authenticated SSR of `/tutorial/bat-dau` rendered both top
+  navigation links and marked Tutorial with `aria-current="page"`; config unit
+  coverage confirms their labels, destinations, and order;
+  `./harness/verify.sh` passed all gates. Evidence:
+  `harness/runs/20260813-142717-19813/`.
+- **Harness gap:** none.
+- **Next step:** none.
+
+---
+
+## 2026-08-13 — Codex
+
+- **Active change:** `openspec/changes/mdx-sidebar-navigation/` custom sidebar.
+- **Task worked:** replaced Astryx SideNav/SideNavItem/SideNavSection with a
+  semantic custom navigation tree modeled on React Docs' open-source
+  SidebarRouteTree and SidebarLink. It has full-row disclosure buttons,
+  chevrons, nested links, route-driven expansion, highlighted current links,
+  optional divider-separated reference headings, focus styles, and mobile
+  drawer close behavior. Reference headings are disabled by default and render
+  only when a consumer explicitly supplies them.
+- **Result:** done.
+- **Verification:** no Astryx SideNav components remain in the implementation;
+  authenticated SSR of `/tutorial/bat-dau` returned one expanded disclosure,
+  one current-page link, the navigation label, and no visible optional
+  reference headings. `./harness/verify.sh` passed all gates. Evidence:
+  `harness/runs/20260813-142328-17277/`.
+- **Harness gap:** none.
+- **Next step:** none.
+
+---
+
+## 2026-08-13 — Codex
+
+- **Active change:** React Docs font families (direct user request).
+- **Task worked:** self-hosted the React Docs Latin and Vietnamese WOFF2 font
+  assets and configured Astryx typography roles to use Optimistic Text for
+  body/UI, Optimistic Display for headings, and Source Code Pro for code. Local
+  system stacks remain as fallbacks; unrelated script subsets were omitted.
+- **Result:** done.
+- **Verification:** generated theme CSS resolves each role to the intended
+  family, all downloaded assets identify as valid WOFF2 files, repository-wide
+  formatting passes, and `./harness/verify.sh` passed all gates. Evidence:
+  `harness/runs/20260813-135154-5479/`.
+- **Harness gap:** none.
+- **Next step:** none.
+
+---
+
+## 2026-08-13 — Codex
+
+- **Active change:** React Docs-like typography sizing (direct user request).
+- **Task worked:** raised the project-wide Astryx typography scale from the
+  neutral 14px base to a 17px base while retaining the 1.2 ratio. This matches
+  React Docs' 17px document body and raises supporting/sidebar text from 12px
+  to 14px, with headings and semantic text growing consistently from tokens.
+- **Result:** done.
+- **Verification:** generated theme CSS confirmed body 17px, supporting 14px,
+  and large text 20px; `./harness/verify.sh` passed all gates. Evidence:
+  `harness/runs/20260813-105149-68036/`.
+- **Harness gap:** none.
+- **Next step:** none.
+
+---
+
+## 2026-08-13 — Codex
+
 - **Active change:** `openspec/changes/mdx-sidebar-navigation/` follow-up.
 - **Task worked:** followed React Docs' reference-sidebar source model by
   adding optional, divider-separated static headings (`react@19.2`,

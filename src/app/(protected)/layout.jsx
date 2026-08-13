@@ -1,14 +1,11 @@
-import { AppShell } from '@astryxdesign/core/AppShell';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 import { ACCESS_TOKEN_KEY, UserMenu } from '../../features/auth/index.js';
 import { loadAllPosts as loadAllBlogPosts } from '../../features/blog/index.js';
 import { loadAllPosts as loadAllTutorialPosts } from '../../features/tutorial/index.js';
-import { Footer } from '../../shared/components/footer.jsx';
-import { Header } from '../../shared/components/header.jsx';
-import { AppSideNav } from '../../shared/components/side-nav.jsx';
-import { navLinks, sideNavTitles, site } from '../../shared/config/site.js';
+import { ProtectedAppShell } from '../../shared/components/protected-app-shell.jsx';
+import { navLinks, site, topNavLinks } from '../../shared/config/site.js';
 
 /**
  * Server-side gate for every route in this group (everything except
@@ -51,19 +48,15 @@ export default async function ProtectedLayout({ children }) {
         }
       : link;
   });
-
   return (
-    <AppShell
-      height="auto"
-      variant="elevated"
-      contentPadding={6}
-      topNav={
-        <Header siteName={site.name} navLinks={[]} endContent={<UserMenu />} />
-      }
-      sideNav={<AppSideNav navLinks={sideNavLinks} titles={sideNavTitles} />}
+    <ProtectedAppShell
+      endContent={<UserMenu />}
+      navLinks={topNavLinks}
+      sideNavLinks={sideNavLinks}
+      site={site}
+      year={new Date().getFullYear()}
     >
       {children}
-      <Footer siteName={site.name} year={new Date().getFullYear()} />
-    </AppShell>
+    </ProtectedAppShell>
   );
 }

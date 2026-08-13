@@ -27,6 +27,29 @@ import { defineTheme } from '@astryxdesign/core/theme';
 // value rather than Astryx's [light, dark] tuple form.
 export const ktxnkTheme = defineTheme({
   name: 'kt-xnk',
+  // react.dev sets its document body to 17px (text-lg) and sidebar links to
+  // 15px (text-base). Raising Astryx's geometric scale from the neutral
+  // default of 14px keeps the same hierarchy while matching that more
+  // readable documentation density: body is 17px and supporting text is
+  // 14px, with headings increasing proportionally.
+  typography: {
+    scale: { base: 17, ratio: 1.2 },
+    body: {
+      family: 'Optimistic Text',
+      fallbacks:
+        '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+    },
+    heading: {
+      family: 'Optimistic Display',
+      fallbacks:
+        '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+    },
+    code: {
+      family: 'Source Code Pro',
+      fallbacks:
+        '"SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+    },
+  },
   tokens: {
     // Brand teal, exactly as it appears in the logo — drives primary buttons,
     // focus rings, links, and accent-colored icons.
@@ -81,17 +104,6 @@ export const ktxnkTheme = defineTheme({
     // these aren't brand identity, changing them would just be surprising.
   },
   components: {
-    // SideNavItem's selected state defaults to --color-neutral (a generic
-    // blue-gray tint, not our brand) — the active section in the sidebar
-    // carried no brand color at all. react.dev's docs nav highlights the
-    // active item in its brand blue; same idea here with our teal.
-    'side-nav-item': {
-      selected: {
-        backgroundColor: 'var(--color-accent-muted)',
-        color: 'var(--color-text-accent)',
-        fontWeight: '600',
-      },
-    },
     // Astryx's Button `variant` prop is an emphasis level, not a brand hue —
     // `variant="primary"` already resolves to --color-accent above, but
     // `variant="secondary"` defaults to a neutral gray (--color-neutral), not
