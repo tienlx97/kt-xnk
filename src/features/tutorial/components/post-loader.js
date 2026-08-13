@@ -11,7 +11,7 @@ import { tutorialPostSlugs } from '../config/posts.js';
 // directive and try to resolve './posts/' itself as a file, which fails.
 const postsDir = path.join(
   process.cwd(),
-  'src/features/tutorial/components/posts'
+  'src/features/tutorial/components/posts',
 );
 
 // Static import() targets so bundlers (Turbopack included) can always
@@ -44,6 +44,6 @@ export async function loadAllPosts() {
   return posts
     .filter((post) => post !== null)
     .sort((a, b) =>
-      (a.frontmatter.date ?? '') < (b.frontmatter.date ?? '') ? 1 : -1
+      (a.frontmatter.date ?? '') < (b.frontmatter.date ?? '') ? 1 : -1,
     );
 }

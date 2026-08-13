@@ -17,7 +17,13 @@ import { ShowcaseSection } from '../showcase-section.jsx';
 /** @type {('info' | 'success' | 'warning' | 'error')[]} */
 const BANNER_STATUSES = ['info', 'success', 'warning', 'error'];
 /** @type {('success' | 'warning' | 'error' | 'accent' | 'neutral')[]} */
-const STATUS_DOT_VARIANTS = ['success', 'warning', 'error', 'accent', 'neutral'];
+const STATUS_DOT_VARIANTS = [
+  'success',
+  'warning',
+  'error',
+  'accent',
+  'neutral',
+];
 
 export function FeedbackSection() {
   const toast = useToast();

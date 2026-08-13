@@ -20,7 +20,9 @@ export function OverlaysSection() {
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [isAlertOpen, setAlertOpen] = useState(false);
   const [isPopoverOpen, setPopoverOpen] = useState(false);
-  const [lastAction, setLastAction] = useState(/** @type {string | null} */ (null));
+  const [lastAction, setLastAction] = useState(
+    /** @type {string | null} */ (null),
+  );
 
   return (
     <ShowcaseSection

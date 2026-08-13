@@ -57,8 +57,7 @@ export function ContentSection() {
         <VStack gap={5}>
           <Blockquote cite="AGENTS.md">
             Mọi màu đều lấy từ Astryx theme token trong
-            src/shared/components/theme.js — không hardcode hex trong
-            component.
+            src/shared/components/theme.js — không hardcode hex trong component.
           </Blockquote>
           <CodeBlock
             code={THEME_SNIPPET}
@@ -73,7 +72,11 @@ export function ContentSection() {
         <AspectRatio
           ratio={16 / 9}
           fit="contain"
-          style={{ height: 160, width: 'auto', borderRadius: 'var(--radius-container)' }}
+          style={{
+            height: 160,
+            width: 'auto',
+            borderRadius: 'var(--radius-container)',
+          }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/images/logo-dn-group.png" alt="Logo KT-XNK" />
@@ -82,7 +85,7 @@ export function ContentSection() {
 
       <ShowcaseSection
         title="Collapsible"
-        description="CollapsibleGroup type=&quot;single&quot; cho hành vi accordion — mở mục này tự đóng mục kia."
+        description='CollapsibleGroup type="single" cho hành vi accordion — mở mục này tự đóng mục kia.'
       >
         <CollapsibleGroup type="single" defaultValue="general">
           <VStack gap={6} style={{ maxWidth: 480 }}>

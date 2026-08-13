@@ -24,7 +24,11 @@ export function login({ username, password }) {
       );
       resolve(
         matched
-          ? { success: true, accessToken: mockToken('access'), refreshToken: mockToken('refresh') }
+          ? {
+              success: true,
+              accessToken: mockToken('access'),
+              refreshToken: mockToken('refresh'),
+            }
           : { success: false, message: 'Sai tên đăng nhập hoặc mật khẩu' },
       );
     }, MOCK_LATENCY_MS);

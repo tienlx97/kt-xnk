@@ -39,7 +39,11 @@ export function useSession() {
     getIsAuthenticated,
     getIsAuthenticatedServerSnapshot,
   );
-  const username = useSyncExternalStore(subscribeToSessionChange, getUsername, getUsernameServerSnapshot);
+  const username = useSyncExternalStore(
+    subscribeToSessionChange,
+    getUsername,
+    getUsernameServerSnapshot,
+  );
 
   function logout() {
     clearSession();

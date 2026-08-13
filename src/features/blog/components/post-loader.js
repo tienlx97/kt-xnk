@@ -41,6 +41,6 @@ export async function loadAllPosts() {
   return posts
     .filter((post) => post !== null)
     .sort((a, b) =>
-      (a.frontmatter.date ?? '') < (b.frontmatter.date ?? '') ? 1 : -1
+      (a.frontmatter.date ?? '') < (b.frontmatter.date ?? '') ? 1 : -1,
     );
 }

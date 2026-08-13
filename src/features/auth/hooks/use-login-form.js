@@ -52,7 +52,9 @@ export function useLoginForm() {
   const setRememberMe = setRememberMeOverride;
 
   const [password, setPassword] = useState('');
-  const [fieldErrors, setFieldErrors] = useState(/** @type {Record<string, string>} */ ({}));
+  const [fieldErrors, setFieldErrors] = useState(
+    /** @type {Record<string, string>} */ ({}),
+  );
   const [submitError, setSubmitError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 

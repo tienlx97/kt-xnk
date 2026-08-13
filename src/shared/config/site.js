@@ -13,3 +13,7 @@ export const navLinks = [
   { label: 'Design System', href: '/design-system' },
   { label: 'Đăng nhập', href: '/login' },
 ];
+
+// Optional reference headings shown after the navigation links. An empty or
+// omitted list leaves the sidenav unchanged.
+export const sideNavTitles = ['react@19.2', 'react-dom@19.2', 'React Compiler'];

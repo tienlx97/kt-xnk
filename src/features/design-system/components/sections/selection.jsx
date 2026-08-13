@@ -1,6 +1,9 @@
 'use client';
 
-import { SegmentedControl, SegmentedControlItem } from '@astryxdesign/core/SegmentedControl';
+import {
+  SegmentedControl,
+  SegmentedControlItem,
+} from '@astryxdesign/core/SegmentedControl';
 import { Tab, TabList } from '@astryxdesign/core/TabList';
 import { VStack } from '@astryxdesign/core/VStack';
 import { useState } from 'react';

@@ -25,6 +25,56 @@ This file is the handoff between sessions/agents — write for a reader with zer
 
 ---
 
+## 2026-08-13 — Codex
+
+- **Active change:** `openspec/changes/mdx-sidebar-navigation/` follow-up.
+- **Task worked:** followed React Docs' reference-sidebar source model by
+  adding optional, divider-separated static headings (`react@19.2`,
+  `react-dom@19.2`, and `React Compiler`) after the navigation links. The
+  heading block is data-driven and renders nothing when omitted or empty.
+- **Result:** done.
+- **Verification:** `./harness/verify.sh` passed all gates. Evidence:
+  `harness/runs/20260813-100155-55676/`; repository-wide `pnpm format:check`
+  also passed after formatting the previously outstanding files.
+- **Harness gap:** none.
+- **Next step:** none.
+
+---
+
+## 2026-08-13 — Codex
+
+- **Active change:** `openspec/changes/mdx-sidebar-navigation/` follow-up.
+- **Task worked:** made collapsible Tutorial and Blog parent rows use the full
+  SideNavItem surface as their expand/collapse trigger instead of keeping a
+  separate small chevron target beside a parent link. Nested article links are
+  unchanged.
+- **Result:** done.
+- **Verification:** `./harness/verify.sh` passed all gates. Evidence:
+  `harness/runs/20260813-092353-45941/`.
+- **Harness gap:** none.
+- **Next step:** none.
+
+---
+
+## 2026-08-13 — Codex
+
+- **Active change:** `openspec/changes/mdx-sidebar-navigation/`.
+- **Task worked:** changed Tutorial and Blog from flat sidebar links into
+  collapsible parents whose nested article links are generated from the existing
+  MDX loaders, slugs, and frontmatter titles. Active article routes start with
+  their parent expanded and mark the exact child as selected, following the
+  route-tree behavior of React Docs while using Astryx's native nested SideNav.
+- **Result:** done on branch `feat/mdx-react-style-sidebar`.
+- **Verification:** lint, typecheck, and unit tests passed; server-rendered route
+  checks confirmed Tutorial expanded/Blog collapsed on `/tutorial/bat-dau` and
+  the inverse on `/blog/xin-chao-mdx`, including `aria-current` on each active
+  child. `./harness/verify.sh` passed all gates. Evidence:
+  `harness/runs/20260813-084937-31693/`.
+- **Harness gap:** none.
+- **Next step:** none.
+
+---
+
 ## 2026-08-12 — Codex
 
 - **Active change:** harness documentation limits (direct user request).

@@ -47,9 +47,24 @@ const CARD_VARIANTS = ['default', 'muted', 'transparent'];
 
 /** @type {Shipment[]} */
 const SHIPMENTS = [
-  { id: 'KT-2026-014', route: 'Cát Lái → Rotterdam', status: 'Đang vận chuyển', containers: 3 },
-  { id: 'KT-2026-015', route: 'Hải Phòng → Busan', status: 'Đã thông quan', containers: 1 },
-  { id: 'KT-2026-016', route: 'Đà Nẵng → Tokyo', status: 'Chờ chứng từ', containers: 2 },
+  {
+    id: 'KT-2026-014',
+    route: 'Cát Lái → Rotterdam',
+    status: 'Đang vận chuyển',
+    containers: 3,
+  },
+  {
+    id: 'KT-2026-015',
+    route: 'Hải Phòng → Busan',
+    status: 'Đã thông quan',
+    containers: 1,
+  },
+  {
+    id: 'KT-2026-016',
+    route: 'Đà Nẵng → Tokyo',
+    status: 'Chờ chứng từ',
+    containers: 2,
+  },
 ];
 
 export function DataDisplaySection() {
@@ -122,9 +137,17 @@ export function DataDisplaySection() {
       <ShowcaseSection title="Avatar / AvatarGroup">
         <VStack gap={4}>
           <HStack gap={4} vAlign="center">
-            <Avatar name="Lê Xuân Tiến" size="xl" status={<AvatarStatusDot variant="success" label="Online" />} />
+            <Avatar
+              name="Lê Xuân Tiến"
+              size="xl"
+              status={<AvatarStatusDot variant="success" label="Online" />}
+            />
             <Avatar name="Nguyễn Văn A" size="lg" />
-            <Avatar name="Trần Thị B" size="md" status={<AvatarStatusDot variant="error" label="Bận" />} />
+            <Avatar
+              name="Trần Thị B"
+              size="md"
+              status={<AvatarStatusDot variant="error" label="Bận" />}
+            />
           </HStack>
           <AvatarGroup size="md">
             <Avatar name="Lê Xuân Tiến" />
@@ -161,7 +184,12 @@ export function DataDisplaySection() {
               <ListItem key={s.id} label={s.id} description={s.route} />
             ))}
           </List>
-          <Pagination page={page} onChange={setPage} totalItems={60} pageSize={10} />
+          <Pagination
+            page={page}
+            onChange={setPage}
+            totalItems={60}
+            pageSize={10}
+          />
         </VStack>
       </ShowcaseSection>
 
@@ -173,11 +201,22 @@ export function DataDisplaySection() {
             <Token label="Ưu tiên cao" color="orange" />
           </HStack>
           <HStack gap={4} vAlign="center">
-            <Timestamp value="2026-08-06T22:00:00Z" format="auto" color="primary" />
-            <Timestamp value="2026-03-25T12:00:00Z" format="date_time" color="secondary" />
+            <Timestamp
+              value="2026-08-06T22:00:00Z"
+              format="auto"
+              color="primary"
+            />
+            <Timestamp
+              value="2026-03-25T12:00:00Z"
+              format="date_time"
+              color="secondary"
+            />
           </HStack>
           <Citation
-            source={{ title: 'Hải quan Việt Nam', url: 'https://www.customs.gov.vn' }}
+            source={{
+              title: 'Hải quan Việt Nam',
+              url: 'https://www.customs.gov.vn',
+            }}
             number={1}
             variant="label"
           />

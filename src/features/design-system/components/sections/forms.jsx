@@ -1,7 +1,10 @@
 'use client';
 
 import { CheckboxInput } from '@astryxdesign/core/CheckboxInput';
-import { CheckboxList, CheckboxListItem } from '@astryxdesign/core/CheckboxList';
+import {
+  CheckboxList,
+  CheckboxListItem,
+} from '@astryxdesign/core/CheckboxList';
 import { FileInput } from '@astryxdesign/core/FileInput';
 import { Grid } from '@astryxdesign/core/Grid';
 import { MultiSelector } from '@astryxdesign/core/MultiSelector';

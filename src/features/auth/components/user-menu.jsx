@@ -32,7 +32,8 @@ export function UserMenu() {
             logout();
           }}
         />
-      }>
+      }
+    >
       <Avatar name={username} size="sm" tooltip={false} onClick={() => {}} />
     </Popover>
   );
