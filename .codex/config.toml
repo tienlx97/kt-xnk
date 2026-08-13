@@ -1,0 +1,2 @@
+[mcp_servers.xds]
+url = "https://astryx.atmeta.com/mcp"
