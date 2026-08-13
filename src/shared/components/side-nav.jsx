@@ -12,7 +12,7 @@ import {
 import * as stylex from '@stylexjs/stylex';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Fragment, useState } from 'react';
+import { Fragment } from 'react';
 
 import { isNavLinkActive } from '../api/nav.js';
 
@@ -121,24 +121,27 @@ const styles = stylex.create({
 });
 
 /**
- * React Docs-inspired expandable route group. The whole parent row is the
- * disclosure button, while article children remain real navigation links.
+ * React Docs-style route group. The parent row remains a real link to its
+ * overview page; expansion follows the active route instead of intercepting
+ * navigation with a disclosure button.
  * @param {{ route: SidebarRouteItem, pathname: string }} props
  */
 function SideNavGroup({ route, pathname }) {
   const routePath = route.path ?? '/';
   const isRouteActive = isNavLinkActive(pathname, routePath);
-  const [isExpanded, setIsExpanded] = useState(isRouteActive);
+  const isSelected = pathname === routePath;
+  const { closeMobileNav } = useAppShellMobile();
   const childrenId = `side-nav-${routePath.slice(1)}-children`;
 
   return (
     <li {...stylex.props(styles.item)}>
-      <button
-        type="button"
+      <Link
+        href={routePath}
+        aria-current={isSelected ? 'page' : undefined}
         aria-controls={childrenId}
-        aria-expanded={isExpanded}
-        onClick={() => setIsExpanded((expanded) => !expanded)}
-        {...stylex.props(styles.row, isRouteActive && styles.selected)}
+        aria-expanded={isRouteActive}
+        onClick={closeMobileNav}
+        {...stylex.props(styles.row, isSelected && styles.selected)}
       >
         <Text type="inherit" xstyle={styles.label}>
           {route.title}
@@ -147,10 +150,10 @@ function SideNavGroup({ route, pathname }) {
           icon="chevronDown"
           size="sm"
           color="inherit"
-          xstyle={[styles.chevron, isExpanded && styles.chevronExpanded]}
+          xstyle={[styles.chevron, isRouteActive && styles.chevronExpanded]}
         />
-      </button>
-      {isExpanded && (
+      </Link>
+      {isRouteActive && (
         <ul id={childrenId} {...stylex.props(styles.list, styles.nestedList)}>
           {route.routes?.map((child) => (
             <SideNavLink
