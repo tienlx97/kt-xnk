@@ -13,9 +13,10 @@ This file is the handoff between sessions/agents — write for a reader with zer
   Footer mismatches. Task 4.3 fixed the instance and added source-contract
   assertions for the exact upstream scale; browser evidence records computed
   styles at 390px and 1536px. A follow-up direct runtime comparison caught the
-  remaining nested SideNav state: unselected children are 13px/30px at weight
-  500, while parent and selected routes are 15px/30px at weight 700. The
-  component and contract test now encode that distinction.
+  remaining nested SideNav state. A subsequent user decision intentionally
+  keeps nested routes at 13px/30px for both states to prevent selection-induced
+  size shift; only weight changes from 500 to 700. Parent routes remain
+  15px/30px at weight 700, and the contract test encodes this adaptation.
 - **Resolved 2026-08-14:** MDX authoring components had no nested typography
   regression gate. On
   2026-08-14, browser inspection measured only the outer `Intro` wrapper and
