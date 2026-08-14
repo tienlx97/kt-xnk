@@ -12,7 +12,10 @@ This file is the handoff between sessions/agents — write for a reader with zer
   H1/H2, SideNav, TOC, body leading/weight, Intro, callout, caption, code, and
   Footer mismatches. Task 4.3 fixed the instance and added source-contract
   assertions for the exact upstream scale; browser evidence records computed
-  styles at 390px and 1536px.
+  styles at 390px and 1536px. A follow-up direct runtime comparison caught the
+  remaining nested SideNav state: unselected children are 13px/30px at weight
+  500, while parent and selected routes are 15px/30px at weight 700. The
+  component and contract test now encode that distinction.
 - **Resolved 2026-08-14:** MDX authoring components had no nested typography
   regression gate. On
   2026-08-14, browser inspection measured only the outer `Intro` wrapper and
