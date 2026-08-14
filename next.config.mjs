@@ -1,4 +1,9 @@
 import createMDX from '@next/mdx';
+import { fileURLToPath } from 'node:url';
+
+const rehypeMetaPluginPath = fileURLToPath(
+  new URL('./src/shared/api/rehype-meta-as-attributes.js', import.meta.url),
+);
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -28,7 +33,12 @@ const withMDX = createMDX({
     // rehype-slug adds an `id` to every rendered heading, using the same
     // github-slugger algorithm remark-flexible-toc uses to build TOC hrefs
     // (see src/shared/api/toc.js) — so heading anchors and TOC links match.
-    rehypePlugins: ['rehype-slug'],
+    rehypePlugins: [
+      'rehype-slug',
+      // Preserve react.dev's fenced-code directives (`{1-3}` and
+      // `[[step,line,"substring"]]`) for the mapped CodeBlock component.
+      rehypeMetaPluginPath,
+    ],
   },
 });
 

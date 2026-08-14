@@ -2,8 +2,20 @@ import * as stylex from '@stylexjs/stylex';
 import NextLink from 'next/link';
 
 import { Intro } from './intro.jsx';
+import { CodeBlock } from './mdx/code-block.jsx';
+import {
+  ConsoleBlock,
+  ConsoleBlockMulti,
+  ConsoleLogLine,
+} from './mdx/console-block.jsx';
 import { FullWidth, MaxWidth } from './mdx/content-width.jsx';
 import { DeepDive } from './mdx/deep-dive.jsx';
+import {
+  CodeDiagram,
+  Diagram,
+  DiagramGroup,
+  PackageImport,
+} from './mdx/diagram-components.jsx';
 import { Figure } from './mdx/figure.jsx';
 import { HeadingAnchorIcon } from './mdx/heading-anchor-icon.jsx';
 import { imageStyles } from './mdx/image-styles.js';
@@ -34,6 +46,7 @@ import {
   IllustrationBlock,
 } from './mdx/react-dev-illustrations.jsx';
 import { CodeStep, Math, MathI, Recap } from './mdx/react-dev-primitives.jsx';
+import { TerminalBlock } from './mdx/terminal-block.jsx';
 import {
   borderVars,
   colorVars,
@@ -142,20 +155,6 @@ const contentStyles = stylex.create({
     paddingBlock: spacingVars['--spacing-0-5'],
     paddingInline: spacingVars['--spacing-1'],
   },
-  codeBlock: {
-    backgroundColor: colorVars['--color-background-muted'],
-    borderColor: colorVars['--color-border'],
-    borderRadius: radiusVars['--radius-container'],
-    borderStyle: 'solid',
-    borderWidth: borderVars['--border-width'],
-    fontFamily: 'var(--font-family-code)',
-    fontSize: '13.6px',
-    lineHeight: '24px',
-    margin: 0,
-    overflowX: 'auto',
-    padding: spacingVars['--spacing-4'],
-    whiteSpace: 'pre',
-  },
   divider: {
     borderBlockEndColor: colorVars['--color-border'],
     borderBlockEndStyle: 'solid',
@@ -220,19 +219,18 @@ function MdxHeading({ level, id, children, xstyle }) {
  * Reads the language + code string off the `<code>` element MDX nests
  * inside a fenced block, so CodeBlock (which takes `code` as a string prop,
  * not children) can render it.
- * @param {{ children: { props?: { className?: string, children?: import('react').ReactNode } } }} props
+ * @param {{ children: { props?: { className?: string, children?: import('react').ReactNode, meta?: string } } }} props
  */
 function Pre({ children }) {
   const className = children?.props?.className ?? '';
   const language = className.replace('language-', '') || 'plaintext';
   const code = String(children?.props?.children ?? '').replace(/\n$/, '');
+  const meta = children?.props?.meta ?? '';
 
-  return (
-    <pre data-language={language} {...stylex.props(contentStyles.codeBlock)}>
-      <code>{code}</code>
-    </pre>
-  );
+  return <CodeBlock code={code} language={language} meta={meta} />;
 }
+
+Pre.mdxName = 'pre';
 
 /**
  * @param {{ href?: string, children: import('react').ReactNode }} props
@@ -268,6 +266,16 @@ function MdxCode({ children }) {
   return <code {...stylex.props(contentStyles.inlineCode)}>{children}</code>;
 }
 
+/** @param {{ src?: string, alt?: string }} props */
+function MdxImage({ src, alt }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- MDX supports authored image sources.
+    <img src={src} alt={alt} {...stylex.props(imageStyles.img)} />
+  );
+}
+
+MdxImage.mdxName = 'img';
+
 /**
  * Maps the HTML elements MDX compiles headings/paragraphs/links/etc. into
  * local authoring components. This registry and its component tree use local
@@ -275,7 +283,7 @@ function MdxCode({ children }) {
  * @param {Record<string, import('react').ComponentType>} components
  */
 export function useMDXComponents(components) {
-  return {
+  const mdxComponents = {
     // `id` comes from rehype-slug (see next.config.mjs) — it's what TOC
     // hrefs (src/shared/api/toc.js) anchor-link to.
     /** @param {{ id?: string, children: import('react').ReactNode }} props */
@@ -333,11 +341,7 @@ export function useMDXComponents(components) {
     // Plain markdown images (`![]()`) — a raw `<img>` slips through the
     // no-raw-markup rule otherwise. Same treatment as the opt-in `Figure`
     // component below, minus the caption.
-    /** @param {{ src?: string, alt?: string }} props */
-    img: ({ src, alt }) => (
-      // eslint-disable-next-line @next/next/no-img-element -- see comment above
-      <img src={src} alt={alt} {...stylex.props(imageStyles.img)} />
-    ),
+    img: MdxImage,
     // Authoring components for callouts, expandable sections, captioned
     // images, and video embeds — see src/shared/components/mdx/.
     Note,
@@ -366,12 +370,29 @@ export function useMDXComponents(components) {
     Illustration,
     IllustrationBlock,
     InlineToc,
+    CodeDiagram,
+    ConsoleBlock,
+    ConsoleBlockMulti,
+    ConsoleLogLine,
+    Diagram,
+    DiagramGroup,
+    PackageImport,
+    TerminalBlock,
     Figure,
     YouTubeEmbed,
     YouTubeIframe: YouTubeEmbed,
     Intro,
     FullWidth,
     MaxWidth,
-    ...components,
   };
+
+  // react.dev tags every mapping so parent authoring components can inspect
+  // compiled MDX children (for example PackageImport locating a fenced block).
+  for (const [name, Component] of Object.entries(mdxComponents)) {
+    /** @type {import('react').ComponentType & { mdxName?: string }} */ (
+      Component
+    ).mdxName = name;
+  }
+
+  return { ...mdxComponents, ...components };
 }

@@ -1,0 +1,69 @@
+## Syntax and line states
+
+Inline code keeps the prose mapping: `const ready = true`.
+
+```jsx {1,3} [[1,1,"count"],[2,2,"count",0],[3,2,"count",6]]
+const count = 0;
+count + count;
+return <output>{count}</output>;
+```
+
+## Console and terminal
+
+<ConsoleBlock level="error">
+
+Hooks can only be called inside the body of a function component.
+
+</ConsoleBlock>
+
+<ConsoleBlockMulti>
+  <ConsoleLogLine level="warning">A warning from the console.</ConsoleLogLine>
+  <ConsoleLogLine level="error">An error from the console.</ConsoleLogLine>
+  <ConsoleLogLine level="info">An informational log.</ConsoleLogLine>
+</ConsoleBlockMulti>
+
+<TerminalBlock>
+
+pnpm test
+
+</TerminalBlock>
+
+## Diagrams
+
+<CodeDiagram flip>
+  <img src="/images/logo-dn-group.png" alt="Đại Nghĩa Group" />
+
+The content and illustration columns follow the upstream responsive order.
+
+</CodeDiagram>
+
+<DiagramGroup>
+  <Diagram
+    src="/images/logo-dn-group.png"
+    alt="First diagram"
+    width={220}
+    height={96}
+  >
+    First diagram caption
+  </Diagram>
+  <Diagram
+    src="/images/logo-dn-group.png"
+    alt="Second diagram"
+    width={220}
+    height={96}
+    captionPosition="top"
+  >
+    Second diagram caption
+  </Diagram>
+</DiagramGroup>
+
+## Package import
+
+<PackageImport>
+  <TerminalBlock>pnpm add react</TerminalBlock>
+
+```jsx {1}
+import React from 'react';
+```
+
+</PackageImport>

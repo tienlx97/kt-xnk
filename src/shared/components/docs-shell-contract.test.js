@@ -150,14 +150,15 @@ test('matches react.dev TOC typography and sticky scroller geometry', () => {
 
 test('keeps the complete MDX component tree semantic and Astryx-free', () => {
   const combinedSource = mdxUiSources.join('\n');
+  const completeTreeSource = mdxComponentTreeSources.join('\n');
   assert.doesNotMatch(
-    mdxComponentTreeSources.join('\n'),
+    completeTreeSource,
     /@astryxdesign\/core/,
   );
   assert.match(combinedSource, /\.\/mdx\/tokens\.stylex\.js/);
   assert.match(combinedSource, /<blockquote/);
   assert.match(combinedSource, /<details/);
-  assert.match(combinedSource, /<pre/);
+  assert.match(completeTreeSource, /<pre/);
   assert.match(combinedSource, /<iframe/);
 });
 
@@ -184,6 +185,6 @@ test('pins the exact react.dev documentation typography scale', () => {
     mdxComponentsSource,
     /h3: \{ fontSize: '24px', lineHeight: '36px' \}/,
   );
-  assert.match(mdxComponentsSource, /fontSize: '13\.6px'/);
-  assert.match(mdxComponentsSource, /lineHeight: '24px'/);
+  assert.match(mdxComponentTreeSources.join('\n'), /fontSize: '13\.6px'/);
+  assert.match(mdxComponentTreeSources.join('\n'), /lineHeight: '24px'/);
 });

@@ -11,7 +11,7 @@
 
 ## 2. Code and diagram UI
 
-- [ ] 2.1 Port `CodeBlock`, `InlineCode`, `CodeStep`, `CodeDiagram`, `Diagram`,
+- [x] 2.1 Port `CodeBlock`, `InlineCode`, `CodeStep`, `CodeDiagram`, `Diagram`,
   `DiagramGroup`, console blocks, `TerminalBlock`, and `PackageImport` — verify:
   syntax/line-state fixtures, copy interaction, responsive screenshots, and
   `./harness/verify.sh`.

@@ -7,6 +7,16 @@ This file is the handoff between sessions/agents — write for a reader with zer
 
 ## Harness gaps (mistakes that need a mechanical rule, not a manual fix)
 
+- **Resolved 2026-08-15:** unit-compiling the fenced-code metadata plugin did
+  not prove that `@next/mdx` could resolve it. The first full build caught that
+  plugin strings resolve from the loader package rather than the project root;
+  `next.config.mjs` now derives a portable absolute path, and the normal build
+  gate protects the integration.
+- **Resolved 2026-08-15:** the first terminal fixture passed a mapped MDX
+  paragraph across the Server-to-Client boundary, where assuming a single
+  directly inspectable element caused a browser-only runtime error. The
+  terminal text reader now recursively handles serialized ReactNode content,
+  and task acceptance includes reloads at both required viewports.
 - **Resolved 2026-08-15:** the MDX exception said Astryx was optional but did
   not mechanically prevent new Astryx imports in nested authoring components.
   The complete `useMDXComponents` tree is now recursively scanned by the source
@@ -68,6 +78,32 @@ This file is the handoff between sessions/agents — write for a reader with zer
   the write-up will trip it, as happened while drafting that entry.)
 
 ---
+
+## 2026-08-15 — Codex
+
+- **Active change:** `react-dev-mdx-components-parity`, task 2.1.
+- **Task worked:** ported the react.dev CodeMirror syntax renderer, fenced-code
+  line and inline-step metadata bridge, console surfaces, terminal/copy flow,
+  CodeDiagram, theme-aware Diagram/DiagramGroup, and PackageImport to semantic
+  React UI plus StyleX. Added pure metadata/plugin tests and a development-only
+  MDX composition fixture.
+- **Result:** nine task-2 registry names are now implemented without Astryx.
+  Browser acceptance confirmed two code blocks, lines 1/3/1 highlighted,
+  inline steps 1/2/3, terminal `Copied` state, 390px single-column and 1536px
+  two-column PackageImport geometry, and no horizontal overflow.
+- **Verification:** `./harness/verify.sh` passed every gate with 36 tests.
+  Evidence: `harness/runs/20260815-010535-145293/`; inspected screenshots:
+  `harness/runs/20260815-react-dev-mdx-components-task-2-1/`.
+- **Dependency note:** pinned the same CodeMirror/Lezer/range-parser family used
+  upstream. `pnpm peers check` still reports the pre-existing Astryx core →
+  StyleX peer mismatch (`^0.19.0` wanted vs `0.15.4` installed); the MDX tree
+  itself does not import Astryx.
+- **Skill influence:** `memory-recall` preserved the output/behavior parity
+  contract; `vercel-react-best-practices` kept client state limited to syntax
+  hover/copy behavior; `frontend-design` held geometry to upstream; and
+  `agent-browser` exposed both the clipboard-state and serialized-child bugs.
+- **Next step:** task 3.1 — Challenges, Recipes, Hint, Solution, and guided
+  navigation/query behavior.
 
 ## 2026-08-15 — Codex
 
