@@ -39,6 +39,10 @@ export function ProtectedAppShell({
   const hasSideNav = SIDE_NAV_ROUTES.some((href) =>
     isNavLinkActive(pathname, href),
   );
+  const hasMdxLayout =
+    pathname === '/docs' ||
+    pathname.startsWith('/docs/') ||
+    pathname.startsWith('/tutorial/');
   const sideNav = hasSideNav ? (
     <AppSideNav routeTrees={sideNavRouteTrees} />
   ) : undefined;
@@ -47,7 +51,7 @@ export function ProtectedAppShell({
     <AppShell
       height="auto"
       variant="surface"
-      contentPadding={6}
+      contentPadding={hasMdxLayout ? 0 : 6}
       topNav={
         <Header
           siteName={site.name}

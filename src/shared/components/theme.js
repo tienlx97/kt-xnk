@@ -56,8 +56,8 @@ export const ktxnkTheme = defineTheme({
     '--color-accent': '#247768',
     // react.dev's `highlight` recipe: brand hue at chroma 7 / tone 96, a
     // whisper of brand rather than a fill. Astryx resolves BOTH the selected
-    // SideNavItem and `Banner status="info"` (i.e. every <Note> callout) to
-    // this token, so an over-saturated value here turns both into mint blobs.
+    // selected SideNavItem and every <Note> callout to this token, so an
+    // over-saturated value here turns both into mint blobs.
     '--color-accent-muted': '#e5f8f3',
     '--color-on-accent': '#ffffff',
     '--color-text-accent': '#247768',

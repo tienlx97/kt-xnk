@@ -1,22 +1,50 @@
 import { Grid } from '@astryxdesign/core/Grid';
-import { Heading } from '@astryxdesign/core/Heading';
-import { Text } from '@astryxdesign/core/Text';
+import { spacingVars } from '@astryxdesign/core/theme/tokens.stylex';
 import { VStack } from '@astryxdesign/core/VStack';
 import * as stylex from '@stylexjs/stylex';
 
+import { useMDXComponents } from './mdx-components.jsx';
+import { MdxPageHeading } from './mdx-page-heading.jsx';
 import { TableOfContents } from './table-of-contents.jsx';
 
 /** @typedef {import('../api/toc.js').TocItem} TocItem */
 
-// Same 767px cutoff as TableOfContents's own display:none — below it the
-// TOC column disappears, so the grid must also collapse to one track or
-// the content column would stay squeezed into leftover space.
+// Responsive contract derived from react.dev's Page.tsx/Tailwind defaults:
+//   < 640px: 20px content inset
+//   >= 640px: 48px content inset
+//   < 1536px: content only
+//   >= 1536px: main + 20rem TOC rail; heading/prose center inside main only
 const styles = stylex.create({
-  grid: {
-    gridTemplateColumns: {
-      default: 'minmax(0, 1fr) 280px',
-      '@media (max-width: 767px)': '1fr',
+  bodyOuter: {
+    paddingBlockEnd: spacingVars['--spacing-12'],
+    paddingInline: {
+      default: spacingVars['--spacing-5'],
+      '@media (min-width: 40rem)': spacingVars['--spacing-12'],
     },
+  },
+  bodyInner: {
+    marginInline: 'auto',
+    maxWidth: '80rem',
+    width: '100%',
+  },
+  prose: {
+    marginInline: {
+      default: 0,
+      '@media (min-width: 96rem)': 'auto',
+    },
+    maxWidth: '56rem',
+    width: '100%',
+  },
+  layoutGrid: {
+    alignItems: 'start',
+    gridTemplateColumns: {
+      default: 'minmax(0, 1fr)',
+      '@media (min-width: 96rem)': 'minmax(0, 1fr) 20rem',
+    },
+    width: '100%',
+  },
+  main: {
+    minWidth: 0,
   },
 });
 
@@ -27,20 +55,29 @@ const styles = stylex.create({
  * @param {{
  *   frontmatter: { title: string, date?: string },
  *   toc: TocItem[],
- *   Content: import('react').ComponentType,
+ *   Content: import('mdx/types').MDXContent | import('react').ComponentType,
+ *   breadcrumbs?: Array<{label: string, href?: string, isCurrent?: boolean}>,
  * }} props
  */
-export function MdxArticle({ frontmatter, toc, Content }) {
+export function MdxArticle({ frontmatter, toc, Content, breadcrumbs = [] }) {
+  const components = useMDXComponents({});
+  const RenderContent = /** @type {import('mdx/types').MDXContent} */ (Content);
+
   return (
-    <Grid gap={6} xstyle={styles.grid}>
-      <VStack gap={4}>
-        <VStack gap={1}>
-          <Heading level={1}>{frontmatter.title}</Heading>
-          {frontmatter.date ? (
-            <Text type="supporting">{frontmatter.date}</Text>
-          ) : null}
+    <Grid gap={0} xstyle={styles.layoutGrid}>
+      <VStack data-mdx-main gap={6} xstyle={styles.main}>
+        <MdxPageHeading
+          title={frontmatter.title}
+          date={frontmatter.date}
+          breadcrumbs={breadcrumbs}
+        />
+        <VStack data-mdx-body gap={0} xstyle={styles.bodyOuter}>
+          <VStack data-mdx-body-inner gap={0} xstyle={styles.bodyInner}>
+            <VStack data-mdx-prose gap={4} xstyle={styles.prose}>
+              <RenderContent components={components} />
+            </VStack>
+          </VStack>
         </VStack>
-        <Content />
       </VStack>
       <TableOfContents items={toc} />
     </Grid>

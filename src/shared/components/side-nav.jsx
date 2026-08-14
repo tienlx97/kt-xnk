@@ -12,7 +12,7 @@ import {
 import * as stylex from '@stylexjs/stylex';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Fragment } from 'react';
+import { Fragment, useState } from 'react';
 
 import { isNavLinkActive } from '../api/nav.js';
 
@@ -121,39 +121,64 @@ const styles = stylex.create({
 });
 
 /**
- * React Docs-style route group. The parent row remains a real link to its
- * overview page; expansion follows the active route instead of intercepting
- * navigation with a disclosure button.
+ * React Docs-style route group. Groups with an overview `path` keep the parent
+ * row as a navigable link. Pure category groups omit `path` and use the full
+ * row as a disclosure button.
  * @param {{ route: SidebarRouteItem, pathname: string }} props
  */
 function SideNavGroup({ route, pathname }) {
-  const routePath = route.path ?? '/';
-  const isRouteActive = isNavLinkActive(pathname, routePath);
-  const isSelected = pathname === routePath;
+  const routePath = route.path;
+  const containsActiveRoute =
+    (routePath ? isNavLinkActive(pathname, routePath) : false) ||
+    (route.routes?.some((child) =>
+      child.path ? isNavLinkActive(pathname, child.path) : false,
+    ) ??
+      false);
+  const [isExpanded, setIsExpanded] = useState(containsActiveRoute);
+  const isSelected = routePath ? pathname === routePath : false;
   const { closeMobileNav } = useAppShellMobile();
-  const childrenId = `side-nav-${routePath.slice(1)}-children`;
+  const groupKey = routePath?.slice(1) ?? route.title ?? 'group';
+  const childrenId = `side-nav-${groupKey.toLowerCase().replaceAll(/[^a-z0-9]+/g, '-')}-children`;
+
+  const label = (
+    <>
+      <Text type="inherit" xstyle={styles.label}>
+        {route.title}
+      </Text>
+      <Icon
+        icon="chevronDown"
+        size="sm"
+        color="inherit"
+        xstyle={[styles.chevron, isExpanded && styles.chevronExpanded]}
+      />
+    </>
+  );
 
   return (
     <li {...stylex.props(styles.item)}>
-      <Link
-        href={routePath}
-        aria-current={isSelected ? 'page' : undefined}
-        aria-controls={childrenId}
-        aria-expanded={isRouteActive}
-        onClick={closeMobileNav}
-        {...stylex.props(styles.row, isSelected && styles.selected)}
-      >
-        <Text type="inherit" xstyle={styles.label}>
-          {route.title}
-        </Text>
-        <Icon
-          icon="chevronDown"
-          size="sm"
-          color="inherit"
-          xstyle={[styles.chevron, isRouteActive && styles.chevronExpanded]}
-        />
-      </Link>
-      {isRouteActive && (
+      {routePath ? (
+        <Link
+          href={routePath}
+          aria-current={isSelected ? 'page' : undefined}
+          aria-controls={childrenId}
+          aria-expanded={isExpanded}
+          onClick={closeMobileNav}
+          {...stylex.props(styles.row, isSelected && styles.selected)}
+        >
+          {label}
+        </Link>
+      ) : (
+        <button
+          type="button"
+          aria-controls={childrenId}
+          aria-expanded={isExpanded}
+          onClick={() => setIsExpanded((expanded) => !expanded)}
+          {...stylex.props(styles.row)}
+        >
+          {label}
+        </button>
+      )}
+      {isExpanded && (
         <ul id={childrenId} {...stylex.props(styles.list, styles.nestedList)}>
           {route.routes?.map((child) => (
             <SideNavLink
@@ -232,9 +257,9 @@ export function AppSideNav({ routeTrees, titles = [] }) {
                     {route.sectionHeader}
                   </Text>
                 </li>
-              ) : !route.path ? null : route.routes ? (
+              ) : route.routes ? (
                 <SideNavGroup route={route} pathname={pathname} />
-              ) : (
+              ) : !route.path ? null : (
                 <SideNavLink route={route} pathname={pathname} />
               )}
             </Fragment>

@@ -20,6 +20,8 @@ browser client would.
 [src/app (routing/wiring)] → [feature or shared public index.js]
                                       ↓
                     types → config → api → hooks → components
+
+[content/docs (company-authored MDX)] → [docs feature loader] → [src/app routes]
 ```
 
 The layer order applies **twice, nested**: once inside each
@@ -55,6 +57,10 @@ still applies to it.
   chrome, theme, site-wide config, shared domain types). Same layer
   ordering as a feature, no public `index.js` requirement since it isn't
   isolated the way a feature is.
+- `content/docs/` — company-authored MDX, organized by documentation domain
+  rather than by React implementation layer. The Docs feature recursively
+  discovers and compiles these trusted files, then owns metadata loading, TOC
+  extraction, and presentation logic.
 
 ## Module boundaries (mechanically enforced)
 
@@ -78,14 +84,19 @@ Enforced by `harness/structure.rules.cjs` (dependency-cruiser), run via
 - `src/features/home/` — `components/hero.jsx`, the homepage hero.
 - `src/features/design-system/` — `components/{showcase-section.jsx,sections/*.jsx}`,
   the internal component showcase at `/design-system`.
+- `src/features/docs/` — filesystem discovery, trusted build-time MDX
+  compilation, and presentation for company documentation stored under
+  `content/docs/{noi-quy,it}/`.
 - `src/shared/components/` — site chrome (`header.jsx`, `footer.jsx`) and theme
   wiring (`theme.js` — no JSX, hence `.js` — plus `theme-provider.jsx` and
   `astryx theme build` output).
+- `src/shared/hooks/` — cross-cutting browser behavior, currently the
+  React Docs-style active-section tracking used by the MDX table of contents.
 - `src/shared/config/` — `site.js` (site name, nav links).
 - `src/shared/types/` — shared domain types (`NavLink`).
-- `src/shared/api/`, `src/shared/hooks/`, and any feature's `api/`/`hooks/` —
-  not created yet; add when a feature actually needs to call the backend
-  project or hold client-side state beyond component-local `useState`.
+- `src/shared/api/` and any feature's missing `api/`/`hooks/` layers — add only
+  when a feature actually needs to call the backend project or hold client-side
+  state beyond component-local `useState`.
 
 ## Data flow
 

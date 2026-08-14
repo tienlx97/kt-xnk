@@ -2,25 +2,33 @@
 
 ## Approach
 
-The protected server layout loads both existing post registries and maps their frontmatter titles and slugs into serializable child navigation links. `AppSideNav` implements a semantic `nav` route tree directly with StyleX, following React Docs' `SidebarRouteTree` and `SidebarLink` behavior instead of using Astryx SideNav components. A section containing the current route starts expanded, while other sections start collapsed and remain user-toggleable.
+The Docs content API recursively scans `content/docs/**/*.mdx`, compiles trusted
+repository content at build time, and derives static params, frontmatter, and
+TOC data without a handwritten import registry. `AppSideNav` renders the
+explicit JSON information architecture as a semantic `nav` route tree with
+StyleX, following React Docs' `SidebarRouteTree` and `SidebarLink` behavior.
+A group containing the current route starts expanded, while other groups start
+collapsed and remain user-toggleable.
 
 ## Affected layers & files
 
 | Layer | Files | Change |
 |---|---|---|
 | types | `src/shared/types/index.js` | Allow nested navigation links. |
-| config/service | Existing tutorial and blog loaders | Reuse post metadata without a new content source. |
+| api | `src/features/docs/api/content.js` | Discover and compile trusted company MDX recursively. |
 | UI | protected layout, shared side nav | Build and render expandable article navigation. |
 | UI | shared header | Render a custom React Docs-derived 64px header with route-aware Tutorial and Blog pills, user actions, and a mobile menu trigger. |
 | UI | protected layout | Use the React Docs 1024px navigation breakpoint and a 320px mobile drawer; remove the elevated content corner. |
 
 ## New dependencies
 
-None.
+- `@mdx-js/mdx` — compile trusted repository MDX discovered outside the App
+  Router tree, mirroring React Docs' build-time compiler model.
 
 ## Risks & mitigations
 
-- Sidebar metadata could drift from article lists → both consume the same existing loaders and frontmatter.
+- Sidebar navigation could point to a removed file → a registry/content
+  consistency test should remain part of the mechanical gate.
 - A selected child could be hidden → active-route matching controls the parent's initial collapsed state.
 - A custom navigation tree could regress keyboard or screen-reader behavior → parent disclosures use native buttons with `aria-expanded`/`aria-controls`, destinations remain native links, and the current destination exposes `aria-current="page"`.
 

@@ -37,3 +37,17 @@ The user CAN expand Tutorial and Blog to access their registered MDX articles.
 - **GIVEN** the current route is not Tutorial, Blog, or one of their descendants
 - **WHEN** the application shell renders
 - **THEN** no sidebar column or sidebar mobile drawer is rendered
+
+### Scenario: Show the containing Docs group in article breadcrumbs
+
+- **GIVEN** a Docs article belongs to a group in the sidebar registry
+- **WHEN** its MDX page heading renders
+- **THEN** the breadcrumbs show Docs followed by the containing group
+- **AND** the article title is not duplicated in the breadcrumb trail
+
+### Scenario: Emphasize an informational note in MDX
+
+- **GIVEN** an MDX article contains a `Note`
+- **WHEN** the article renders on desktop or mobile
+- **THEN** the note presents an icon, a concise title, and its body as one visually distinct region
+- **AND** the complete note remains visible without client-side interaction

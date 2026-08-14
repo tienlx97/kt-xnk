@@ -3,16 +3,77 @@
   "path": "/docs",
   "routes": [
     {
-      "hasSectionHeader": false,
-      "sectionHeader": "TÀI LIỆU"
-    },
-    {
-      "title": "Docs",
+      "title": "NỘI QUY",
       "path": "/docs",
       "routes": [
         {
-          "title": "Xin chào MDX",
-          "path": "/docs/xin-chao-mdx"
+          "title": "Nội quy chung",
+          "path": "/docs/noi-quy-chung"
+        },
+        {
+          "title": "Giờ làm việc",
+          "path": "/docs/gio-lam-viec"
+        },
+        {
+          "title": "Chấm công",
+          "path": "/docs/cham-cong"
+        },
+        {
+          "title": "Nghỉ phép",
+          "path": "/docs/nghi-phep"
+        },
+        {
+          "title": "Làm thêm giờ",
+          "path": "/docs/lam-them-gio"
+        },
+        {
+          "title": "Tài sản công ty",
+          "path": "/docs/tai-san-cong-ty"
+        },
+        {
+          "title": "Bảo mật",
+          "path": "/docs/bao-mat"
+        }
+      ]
+    },
+    {
+      "title": "IT",
+      "routes": [
+        {
+          "title": "Máy tính",
+          "path": "/docs/may-tinh"
+        },
+        {
+          "title": "Tài khoản",
+          "path": "/docs/tai-khoan"
+        },
+        {
+          "title": "Phần mềm",
+          "path": "/docs/phan-mem"
+        },
+        {
+          "title": "Mạng & Wi-Fi",
+          "path": "/docs/mang-wifi"
+        },
+        {
+          "title": "Dữ liệu chung",
+          "path": "/docs/du-lieu-chung"
+        },
+        {
+          "title": "Truy cập từ xa",
+          "path": "/docs/truy-cap-tu-xa"
+        },
+        {
+          "title": "Máy in",
+          "path": "/docs/may-in"
+        },
+        {
+          "title": "An toàn IT",
+          "path": "/docs/an-toan-it"
+        },
+        {
+          "title": "Hỗ trợ IT",
+          "path": "/docs/ho-tro-it"
         }
       ]
     }

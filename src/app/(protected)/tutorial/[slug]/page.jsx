@@ -1,4 +1,3 @@
-import { Section } from '@astryxdesign/core/Section';
 import { notFound } from 'next/navigation';
 
 import {
@@ -33,12 +32,11 @@ export default async function TutorialPostPage({ params }) {
   if (!post) notFound();
 
   return (
-    <Section variant="transparent" paddingBlock={8}>
-      <MdxArticle
-        frontmatter={post.frontmatter}
-        toc={post.toc}
-        Content={post.Content}
-      />
-    </Section>
+    <MdxArticle
+      frontmatter={post.frontmatter}
+      toc={post.toc}
+      Content={post.Content}
+      breadcrumbs={[{ label: 'Tutorial', href: '/tutorial' }]}
+    />
   );
 }

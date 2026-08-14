@@ -1,11 +1,16 @@
-import { Section } from '@astryxdesign/core/Section';
 import { notFound } from 'next/navigation';
 
-import { docsPostSlugs, loadPost } from '../../../../features/docs/index.js';
+import {
+  getDocsPostSlugs,
+  loadPost,
+} from '../../../../features/docs/index.js';
+import { getSidebarBreadcrumbs } from '../../../../shared/api/nav.js';
 import { MdxArticle } from '../../../../shared/components/mdx-article.jsx';
+import sidebarPost from '../../../../sidebarPost.json';
 
-export function generateStaticParams() {
-  return docsPostSlugs.map((slug) => ({ slug }));
+export async function generateStaticParams() {
+  const slugs = await getDocsPostSlugs();
+  return slugs.map((slug) => ({ slug }));
 }
 
 /**
@@ -28,14 +33,14 @@ export default async function DocsPostPage({ params }) {
   const { slug } = await params;
   const post = await loadPost(slug);
   if (!post) notFound();
+  const breadcrumbs = getSidebarBreadcrumbs(sidebarPost, `/docs/${slug}`);
 
   return (
-    <Section variant="transparent" paddingBlock={8}>
-      <MdxArticle
-        frontmatter={post.frontmatter}
-        toc={post.toc}
-        Content={post.Content}
-      />
-    </Section>
+    <MdxArticle
+      frontmatter={post.frontmatter}
+      toc={post.toc}
+      Content={post.Content}
+      breadcrumbs={breadcrumbs}
+    />
   );
 }

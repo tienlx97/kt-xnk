@@ -1,3 +1,5 @@
+'use client';
+
 import { Heading } from '@astryxdesign/core/Heading';
 import {
   colorVars,
@@ -5,25 +7,30 @@ import {
   radiusVars,
   spacingVars,
 } from '@astryxdesign/core/theme/tokens.stylex';
+import { VStack } from '@astryxdesign/core/VStack';
 import * as stylex from '@stylexjs/stylex';
 import Link from 'next/link';
+import { useMemo } from 'react';
+
+import { useTocHighlight } from '../hooks/use-toc-highlight.js';
 
 /** @typedef {import('../api/toc.js').TocItem} TocItem */
 
 const styles = stylex.create({
   toc: {
     display: {
-      default: 'block',
-      '@media (max-width: 1023px)': 'none',
+      default: 'none',
+      '@media (min-width: 96rem)': 'block',
     },
     fontFamily: 'var(--font-family-body)',
-    maxHeight: 'calc(100vh - var(--appshell-header-height, 0px) - 48px)',
-    overflowY: 'auto',
+    insetInlineEnd: 0,
+    marginBlockStart: `calc(-1 * (${spacingVars['--spacing-12']} + ${spacingVars['--spacing-4']}))`,
+    paddingBlockStart: `calc(${spacingVars['--spacing-12']} + ${spacingVars['--spacing-8']})`,
     position: 'sticky',
-    top: 'calc(var(--appshell-header-height, 0px) + 24px)',
+    top: 0,
   },
   heading: {
-    color: colorVars['--color-text-secondary'],
+    color: colorVars['--color-text-accent'],
     fontFamily: 'var(--font-family-body)',
     fontSize: '0.8125rem',
     fontWeight: fontWeightVars['--font-weight-bold'],
@@ -33,36 +40,54 @@ const styles = stylex.create({
     marginBlockEnd: spacingVars['--spacing-3'],
     paddingInline: spacingVars['--spacing-4'],
     textTransform: 'uppercase',
+    width: '100%',
+  },
+  scroller: {
+    maxHeight: 'calc(100vh - 7.5rem)',
+    overflowY: 'auto',
+    overscrollBehavior: 'contain',
+    paddingInlineStart: spacingVars['--spacing-4'],
   },
   list: {
     display: 'flex',
     flexDirection: 'column',
+    gap: spacingVars['--spacing-2'],
     listStyle: 'none',
     margin: 0,
-    padding: 0,
+    paddingBlockEnd: `calc(${spacingVars['--spacing-12']} + ${spacingVars['--spacing-4']})`,
+    paddingBlockStart: 0,
+    paddingInline: 0,
   },
   item: {
+    borderRadius: `${radiusVars['--radius-container']} 0 0 ${radiusVars['--radius-container']}`,
+    fontSize: '0.8125rem',
     margin: 0,
-    padding: 0,
+    paddingInline: spacingVars['--spacing-2'],
+  },
+  activeItem: {
+    backgroundColor: colorVars['--color-background-muted'],
+  },
+  nestedItem: {
+    paddingInlineStart: spacingVars['--spacing-4'],
   },
   link: {
-    backgroundColor: {
-      default: 'transparent',
-      ':hover': colorVars['--color-background-muted'],
+    color: {
+      default: colorVars['--color-text-secondary'],
+      ':hover': colorVars['--color-text-accent'],
     },
-    borderRadius: `${radiusVars['--radius-container']} 0 0 ${radiusVars['--radius-container']}`,
-    color: colorVars['--color-text-secondary'],
     display: 'block',
-    fontSize: '0.8125rem',
     fontWeight: fontWeightVars['--font-weight-normal'],
     lineHeight: 1.5,
     outline: {
       default: 'none',
       ':focus-visible': `2px solid ${colorVars['--color-accent']}`,
     },
-    paddingBlock: spacingVars['--spacing-1'],
-    paddingInline: spacingVars['--spacing-2'],
+    paddingBlock: spacingVars['--spacing-2'],
     textDecoration: 'none',
+  },
+  activeLink: {
+    color: colorVars['--color-text-accent'],
+    fontWeight: fontWeightVars['--font-weight-bold'],
   },
 });
 
@@ -72,22 +97,48 @@ const styles = stylex.create({
  * @param {{ items: TocItem[] }} props
  */
 export function TableOfContents({ items }) {
-  if (items.length === 0) return null;
+  const visibleItems = useMemo(
+    () => items.filter((item) => item.depth <= 3),
+    [items],
+  );
+  const headingHrefs = useMemo(
+    () => visibleItems.map((item) => item.href),
+    [visibleItems],
+  );
+  const currentIndex = useTocHighlight(headingHrefs);
+
+  if (visibleItems.length === 0) return null;
 
   return (
     <nav aria-label="Mục lục" {...stylex.props(styles.toc)}>
       <Heading level={2} accessibilityLevel={2} xstyle={styles.heading}>
         Mục lục
       </Heading>
-      <ul {...stylex.props(styles.list)}>
-        {items.map((item) => (
-          <li key={item.href} {...stylex.props(styles.item)}>
-            <Link href={item.href} {...stylex.props(styles.link)}>
-              {item.value}
-            </Link>
-          </li>
-        ))}
-      </ul>
+      <VStack gap={0} xstyle={styles.scroller}>
+        <ul {...stylex.props(styles.list)}>
+          {visibleItems.map((item, index) => {
+            const isActive = index === currentIndex;
+            return (
+              <li
+                key={item.href}
+                {...stylex.props(
+                  styles.item,
+                  item.depth === 3 && styles.nestedItem,
+                  isActive && styles.activeItem,
+                )}
+              >
+                <Link
+                  href={item.href}
+                  aria-current={isActive ? 'location' : undefined}
+                  {...stylex.props(styles.link, isActive && styles.activeLink)}
+                >
+                  {item.value}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </VStack>
     </nav>
   );
 }

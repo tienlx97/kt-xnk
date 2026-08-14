@@ -7,6 +7,25 @@ This file is the handoff between sessions/agents — write for a reader with zer
 
 ## Harness gaps (mistakes that need a mechanical rule, not a manual fix)
 
+- MDX authoring components have no nested computed-style regression gate. On
+  2026-08-14, browser inspection measured only the outer `Intro` wrapper and
+  missed that its generated MDX paragraph applied the body typography recipe
+  again. The instance is fixed and the inner paragraph is now browser-measured;
+  add a Playwright assertion for both wrapper and rendered child styles when
+  browser tests become part of the gate.
+- MDX alignment has no visual/geometry regression gate. On 2026-08-14 the
+  outer `max-w-7xl` body frame was ported from react.dev without the generated
+  `MaxWidth` (`max-w-4xl ms-0 2xl:mx-auto`) prose wrapper, so PageHeading and
+  article text used different horizontal axes. The instance is fixed and
+  browser-measured at 390px, 1280px, and 2048px; add a Playwright geometry
+  assertion or screenshot baseline when browser tests become part of the gate.
+- MDX layout components do not yet have a DOM-structure regression test. On
+  2026-08-14, a rendered MDX fragment was placed directly inside the responsive
+  CSS Grid; its multiple root nodes became independent grid items and split
+  paragraphs/headings across the content and TOC columns. The instance is fixed
+  by an explicit content-column wrapper. Add a render-level test when the repo
+  adopts a JSX-capable component test runtime; the current Node test runner does
+  not transform JSX components.
 - `harness/checks/project-readiness.sh`'s placeholder scan (angle-bracket
   CLI-argument tokens, an unfilled date-format token, etc. — see the script
   for the exact pattern) didn't account for tool-generated content blocks —
@@ -22,6 +41,436 @@ This file is the handoff between sessions/agents — write for a reader with zer
   log: avoid reproducing the literal placeholder tokens themselves here —
   this file is one of the ones the scan covers, and literal examples in
   the write-up will trip it, as happened while drafting that entry.)
+
+---
+
+## 2026-08-14 — Codex
+
+- **Active change:** finalize the MDX navigation/content work for publication.
+- **Task worked:** reconciled tests with the committed navigable-parent sidebar
+  behavior and the actual 16 Docs article routes. Current breadcrumb ancestors
+  intentionally omit `href` even when the corresponding sidebar group is
+  navigable, preserving `DOCS > NỘI QUY` semantics without linking the current
+  crumb.
+- **Result:** done. Task 1.31 and the `mdx-sidebar-navigation` proposal are now
+  complete.
+- **Verification:** `./harness/verify.sh` passed every gate. Evidence:
+  `harness/runs/20260814-165918-92357/`.
+- **Harness gap:** none.
+- **Next step:** commit and push the completed branch as requested.
+
+---
+
+## 2026-08-14 — Codex
+
+- **Active change:** React.dev-inspired MDX `Note` callout refinement.
+- **Task worked:** replaced the stateful Astryx Banner wrapper with an
+  always-visible server-rendered callout built from Astryx layout, icon, and
+  text primitives. The note uses the KT-XNK accent tint, inset hairline,
+  display-font title, responsive padding, rounded desktop treatment, and a
+  full-bleed mobile treatment. Applied it to the company-specific schedule in
+  `content/docs/noi-quy/gio-lam-viec.mdx`.
+- **Result:** implementation and browser QA complete. The note renders as
+  semantic `<aside role="note">`; desktop measured 12px radius and 20px/24px
+  padding, while 390px mobile measured full viewport width, zero radius, 20px
+  padding, and no horizontal overflow.
+- **Verification:** lint, typecheck, structure, harness tests, production build,
+  and quality thresholds pass. Full gate is blocked by three pre-existing unit
+  test/data mismatches in Docs post count and the `NỘI QUY` sidebar `path`; see
+  `harness/runs/20260814-135035-52115/`. UI evidence:
+  `harness/runs/20260814-mdx-note/gio-lam-viec-note-desktop.png` and
+  `harness/runs/20260814-mdx-note/gio-lam-viec-note-mobile.png`.
+- **Discovered:** reconcile the expected Docs post count (17 vs 16 discovered)
+  and decide whether `NỘI QUY.path` should remain `/docs`; not changed because
+  both are outside the note styling task and overlap current user-owned work.
+- **Next step:** after those unrelated test/data mismatches are resolved, rerun
+  `./harness/verify.sh` and mark task 1.31 done.
+
+---
+
+## 2026-08-14 — Codex
+
+- **Active change:** Docs breadcrumb hierarchy correction.
+- **Task worked:** replaced the hard-coded single `Docs` breadcrumb on article
+  pages with a recursive lookup against `src/sidebarPost.json`, the same source
+  used by the Docs sidebar. The matching article remains the page heading, while
+  its ancestors become the breadcrumb trail; separators now render only between
+  entries.
+- **Result:** done. `/docs/lam-them-gio` renders `DOCS > NỘI QUY`; `Docs` links
+  to `/docs`, `NỘI QUY` is the current non-link item, and `Làm thêm giờ` is not
+  duplicated. A registry-backed unit test also covers the `IT` group and an
+  unknown route.
+- **Verification:** `./harness/verify.sh` passed all gates. Mechanical evidence:
+  `harness/runs/20260814-115246-20534/`. UI screenshot:
+  `harness/runs/20260814-mdx-breadcrumb-group/docs-lam-them-gio-breadcrumb-2048.png`.
+- **Harness gap:** closed for hierarchy derivation with a unit test; visual
+  separator rendering remains covered by the existing MDX visual-regression gap.
+- **Next step:** none.
+
+---
+
+## 2026-08-14 — Codex
+
+- **Active change:** nested MDX typography correction for `Intro`.
+- **Task worked:** corrected the actual rendered node rather than only the
+  wrapper. MDX compiles prose inside `<Intro>` to the shared paragraph mapping,
+  whose body recipe previously reset the wrapper's font family, size, weight,
+  and leading. Paragraphs under the stable `data-mdx-intro` boundary now receive
+  the lead typography through scoped StyleX selectors; ordinary paragraphs are
+  unaffected and the component remains server-only.
+- **Result:** done. Browser inspection on `/docs/noi-quy-chung` confirms both
+  wrapper and nested paragraph use Optimistic Display, 20px, weight 400, and
+  28.572px leading; the paragraph retains primary ink `rgb(30, 42, 39)`.
+- **Verification:** `./harness/verify.sh` passed all gates. Mechanical evidence:
+  `harness/runs/20260814-114140-12796/`. UI screenshot:
+  `harness/runs/20260814-mdx-intro-fix/intro-fixed-2048.png`.
+- **Harness gap:** nested computed-style coverage is logged above.
+- **Next step:** none.
+
+---
+
+## 2026-08-14 — Codex
+
+- **Active change:** React Docs-style MDX `Intro` component.
+- **Task worked:** added `Intro` to the shared MDX authoring map and adapted the
+  supplied React.dev component to Astryx `Text` plus StyleX typography tokens.
+  The component stays server-rendered and uses Optimistic Display, 20px lead
+  text, normal weight, primary ink, block layout, and relaxed tokenized leading.
+  The opening copy in the MDX sample now demonstrates the component.
+- **Result:** done. Browser inspection on `/docs/xin-chao-mdx` measured a DIV
+  rendered by Astryx Text with Optimistic Display, 20px, weight 400,
+  `rgb(30, 42, 39)` primary ink, 28.572px leading, and block display.
+- **Verification:** `./harness/verify.sh` passed all gates. Mechanical evidence:
+  `harness/runs/20260814-112517-36258/`. UI screenshot:
+  `harness/runs/20260814-mdx-intro/intro-2048.png`.
+- **Harness gap:** none beyond the existing MDX visual-regression gap.
+- **Next step:** none.
+
+---
+
+## 2026-08-14 — Codex
+
+- **Active change:** react.dev-style MDX TOC scroll highlighting.
+- **Task worked:** confirmed the existing `remark-flexible-toc` extraction
+  pipeline already generates heading labels, depths, Unicode slugs, and
+  duplicate-heading suffixes correctly. Ported react.dev's missing
+  `useTocHighlight` behavior into `src/shared/hooks/`, kept the client boundary
+  limited to the TOC, coalesced passive scroll events with animation frames,
+  and applied active background/accent/bold styles plus `aria-current`.
+- **Result:** done. Browser checks at 2048x900 selected the first section on
+  load, selected `IT` when its heading reached 83.7px beneath the fixed header,
+  and selected the final visible section at page end. The active item measured
+  teal `rgb(36, 119, 104)`, weight 700, and a non-transparent highlight.
+- **Verification:** `./harness/verify.sh` passed all gates. Mechanical evidence:
+  `harness/runs/20260814-111136-26861/`. UI screenshot:
+  `harness/runs/20260814-toc-highlight/toc-active-it-2048.png`.
+- **Harness gap:** none beyond the existing MDX visual-regression gap.
+- **Next step:** none.
+
+---
+
+## 2026-08-14 — Codex
+
+- **Active change:** MDX heading permalink alignment correction.
+- **Task worked:** matched react.dev's `.mdx-header-anchor svg` display mode by
+  overriding Astryx Icon's block SVG to `display: inline`. Removed the earlier
+  vertical-align override, allowing the glyph to participate in the heading's
+  native text baseline exactly like the upstream implementation.
+- **Result:** done. Browser geometry showed the previous block SVG sitting 14px
+  below the text baseline with a 19.5px center delta. The inline SVG reduces
+  that center delta to 3.5px and visually aligns with the heading text. Clicking
+  the glyph still updates the hash and positions its heading at the 84px safe
+  header offset.
+- **Verification:** `./harness/verify.sh` passed all gates. Mechanical evidence:
+  `harness/runs/20260814-105453-14568/`. UI screenshot:
+  `harness/runs/20260814-105435-mdx-anchor-alignment/mdx-anchor-aligned-2048.png`.
+- **Harness gap:** none beyond the existing MDX visual-regression gap.
+- **Next step:** none.
+
+---
+
+## 2026-08-14 — Codex
+
+- **Active change:** react.dev-style MDX heading permalinks.
+- **Task worked:** audited react.dev's `MDXComponents.tsx` against the local
+  MDX mapping and ported the missing `Heading` behavior. MDX h2-h6 now expose
+  the upstream chain-link glyph beside their text on heading hover or keyboard
+  focus; h1 remains unlinked. Links use generated `rehype-slug` ids, localized
+  accessible labels, KT-XNK accent color, and an 84px header-safe scroll
+  margin. The glyph is isolated in a tiny Client Component so server-rendered
+  MDX never passes a component function across the React Server Component
+  boundary.
+- **Result:** done. Browser checks on `/docs` found zero h1 permalinks and 11
+  h2-h6 permalinks, measured icon opacity changing from 0 to 1 on hover/focus,
+  and confirmed a glyph click updates the URL fragment and places the target
+  heading 84px below the viewport top.
+- **Verification:** `./harness/verify.sh` passed all gates. Mechanical evidence:
+  `harness/runs/20260814-104947-8675/`. UI screenshot:
+  `harness/runs/20260814-104846-mdx-heading-link/mdx-heading-permalink-hover-2048.png`.
+- **Harness gap:** none; the initial server/client-boundary mistake is covered
+  by the existing production-build gate, which rejects that invalid component
+  serialization.
+- **Next step:** none.
+
+---
+
+## 2026-08-14 — Codex
+
+- **Active change:** react.dev Breadcrumbs and TOC style port for MDX pages.
+- **Task worked:** replaced the generic Astryx breadcrumb presentation with
+  react.dev's 13px uppercase/bold/tracking-wide breadcrumb rhythm and trailing
+  20px chevrons. Ported react.dev's TOC offsets, 13px uppercase label, inner
+  scroll rail, 8px list/item spacing, 8px vertical link padding, rounded start
+  edge, depth-3 indentation, and depth-4+ hiding. This is a presentation-only
+  port; existing routes/TOC data remain unchanged. React link/highlight colors
+  map to KT-XNK teal/mint tokens rather than React's cyan palette.
+- **Result:** done. Browser measurements confirm the breadcrumb and TOC label
+  at 13px/700 with 0.025em tracking, the chevron at 20px, TOC heading y=80,
+  link padding 8px, and mobile TOC display none. Desktop/mobile screenshots
+  show the expected layout without overflow.
+- **Verification:** `./harness/verify.sh` passed all gates. Evidence and UI
+  screenshots: `harness/runs/20260814-102945-95115/`.
+- **Harness gap:** none beyond the existing visual-regression gap above.
+- **Next step:** none.
+
+---
+
+## 2026-08-14 — Codex
+
+- **Active change:** semantic refinement of the MDX color hierarchy.
+- **Task worked:** returned PageHeading and all article h1-h6 headings to the
+  neutral primary ink, while reserving brand teal for breadcrumb items and
+  separators, inline links, markdown strong emphasis, TOC labeling, and the
+  copy action. Retained the mint h2 divider and callout surfaces as quiet
+  structural accents. Breadcrumb coloring is scoped through inherited Astryx
+  color tokens rather than a global component override.
+- **Result:** done. Browser computed styles measure headings at
+  `rgb(30, 42, 39)` and breadcrumbs/links/strong emphasis at
+  `rgb(36, 119, 104)`. Desktop and 390px mobile screenshots preserve the MDX
+  alignment and wrapping contracts.
+- **Verification:** `./harness/verify.sh` passed all gates. Evidence and UI
+  screenshots: `harness/runs/20260814-101958-86869/`.
+- **Harness gap:** none beyond the existing visual-regression gap above.
+- **Next step:** none.
+
+---
+
+## 2026-08-14 — Codex
+
+- **Active change:** MDX document color hierarchy.
+- **Task worked:** replaced the monochrome MDX presentation with a restrained
+  KT-XNK brand hierarchy. Page titles and h1-h3 headings use the logo teal;
+  h2 headings gain a mint divider; inline links are teal and permanently
+  underlined; blockquotes use the mint accent surface; TOC and copy-link
+  affordances use the same accent. Body copy remains neutral for long-form
+  readability. The copy icon button now also exposes its accessible label.
+- **Result:** done. Browser computed styles confirm `rgb(36, 119, 104)` for
+  PageHeading, section headings, links, TOC heading, and copy action; MDX links
+  retain an underline. Desktop and 390px mobile screenshots show no overflow
+  or layout regression.
+- **Verification:** `./harness/verify.sh` passed all gates. Evidence and UI
+  screenshots: `harness/runs/20260814-095912-77927/`.
+- **Harness gap:** none beyond the existing visual-regression gap above.
+- **Next step:** none.
+
+---
+
+## 2026-08-14 — Codex
+
+- **Active change:** exact MDX PageHeading/article alignment with react.dev.
+- **Task worked:** added the missing prose-level `MaxWidth` wrapper used by
+  react.dev's `prepareMDX.js`/MDX component map. The body retains its outer
+  `max-w-7xl` frame for wide content, while ordinary prose now uses
+  `max-w-4xl ms-0 2xl:mx-auto`, matching PageHeading's horizontal contract.
+  Added stable layout markers for geometry-based browser checks.
+- **Result:** done. At 2048px PageHeading and prose both measure x=576 and
+  width=896 while the TOC occupies x=1728..2048; at 1280px both measure x=368
+  and width=864 with TOC hidden; at 390px both measure x=20 and width=350.
+- **Verification:** `./harness/verify.sh` passed all gates. Browser screenshots
+  are `mdx-layout-{390,1280,2048}.png` in evidence directory
+  `harness/runs/20260814-094550-69001/`.
+- **Harness gap:** logged above; geometry is verified for this change but not
+  yet run automatically by the repository gate.
+- **Next step:** none.
+
+---
+
+## 2026-08-14 — Codex
+
+- **Active change:** MDX PageHeading/body alignment correction against react.dev.
+- **Task worked:** corrected the responsive hierarchy so the 2xl layout now
+  matches react.dev's outer `sidebar | main | toc` model. Within the AppShell
+  content area, MDX uses `main | 20rem TOC`; PageHeading (`max-w-4xl`) and body
+  (`max-w-7xl`) each center within main, rather than PageHeading centering over
+  the combined main-plus-TOC width. This removes the extra rightward offset
+  while preserving their intentional different maximum widths.
+- **Result:** done.
+- **Verification:** `./harness/verify.sh` passed all gates. Evidence:
+  `harness/runs/20260814-093202-60510/`.
+- **Harness gap:** visual automation remains unavailable because local Chrome
+  lacks `libnspr4.so`; the corrected column hierarchy is mechanically covered
+  by typecheck/build but not screenshot diffing.
+- **Next step:** none.
+
+---
+
+## 2026-08-14 — Codex
+
+- **Active change:** MDX responsive-grid regression reported from visual review.
+- **Task worked:** fixed the MDX body fragment being mounted directly into the
+  two-column Grid. MDX can emit many top-level DOM nodes, so each paragraph,
+  heading, or list became an independent grid item and flowed into the TOC
+  column. The Grid now has exactly two conceptual children: one explicit
+  content-column wrapper containing all rendered MDX, and the TOC rail.
+- **Result:** done.
+- **Verification:** `./harness/verify.sh` passed all gates. Evidence:
+  `harness/runs/20260814-092718-56214/`.
+- **Harness gap:** logged above; a JSX-capable render test should mechanically
+  enforce the Grid's direct-child contract in future.
+- **Next step:** none.
+
+---
+
+## 2026-08-14 — Codex
+
+- **Active change:** `openspec/changes/mdx-sidebar-navigation/` React Docs content breakpoints.
+- **Task worked:** ported the responsive relationship from react.dev's
+  `Layout/Page.tsx`, `PageHeading.tsx`, and Tailwind defaults into the MDX
+  frame. MDX routes now remove AppShell's generic padding, apply 20px content
+  insets below 640px and 48px from 640px, constrain the heading to 56rem and
+  center it only from 1536px, constrain the body to 80rem, and introduce a
+  21rem TOC rail only from 1536px. Below that breakpoint the article keeps the
+  full content column. All behavior is CSS-driven; no viewport subscriptions
+  or resize listeners were added.
+- **Result:** done.
+- **Verification:** production build output contains the expected spacing
+  tokens and 21rem rail; `./harness/verify.sh` passed all gates. Evidence:
+  `harness/runs/20260814-092141-52007/`.
+- **Harness gap:** screenshot automation remains unavailable because the local
+  Chrome runtime lacks `libnspr4.so`; responsive contracts were checked in
+  source and compiled output.
+- **Next step:** none.
+
+---
+
+## 2026-08-14 — Codex
+
+- **Active change:** `openspec/changes/mdx-sidebar-navigation/` React Docs PageHeading.
+- **Task worked:** applied the structure of react.dev's open-source
+  `PageHeading.tsx` to every rendered MDX article: a compact top row with
+  breadcrumbs and a copy action, followed by a balanced 5xl display heading
+  and optional update date. Styling uses KT-XNK/Astryx theme tokens and
+  primitives. The heading remains server-rendered; only the clipboard action
+  is a small client component. Docs and Tutorial child pages now expose their
+  collection breadcrumb.
+- **Result:** done.
+- **Verification:** production SSR checks confirmed the large heading, copy
+  action, and Docs breadcrumb on the relevant routes; `./harness/verify.sh`
+  passed all gates. Evidence: `harness/runs/20260814-090756-44019/`.
+- **Harness gap:** interactive screenshot/click automation remains unavailable
+  because local Chrome is missing `libnspr4.so`; production markup and build
+  validate the server/client boundary.
+- **Next step:** none.
+
+---
+
+## 2026-08-14 — Codex
+
+- **Active change:** `openspec/changes/mdx-sidebar-navigation/` Docs landing content.
+- **Task worked:** replaced the `/docs` list view with a long-form
+  `content/docs/index.mdx` landing article. It explains how to use the internal
+  knowledge base, introduces the Nội quy and IT domains, links to all 16 child
+  documents in context, and includes guidance for reporting incidents and
+  proposing documentation updates. The content pipeline reserves `index.mdx`
+  for `/docs`, excludes it from `/docs/[slug]`, and no longer carries the now
+  unused Docs post-list component or list-loading API.
+- **Result:** done.
+- **Verification:** unit coverage confirms the landing frontmatter/TOC and the
+  absence of an `/docs/index` slug; `./harness/verify.sh` passed all gates.
+  Evidence: `harness/runs/20260814-090359-39993/`.
+- **Harness gap:** browser screenshots remain unavailable because the local
+  Chrome runtime lacks `libnspr4.so`; production rendering is covered by the
+  build and MDX compilation tests.
+- **Next step:** none.
+
+---
+
+## 2026-08-14 — Codex
+
+- **Active change:** `openspec/changes/mdx-sidebar-navigation/` automatic Docs content pipeline.
+- **Task worked:** removed the handwritten `docsPostSlugs` array and
+  `components/post-loader.js`. Added a React Docs-inspired content API that
+  recursively discovers `content/docs/**/*.mdx`, rejects duplicate filename
+  slugs, compiles trusted repository MDX at build time, and derives static
+  params, frontmatter, TOC, and index entries directly from files. Moved the
+  MDX component mapping into shared UI so both static Tutorial MDX and compiled
+  Docs MDX render through the same components. Adding or deleting a Docs file
+  no longer requires editing a JavaScript import registry.
+- **Result:** done.
+- **Verification:** discovery/compilation unit coverage passed for nested
+  Nội quy and IT content; typecheck and production build passed; full
+  `./harness/verify.sh` passed. Evidence:
+  `harness/runs/20260814-085743-35549/`.
+- **Harness gap:** sidebar/content consistency is identified in the change
+  design as the next mechanical check; filesystem discovery itself is covered.
+- **Next step:** none.
+
+---
+
+## 2026-08-14 — Codex
+
+- **Active change:** `openspec/changes/mdx-sidebar-navigation/` content ownership cleanup.
+- **Task worked:** moved all company-authored Docs MDX out of
+  `src/features/docs/components/posts/` into `content/docs/`, organized under
+  `noi-quy/` and `it/` with the introductory article at the Docs root. Updated
+  the feature's static source registry so Turbopack can still analyze every
+  import while TOC extraction resolves each nested filesystem path. Documented
+  `content/docs/` as an architecture-level content boundary.
+- **Result:** done.
+- **Verification:** typecheck and production build confirm MDX imports outside
+  `src/` compile correctly; `./harness/verify.sh` passed all gates. Evidence:
+  `harness/runs/20260814-084544-26105/`.
+- **Harness gap:** none; typecheck caught and rejected the loader registry's
+  stale JSDoc contract during the first run.
+- **Next step:** none.
+
+---
+
+## 2026-08-14 — Codex
+
+- **Active change:** `openspec/changes/mdx-sidebar-navigation/` Docs group behavior correction.
+- **Task worked:** corrected `NỘI QUY` and `IT` from static section headings to
+  pathless disclosure groups. Each full parent row now toggles its nested list;
+  a group containing the current article starts expanded, while all 16 article
+  rows remain normal navigable links. Added a registry test that locks the
+  intended two-group structure and 7/9 child counts.
+- **Result:** done.
+- **Verification:** `./harness/verify.sh` passed all gates. Evidence:
+  `harness/runs/20260814-083514-19167/`.
+- **Harness gap:** none; the first state-sync implementation was rejected by
+  the existing React hooks lint rule and replaced before completion.
+- **Next step:** none.
+
+---
+
+## 2026-08-14 — Codex
+
+- **Active change:** `openspec/changes/mdx-sidebar-navigation/` company Docs content structure.
+- **Task worked:** added route-backed `NỘI QUY` and `IT` sections to
+  `sidebarPost.json`. Added 16 MDX documents covering seven company-policy
+  topics and nine IT topics, then registered every slug in the static post
+  loader so sidebar links, static params, metadata, TOC extraction, and the
+  Docs index all use the same content set.
+- **Result:** done.
+- **Verification:** `./harness/verify.sh` passed all gates. Authenticated SSR
+  checks of `/docs/noi-quy-chung` and `/docs/may-tinh` confirmed both section
+  labels, article content, and current-page state. Evidence:
+  `harness/runs/20260814-082636-12913/`.
+- **Harness gap:** browser screenshot automation could not start because the
+  installed Chrome runtime is missing the host library `libnspr4.so`; SSR
+  artifacts were captured as the available UI evidence.
+- **Next step:** replace the initial policy guidance with company-approved
+  wording and operational details when those sources become available.
 
 ---
 

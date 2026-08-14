@@ -1,8 +1,5 @@
-import { Heading } from '@astryxdesign/core/Heading';
-import { Section } from '@astryxdesign/core/Section';
-import { VStack } from '@astryxdesign/core/VStack';
-
-import { loadAllPosts, PostList } from '../../../features/docs/index.js';
+import { loadDocsLanding } from '../../../features/docs/index.js';
+import { MdxArticle } from '../../../shared/components/mdx-article.jsx';
 
 export const metadata = {
   title: 'Tài liệu · KT-XNK',
@@ -10,14 +7,13 @@ export const metadata = {
 };
 
 export default async function DocsIndexPage() {
-  const posts = await loadAllPosts();
+  const landing = await loadDocsLanding();
 
   return (
-    <Section variant="transparent" paddingBlock={8}>
-      <VStack gap={4}>
-        <Heading level={1}>Tài liệu công ty</Heading>
-        <PostList posts={posts} basePath="/docs" />
-      </VStack>
-    </Section>
+    <MdxArticle
+      frontmatter={landing.frontmatter}
+      toc={landing.toc}
+      Content={landing.Content}
+    />
   );
 }
