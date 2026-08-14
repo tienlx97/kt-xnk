@@ -1,6 +1,6 @@
 # Acceptance: React.dev Docs Copycat
 
-**Accepted:** 2026-08-14, after typography re-audit
+**Accepted:** 2026-08-15, after SideNav accordion re-audit
 **Reference:** local `../react.dev` clone
 **Route fixture:** `/docs/gio-lam-viec`
 
@@ -70,6 +70,12 @@ selection remains visible through color, background, and weight 700.
   resizing across the 1024px desktop boundary.
 - SideNav disclosures preserve semantic buttons, active links, keyboard focus,
   and inert closed descendants.
+- SideNav disclosures are an exclusive accordion: at 1536px, opening IT on
+  `/docs/gio-lam-viec` changed NỘI QUY to `aria-expanded=false` and its child
+  region to `aria-hidden=true`; closing IT left both groups collapsed, and
+  navigating to `/docs/may-tinh` reopened IT as the active route's group. Group
+  headings remained 15px throughout. Screenshots are under
+  `harness/runs/20260815-react-dev-docs-shell-side-nav-accordion/`.
 - TOC highlighting follows the fixed-header offset and selects the final item
   at page end.
 - MDX callouts, disclosures, figures, media, headings, links, quotes, and code
@@ -97,4 +103,5 @@ widths, or navigation state.
   `harness/PROGRESS.md`.
 - Unit/API/source-contract suite covers MDX discovery, frontmatter, heading
   IDs, TOC, width grouping, registry parity, semantic MDX UI, shell geometry,
-  breakpoint boundaries, active navigation, and TOC selection.
+  breakpoint boundaries, exclusive SideNav state, active navigation, and TOC
+  selection.

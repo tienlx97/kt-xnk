@@ -7,6 +7,12 @@ This file is the handoff between sessions/agents — write for a reader with zer
 
 ## Harness gaps (mistakes that need a mechanical rule, not a manual fix)
 
+- **Resolved 2026-08-15:** SideNav disclosure ownership was not covered by a
+  behavioral regression test. Each group kept independent local state, so
+  opening IT did not collapse NỘI QUY. Task 4.4 hoisted one pathname-aware
+  selection to `AppSideNav`, added pure accordion/active-route tests and a
+  source contract that rejects the old per-group state pattern, and captured
+  the two-group click flow in browser evidence.
 - **Resolved 2026-08-14:** the initial react.dev copycat acceptance pinned
   region geometry but not its typography scale. A user review correctly found
   H1/H2, SideNav, TOC, body leading/weight, Intro, callout, caption, code, and

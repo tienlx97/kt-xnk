@@ -83,6 +83,9 @@ test('ports the react.dev sidebar tree without Astryx UI primitives', () => {
   );
   assert.match(sideNavSource, /transitionDuration: '250ms'/);
   assert.match(sideNavSource, /gridTemplateRows: '1fr'/);
+  assert.match(sideNavSource, /expandedGroupKey === routeKey/);
+  assert.match(sideNavSource, /toggleSidebarGroup\(/);
+  assert.doesNotMatch(sideNavSource, /useState\(containsActiveRoute\)/);
   assert.match(sideNavSource, /fontSize: '0\.9375rem'/);
   assert.match(sideNavSource, /fontSize: '0\.8125rem'/);
   assert.match(

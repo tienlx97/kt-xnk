@@ -13,6 +13,62 @@ export function isNavLinkActive(pathname, href) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+/**
+ * Return a stable identity for a top-level sidebar record.
+ * @param {SidebarRouteItem} route
+ * @param {number} [index]
+ */
+export function getSidebarRouteKey(route, index = 0) {
+  return route.path ?? route.sectionHeader ?? route.title ?? `route-${index}`;
+}
+
+/**
+ * Find the one disclosure group that should be open for the current route.
+ * Child matches take precedence over a broad parent path such as `/docs`, so
+ * `/docs/may-tinh` opens IT instead of the earlier NỘI QUY overview group.
+ * @param {SidebarRouteItem[]} routes
+ * @param {string} pathname
+ * @returns {string | null}
+ */
+export function getActiveSidebarGroupKey(routes, pathname) {
+  const groups = routes.filter((route) => route.routes);
+  const childMatch = groups.find((route) =>
+    route.routes?.some((child) =>
+      child.path ? isNavLinkActive(pathname, child.path) : false,
+    ),
+  );
+  const parentMatch = groups.find((route) =>
+    route.path ? isNavLinkActive(pathname, route.path) : false,
+  );
+  const activeGroup = childMatch ?? parentMatch;
+
+  return activeGroup ? getSidebarRouteKey(activeGroup) : null;
+}
+
+/**
+ * Compute the next exclusive accordion selection for a disclosure click.
+ * Keeping the pathname in the selection lets the component derive a fresh
+ * active group after navigation without synchronizing state in an effect.
+ * @param {{ pathname: string, groupKey: string | null } | null} selection
+ * @param {string} pathname
+ * @param {string | null} activeGroupKey
+ * @param {string} toggledGroupKey
+ */
+export function toggleSidebarGroup(
+  selection,
+  pathname,
+  activeGroupKey,
+  toggledGroupKey,
+) {
+  const currentGroupKey =
+    selection?.pathname === pathname ? selection.groupKey : activeGroupKey;
+
+  return {
+    pathname,
+    groupKey: currentGroupKey === toggledGroupKey ? null : toggledGroupKey,
+  };
+}
+
 /** @typedef {import('../types/index.js').SidebarRouteItem} SidebarRouteItem */
 
 /**

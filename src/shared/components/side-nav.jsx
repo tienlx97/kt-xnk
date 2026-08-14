@@ -10,7 +10,12 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Fragment, useState } from 'react';
 
-import { isNavLinkActive } from '../api/nav.js';
+import {
+  getActiveSidebarGroupKey,
+  getSidebarRouteKey,
+  isNavLinkActive,
+  toggleSidebarGroup,
+} from '../api/nav.js';
 
 /** @typedef {import('../types/index.js').SidebarRouteItem} SidebarRouteItem */
 
@@ -169,20 +174,14 @@ function SideNavChevron({ isExpanded }) {
  * React Docs-style route group. Groups with an overview `path` keep the parent
  * row as a navigable link. Pure category groups omit `path` and use the full
  * row as a disclosure button.
- * @param {{ route: SidebarRouteItem, pathname: string, onNavigate: () => void }} props
+ * @param {{ route: SidebarRouteItem, pathname: string, isExpanded: boolean, onToggle: () => void, onNavigate: () => void }} props
  */
-function SideNavGroup({ route, pathname, onNavigate }) {
+function SideNavGroup({ route, pathname, isExpanded, onToggle, onNavigate }) {
   const routePath = route.path;
-  const containsActiveRoute =
-    (routePath ? isNavLinkActive(pathname, routePath) : false) ||
-    (route.routes?.some((child) =>
-      child.path ? isNavLinkActive(pathname, child.path) : false,
-    ) ??
-      false);
-  const [isExpanded, setIsExpanded] = useState(containsActiveRoute);
   const isSelected = routePath ? pathname === routePath : false;
-  const groupKey = routePath?.slice(1) ?? route.title ?? 'group';
-  const childrenId = `side-nav-${groupKey.toLowerCase().replaceAll(/[^a-z0-9]+/g, '-')}-children`;
+  const groupKey = getSidebarRouteKey(route);
+  const childrenKey = routePath?.slice(1) ?? groupKey;
+  const childrenId = `side-nav-${childrenKey.toLowerCase().replaceAll(/[^a-z0-9]+/g, '-')}-children`;
 
   const label = (
     <>
@@ -209,7 +208,7 @@ function SideNavGroup({ route, pathname, onNavigate }) {
           type="button"
           aria-controls={childrenId}
           aria-expanded={isExpanded}
-          onClick={() => setIsExpanded((expanded) => !expanded)}
+          onClick={onToggle}
           {...stylex.props(styles.row)}
         >
           {label}
@@ -286,11 +285,23 @@ export function AppSideNav({
   onNavigate = () => {},
 }) {
   const pathname = usePathname();
+  const [expandedSelection, setExpandedSelection] = useState(
+    /** @type {{ pathname: string, groupKey: string | null } | null} */ (null),
+  );
   const activeRouteTree = routeTrees.find((routeTree) =>
     isNavLinkActive(pathname, routeTree.path),
   );
 
   if (!activeRouteTree) return null;
+
+  const activeGroupKey = getActiveSidebarGroupKey(
+    activeRouteTree.routes,
+    pathname,
+  );
+  const expandedGroupKey =
+    expandedSelection?.pathname === pathname
+      ? expandedSelection.groupKey
+      : activeGroupKey;
 
   return (
     <nav
@@ -299,11 +310,7 @@ export function AppSideNav({
     >
       <ul {...stylex.props(styles.list)}>
         {activeRouteTree.routes.map((route, index) => {
-          const routeKey =
-            route.path ??
-            route.sectionHeader ??
-            route.title ??
-            `route-${index}`;
+          const routeKey = getSidebarRouteKey(route, index);
 
           return (
             <Fragment key={`${routeKey}-${index}`}>
@@ -325,6 +332,17 @@ export function AppSideNav({
                 <SideNavGroup
                   route={route}
                   pathname={pathname}
+                  isExpanded={expandedGroupKey === routeKey}
+                  onToggle={() =>
+                    setExpandedSelection((selection) =>
+                      toggleSidebarGroup(
+                        selection,
+                        pathname,
+                        activeGroupKey,
+                        routeKey,
+                      ),
+                    )
+                  }
                   onNavigate={onNavigate}
                 />
               ) : !route.path ? null : (

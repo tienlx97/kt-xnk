@@ -65,3 +65,4 @@ are recorded in `acceptance.md`.
 | 2026-08-14 | Preserve brand, auth, routes, and Vietnamese content. | These are product requirements, not styling details from the reference implementation. |
 | 2026-08-14 | Retain upstream MIT notices in any substantially copied source file. | react.dev's implementation is MIT-licensed and attribution must survive source adaptation. |
 | 2026-08-14 | Reopen acceptance for an exact typography audit. | Runtime review found that geometry was pinned but the upstream 17px body and 40/28/24/20/17px heading scale had not been mechanically enforced. |
+| 2026-08-15 | Reopen acceptance for exclusive SideNav disclosure state. | Runtime review found that each group owned independent state, so opening a second group left the previous group expanded instead of behaving as one accordion. |

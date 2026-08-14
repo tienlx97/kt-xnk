@@ -53,3 +53,7 @@ Rules:
   PageHeading, MDX prose/headings, Intro/callouts/code/media captions, SideNav,
   TOC, breadcrumbs, and copy action — verify: a source contract plus computed
   styles at mobile and desktop widths, then refresh acceptance documentation.
+- [x] 4.4 Make SideNav groups an exclusive accordion so opening one group
+  collapses the previously open group, while route changes reopen the group
+  containing the active page — verify: pure state tests, source contract,
+  browser click flow, and `./harness/verify.sh`.
