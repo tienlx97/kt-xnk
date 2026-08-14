@@ -24,10 +24,10 @@ const styles = stylex.create({
     display: 'inline-flex',
     flexShrink: 0,
     fontFamily: 'var(--font-family-body)',
-    fontSize: '0.875rem',
-    fontWeight: fontWeightVars['--font-weight-medium'],
+    fontSize: '0.8125rem',
+    fontWeight: fontWeightVars['--font-weight-bold'],
     gap: '6px',
-    lineHeight: 1.5,
+    lineHeight: 1.25,
     outline: {
       default: 'none',
       ':focus-visible': `2px solid ${colorVars['--color-accent']}`,

@@ -1,7 +1,6 @@
 import {
   colorVars,
   fontWeightVars,
-  typeScaleVars,
   typographyVars,
 } from '@astryxdesign/core/theme/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
@@ -11,9 +10,9 @@ const styles = stylex.create({
     color: colorVars['--color-text-primary'],
     display: 'block',
     fontFamily: typographyVars['--font-family-heading'],
-    fontSize: typeScaleVars['--text-large-size'],
-    fontWeight: fontWeightVars['--font-weight-normal'],
-    lineHeight: typeScaleVars['--text-supporting-leading'],
+    fontSize: '20px',
+    fontWeight: fontWeightVars['--font-weight-medium'],
+    lineHeight: '32.5px',
   },
 });
 

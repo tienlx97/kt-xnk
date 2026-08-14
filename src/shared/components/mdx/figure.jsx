@@ -13,8 +13,8 @@ const styles = stylex.create({
   caption: {
     color: colorVars['--color-text-secondary'],
     fontFamily: 'var(--font-family-body)',
-    fontSize: '0.875rem',
-    lineHeight: 1.5,
+    fontSize: '17px',
+    lineHeight: 1.25,
     textAlign: 'center',
   },
 });

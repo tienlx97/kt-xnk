@@ -1,4 +1,8 @@
-import { colorVars, spacingVars } from '@astryxdesign/core/theme/tokens.stylex';
+import {
+  colorVars,
+  fontWeightVars,
+  spacingVars,
+} from '@astryxdesign/core/theme/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
 
 const styles = stylex.create({
@@ -24,7 +28,8 @@ const styles = stylex.create({
   content: {
     color: colorVars['--color-text-secondary'],
     fontFamily: 'var(--font-family-body)',
-    fontSize: '0.875rem',
+    fontSize: '0.6875rem',
+    lineHeight: '30px',
     marginInline: 'auto',
     maxWidth: '80rem',
     paddingBlock: {
@@ -34,6 +39,9 @@ const styles = stylex.create({
     },
   },
   copyright: {
+    fontSize: '0.6875rem',
+    fontWeight: fontWeightVars['--font-weight-medium'],
+    lineHeight: '30px',
     margin: 0,
   },
 });

@@ -83,7 +83,8 @@ test('ports the react.dev sidebar tree without Astryx UI primitives', () => {
   );
   assert.match(sideNavSource, /transitionDuration: '250ms'/);
   assert.match(sideNavSource, /gridTemplateRows: '1fr'/);
-  assert.match(sideNavSource, /fontSize: '1rem'/);
+  assert.match(sideNavSource, /fontSize: '0\.9375rem'/);
+  assert.match(sideNavSource, /fontSize: '0\.8125rem'/);
 });
 
 test('ports content regions to semantic StyleX with exact width axes', () => {
@@ -104,7 +105,7 @@ test('ports content regions to semantic StyleX with exact width axes', () => {
 
 test('matches react.dev TOC typography and sticky scroller geometry', () => {
   const tocSource = contentSources.at(-1);
-  assert.match(tocSource, /fontSize: '0\.875rem'/);
+  assert.match(tocSource, /fontSize: '0\.8125rem'/);
   assert.match(tocSource, /borderEndStartRadius: '12px'/);
   assert.match(tocSource, /borderStartStartRadius: '12px'/);
   assert.match(tocSource, /maxHeight: 'calc\(100vh - 7\.5rem\)'/);
@@ -124,8 +125,27 @@ test('keeps the scoped MDX UI semantic while retaining theme variables', () => {
 
 test('preserves Intro typography on its generated MDX paragraph', () => {
   const mdxComponentsSource = mdxUiSources.at(1);
-  assert.match(mdxComponentsSource, /introParagraph/);
+  assert.match(mdxComponentsSource, /paragraph/);
   assert.match(mdxComponentsSource, /:is\(\[data-mdx-intro\] \*\)/);
-  assert.match(mdxComponentsSource, /--text-large-size/);
-  assert.match(mdxComponentsSource, /--text-supporting-leading/);
+  assert.match(mdxComponentsSource, /fontSize: '20px'/);
+  assert.match(mdxComponentsSource, /'32\.5px'/);
+});
+
+test('pins the exact react.dev documentation typography scale', () => {
+  const combinedContentSource = contentSources.join('\n');
+  const mdxComponentsSource = mdxUiSources.at(1);
+  assert.match(shellSource, /fontSize: '17px'/);
+  assert.match(shellSource, /lineHeight: '30px'/);
+  assert.match(combinedContentSource, /fontSize: '40px'/);
+  assert.match(mdxComponentsSource, /h1: \{ fontSize: '40px' \}/);
+  assert.match(
+    mdxComponentsSource,
+    /h2: \{ fontSize: '28px', lineHeight: '40px' \}/,
+  );
+  assert.match(
+    mdxComponentsSource,
+    /h3: \{ fontSize: '24px', lineHeight: '36px' \}/,
+  );
+  assert.match(mdxComponentsSource, /fontSize: '13\.6px'/);
+  assert.match(mdxComponentsSource, /lineHeight: '24px'/);
 });

@@ -62,10 +62,10 @@ const styles = stylex.create({
     cursor: 'pointer',
     display: 'flex',
     fontFamily: 'inherit',
-    fontSize: '1rem',
+    fontSize: '0.9375rem',
     fontWeight: fontWeightVars['--font-weight-bold'],
     justifyContent: 'space-between',
-    lineHeight: 1.5,
+    lineHeight: '30px',
     outline: {
       default: 'none',
       ':focus-visible': `2px solid ${colorVars['--color-accent']}`,
@@ -80,9 +80,9 @@ const styles = stylex.create({
   },
   childRow: {
     color: colorVars['--color-text-secondary'],
-    fontSize: '1rem',
+    fontSize: '0.9375rem',
     fontWeight: fontWeightVars['--font-weight-normal'],
-    lineHeight: 1.5,
+    lineHeight: '30px',
     paddingInlineStart: spacingVars['--spacing-6'],
   },
   selected: {
@@ -137,9 +137,9 @@ const styles = stylex.create({
   },
   sectionHeader: {
     color: colorVars['--color-text-secondary'],
-    fontSize: '0.875rem',
+    fontSize: '0.8125rem',
     fontWeight: fontWeightVars['--font-weight-bold'],
-    lineHeight: 1.5,
+    lineHeight: '30px',
     marginBlockEnd: spacingVars['--spacing-1'],
     marginBlockStart: 0,
     marginInlineEnd: 0,

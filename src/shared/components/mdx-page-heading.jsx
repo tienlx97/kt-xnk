@@ -28,7 +28,7 @@ const styles = stylex.create({
     fontSize: '0.8125rem',
     fontWeight: fontWeightVars['--font-weight-bold'],
     letterSpacing: '0.025em',
-    lineHeight: 1.5,
+    lineHeight: '30px',
     marginInlineEnd: spacingVars['--spacing-1'],
     outline: {
       default: 'none',
@@ -69,9 +69,9 @@ const styles = stylex.create({
   title: {
     color: colorVars['--color-text-primary'],
     fontFamily: 'var(--font-family-display)',
-    fontSize: 'var(--font-size-5xl)',
+    fontSize: '40px',
     fontWeight: fontWeightVars['--font-weight-bold'],
-    lineHeight: 1.25,
+    lineHeight: '50px',
     margin: 0,
     overflowWrap: 'anywhere',
     textWrap: 'balance',

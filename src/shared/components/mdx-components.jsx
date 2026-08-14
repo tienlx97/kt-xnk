@@ -4,7 +4,6 @@ import {
   fontWeightVars,
   radiusVars,
   spacingVars,
-  typeScaleVars,
   typographyVars,
 } from '@astryxdesign/core/theme/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
@@ -37,6 +36,7 @@ const listStyles = stylex.create({
     paddingInlineStart: spacingVars['--spacing-6'],
   },
   li: {
+    lineHeight: 1.625,
     marginBlock: spacingVars['--spacing-1'],
   },
 });
@@ -46,17 +46,17 @@ const contentStyles = stylex.create({
     color: colorVars['--color-text-primary'],
     fontFamily: typographyVars['--font-family-heading'],
     fontWeight: fontWeightVars['--font-weight-bold'],
-    lineHeight: 1.25,
+    lineHeight: '50px',
     margin: 0,
     paddingInlineEnd: spacingVars['--spacing-5'],
     scrollMarginTop: `calc(4rem + ${spacingVars['--spacing-5']})`,
   },
-  h1: { fontSize: '3rem' },
-  h2: { fontSize: '1.5rem' },
-  h3: { fontSize: '1.25rem' },
-  h4: { fontSize: '1.125rem' },
-  h5: { fontSize: '1rem' },
-  h6: { fontSize: '0.875rem' },
+  h1: { fontSize: '40px' },
+  h2: { fontSize: '28px', lineHeight: '40px' },
+  h3: { fontSize: '24px', lineHeight: '36px' },
+  h4: { fontSize: '20px', lineHeight: '36px' },
+  h5: { fontSize: '17px', lineHeight: '36px' },
+  h6: { fontSize: '15px', lineHeight: '30px' },
   headingAnchor: {
     color: colorVars['--color-text-accent'],
     display: 'inline-block',
@@ -90,9 +90,22 @@ const contentStyles = stylex.create({
     paddingInlineStart: spacingVars['--spacing-6'],
   },
   paragraph: {
-    fontFamily: typographyVars['--font-family-body'],
-    fontSize: '1.0625rem',
-    lineHeight: 1.5,
+    fontFamily: {
+      default: typographyVars['--font-family-body'],
+      ':is([data-mdx-intro] *)': typographyVars['--font-family-heading'],
+    },
+    fontSize: {
+      default: '17px',
+      ':is([data-mdx-intro] *)': '20px',
+    },
+    fontWeight: {
+      default: fontWeightVars['--font-weight-medium'],
+      ':is([data-mdx-intro] *)': fontWeightVars['--font-weight-medium'],
+    },
+    lineHeight: {
+      default: '30px',
+      ':is([data-mdx-intro] *)': '32.5px',
+    },
     margin: 0,
     whiteSpace: 'pre-wrap',
   },
@@ -100,7 +113,7 @@ const contentStyles = stylex.create({
     backgroundColor: colorVars['--color-background-muted'],
     borderRadius: radiusVars['--radius-element'],
     fontFamily: 'var(--font-family-code)',
-    fontSize: '0.875em',
+    fontSize: 'calc(1em - 10%)',
     paddingBlock: spacingVars['--spacing-0-5'],
     paddingInline: spacingVars['--spacing-1'],
   },
@@ -111,8 +124,8 @@ const contentStyles = stylex.create({
     borderStyle: 'solid',
     borderWidth: borderVars['--border-width'],
     fontFamily: 'var(--font-family-code)',
-    fontSize: '0.875rem',
-    lineHeight: 1.6,
+    fontSize: '13.6px',
+    lineHeight: '24px',
     margin: 0,
     overflowX: 'auto',
     padding: spacingVars['--spacing-4'],
@@ -127,24 +140,6 @@ const contentStyles = stylex.create({
   },
   emphasis: {
     color: colorVars['--color-text-accent'],
-  },
-  introParagraph: {
-    fontFamily: {
-      default: null,
-      ':is([data-mdx-intro] *)': typographyVars['--font-family-heading'],
-    },
-    fontSize: {
-      default: null,
-      ':is([data-mdx-intro] *)': typeScaleVars['--text-large-size'],
-    },
-    fontWeight: {
-      default: null,
-      ':is([data-mdx-intro] *)': fontWeightVars['--font-weight-normal'],
-    },
-    lineHeight: {
-      default: null,
-      ':is([data-mdx-intro] *)': typeScaleVars['--text-supporting-leading'],
-    },
   },
 });
 
@@ -296,11 +291,7 @@ export function useMDXComponents(components) {
     ),
     /** @param {{ children: import('react').ReactNode }} props */
     p: ({ children }) => (
-      <p
-        {...stylex.props(contentStyles.paragraph, contentStyles.introParagraph)}
-      >
-        {children}
-      </p>
+      <p {...stylex.props(contentStyles.paragraph)}>{children}</p>
     ),
     a: MdxLink,
     strong: MdxStrong,

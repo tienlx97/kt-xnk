@@ -22,8 +22,9 @@ const styles = stylex.create({
   title: {
     color: colorVars['--color-text-primary'],
     fontFamily: typographyVars['--font-family-heading'],
-    fontSize: '1.125rem',
+    fontSize: '24px',
     fontWeight: fontWeightVars['--font-weight-bold'],
+    lineHeight: '30px',
   },
 });
 

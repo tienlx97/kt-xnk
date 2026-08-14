@@ -49,3 +49,7 @@ Rules:
   verify: evidence exists under a dated `harness/runs/` directory.
 - [x] 4.2 Update architecture/project documentation, close every harness gap
   introduced by the port, pass `./harness/verify.sh`, and mark the proposal done.
+- [x] 4.3 Match react.dev's exact Docs typography scale, weights, and leading for
+  PageHeading, MDX prose/headings, Intro/callouts/code/media captions, SideNav,
+  TOC, breadcrumbs, and copy action — verify: a source contract plus computed
+  styles at mobile and desktop widths, then refresh acceptance documentation.

@@ -1,6 +1,10 @@
 'use client';
 
-import { colorVars, spacingVars } from '@astryxdesign/core/theme/tokens.stylex';
+import {
+  colorVars,
+  fontWeightVars,
+  spacingVars,
+} from '@astryxdesign/core/theme/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
@@ -18,6 +22,10 @@ const styles = stylex.create({
   root: {
     backgroundColor: colorVars['--color-background-surface'],
     color: colorVars['--color-text-primary'],
+    fontFamily: 'var(--font-family-body)',
+    fontSize: '17px',
+    fontWeight: fontWeightVars['--font-weight-medium'],
+    lineHeight: '30px',
     minHeight: '100vh',
   },
   topNav: {

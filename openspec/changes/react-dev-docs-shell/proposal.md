@@ -64,3 +64,4 @@ are recorded in `acceptance.md`.
 | 2026-08-14 | Target output/behavior parity, not byte-for-byte implementation parity. | react.dev uses Next 15 Pages Router, TypeScript, Tailwind, MDX 2, Babel evaluation, and JSON tree revival; KT-XNK must remain Next 16 App Router, JavaScript, StyleX, and MDX 3. |
 | 2026-08-14 | Preserve brand, auth, routes, and Vietnamese content. | These are product requirements, not styling details from the reference implementation. |
 | 2026-08-14 | Retain upstream MIT notices in any substantially copied source file. | react.dev's implementation is MIT-licensed and attribution must survive source adaptation. |
+| 2026-08-14 | Reopen acceptance for an exact typography audit. | Runtime review found that geometry was pinned but the upstream 17px body and 40/28/24/20/17px heading scale had not been mechanically enforced. |

@@ -146,7 +146,7 @@ const styles = stylex.create({
     display: 'inline-flex',
     fontSize: '0.9375rem',
     fontWeight: fontWeightVars['--font-weight-normal'],
-    lineHeight: 1.5,
+    lineHeight: '30px',
     outline: {
       default: 'none',
       ':focus-visible': `2px solid ${colorVars['--color-accent']}`,

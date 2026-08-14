@@ -3,6 +3,7 @@ import {
   fontWeightVars,
   radiusVars,
   spacingVars,
+  typographyVars,
 } from '@astryxdesign/core/theme/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
 
@@ -17,7 +18,10 @@ const styles = stylex.create({
   summary: {
     color: colorVars['--color-text-primary'],
     cursor: 'pointer',
+    fontFamily: typographyVars['--font-family-heading'],
+    fontSize: '20px',
     fontWeight: fontWeightVars['--font-weight-bold'],
+    lineHeight: '36px',
     outline: {
       default: 'none',
       ':focus-visible': `2px solid ${colorVars['--color-accent']}`,
