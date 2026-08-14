@@ -32,7 +32,7 @@ Rules:
 
 ## 3. MDX authoring contract
 
-- [ ] 3.1 Record and test the react.dev component-registry parity matrix against
+- [x] 3.1 Record and test the react.dev component-registry parity matrix against
   the current KT-XNK MDX map — verify: every supported/missing/adapted component
   is mechanically classified.
 - [ ] 3.2 Port `MaxWidth` prose grouping and explicit full-width interruption
