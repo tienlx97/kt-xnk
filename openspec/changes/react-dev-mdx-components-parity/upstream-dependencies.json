@@ -1,0 +1,101 @@
+{
+  "reference": "../react.dev/src/components/MDX/MDXComponents.tsx",
+  "groups": [
+    {
+      "task": "1.1",
+      "name": "primitive-authoring-ui",
+      "externalDependencies": ["next/link", "react"],
+      "components": [
+        "p",
+        "strong",
+        "blockquote",
+        "ol",
+        "ul",
+        "li",
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "hr",
+        "a",
+        "img",
+        "BlogCard",
+        "FullWidth",
+        "MaxWidth",
+        "Pitfall",
+        "Deprecated",
+        "Wip",
+        "Illustration",
+        "IllustrationBlock",
+        "Intro",
+        "InlineToc",
+        "LearnMore",
+        "Math",
+        "MathI",
+        "Note",
+        "RC",
+        "Canary",
+        "Experimental",
+        "ExperimentalBadge",
+        "CanaryBadge",
+        "NextMajor",
+        "NextMajorBadge",
+        "RSC",
+        "RSCBadge",
+        "ReadBlogPost",
+        "Recap",
+        "YouWillLearn",
+        "YouWillLearnCard",
+        "YouTubeIframe"
+      ]
+    },
+    {
+      "task": "2.1",
+      "name": "code-console-diagram",
+      "externalDependencies": [
+        "@codemirror/language",
+        "@codemirror/lang-css",
+        "@codemirror/lang-html",
+        "@codemirror/lang-javascript",
+        "@lezer/highlight",
+        "parse-numeric-range"
+      ],
+      "components": [
+        "code",
+        "pre",
+        "CodeDiagram",
+        "ConsoleBlock",
+        "ConsoleBlockMulti",
+        "ConsoleLogLine",
+        "Diagram",
+        "DiagramGroup",
+        "PackageImport",
+        "TerminalBlock",
+        "CodeStep"
+      ]
+    },
+    {
+      "task": "3.1",
+      "name": "guided-learning",
+      "externalDependencies": ["react", "next/navigation"],
+      "components": ["DeepDive", "Recipes", "Challenges", "Hint", "Solution"]
+    },
+    {
+      "task": "4.1",
+      "name": "interactive-sandbox",
+      "externalDependencies": [
+        "@codesandbox/sandpack-client",
+        "@codesandbox/sandpack-react",
+        "@headlessui/react"
+      ],
+      "components": ["Sandpack", "SandpackRSC", "SandpackWithHTMLOutput"]
+    },
+    {
+      "task": "5.1",
+      "name": "product-context",
+      "externalDependencies": ["next/image", "next/navigation", "react"],
+      "components": ["LanguageList", "TeamMember", "ErrorDecoder"]
+    }
+  ]
+}

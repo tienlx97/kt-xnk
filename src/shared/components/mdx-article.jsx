@@ -1,6 +1,7 @@
 import { spacingVars } from '@astryxdesign/core/theme/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
 
+import { MdxTocProvider } from './mdx/inline-toc.jsx';
 import { useMDXComponents } from './mdx-components.jsx';
 import { MdxPageHeading } from './mdx-page-heading.jsx';
 import { TableOfContents } from './table-of-contents.jsx';
@@ -67,7 +68,9 @@ export function MdxArticle({ frontmatter, toc, Content, breadcrumbs = [] }) {
         />
         <div data-mdx-body {...stylex.props(styles.bodyOuter)}>
           <div data-mdx-body-inner {...stylex.props(styles.bodyInner)}>
-            <RenderContent components={components} />
+            <MdxTocProvider items={toc}>
+              <RenderContent components={components} />
+            </MdxTocProvider>
           </div>
         </div>
       </div>

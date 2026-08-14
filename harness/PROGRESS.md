@@ -71,6 +71,30 @@ This file is the handoff between sessions/agents — write for a reader with zer
 
 ## 2026-08-15 — Codex
 
+- **Active change:** `react-dev-mdx-components-parity`, task 1.1.
+- **Task worked:** pinned every upstream registry key to one of five dependency
+  milestones, then ported primitive typography, nine lifecycle callouts, four
+  badges, BlogCard, LearnMore/ReadBlogPost, YouWillLearnCard, math, CodeStep,
+  Recap, illustrations/groups, and nested InlineToc. Added a development-only
+  MDX fixture route that exercises real registry composition through MDX 3.
+- **Result:** 22 formerly planned/omitted authoring names are now adapted in
+  the registry matrix. The mobile callout is full-bleed at exactly 390px with
+  zero radius; desktop uses 16px radius; the full fixture has no horizontal
+  overflow. All implementation remains Astryx-free and preserves upstream MIT
+  attribution.
+- **Verification:** `./harness/verify.sh` passed every gate with 32 tests.
+  Evidence: `harness/runs/20260815-004852-131078/`; inspected screenshots:
+  `harness/runs/20260815-react-dev-mdx-components-task-1-1/`.
+- **Skill influence:** `memory-recall` identified the old subset contract that
+  this change supersedes; `vercel-react-best-practices` kept one small client
+  boundary around TOC context; `frontend-design` held all visual decisions to
+  the pinned source; `agent-browser` caught fixture-shell padding before final
+  mobile acceptance.
+- **Next step:** task 2.1 — code, console, diagram, terminal, and package-import
+  authoring UI.
+
+## 2026-08-15 — Codex
+
 - **Active change:** `mdx-component-authoring-policy`, task 1.1.
 - **Task worked:** strengthened the user-requested MDX exception from “Astryx
   optional” to “no Astryx imports” across the complete rendered registry tree.

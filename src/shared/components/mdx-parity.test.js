@@ -11,6 +11,15 @@ const matrix = JSON.parse(
     'utf8',
   ),
 );
+const dependencyMap = JSON.parse(
+  await readFile(
+    new URL(
+      '../../../openspec/changes/react-dev-mdx-components-parity/upstream-dependencies.json',
+      import.meta.url,
+    ),
+    'utf8',
+  ),
+);
 const localSource = await readFile(
   new URL('./mdx-components.jsx', import.meta.url),
   'utf8',
@@ -100,6 +109,19 @@ test('classifies every component in the pinned react.dev MDX registry', () => {
         `${entry.name} must not claim local UI`,
       );
     }
+  }
+});
+
+test('assigns every upstream MDX component to one implementation task', () => {
+  const assignedNames = dependencyMap.groups.flatMap(
+    ({ components }) => components,
+  );
+
+  assert.deepEqual(assignedNames.toSorted(), upstreamComponents.toSorted());
+  assert.equal(new Set(assignedNames).size, assignedNames.length);
+  for (const group of dependencyMap.groups) {
+    assert.match(group.task, /^\d+\.\d+$/u);
+    assert.ok(group.externalDependencies.length > 0, group.name);
   }
 });
 

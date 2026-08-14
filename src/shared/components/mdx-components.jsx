@@ -7,8 +7,33 @@ import { DeepDive } from './mdx/deep-dive.jsx';
 import { Figure } from './mdx/figure.jsx';
 import { HeadingAnchorIcon } from './mdx/heading-anchor-icon.jsx';
 import { imageStyles } from './mdx/image-styles.js';
-import { Note } from './mdx/note.jsx';
-import { Pitfall } from './mdx/pitfall.jsx';
+import { InlineToc } from './mdx/inline-toc.jsx';
+import {
+  Canary,
+  CanaryBadge,
+  Deprecated,
+  Experimental,
+  ExperimentalBadge,
+  NextMajor,
+  NextMajorBadge,
+  Note,
+  Pitfall,
+  RC,
+  RSC,
+  RSCBadge,
+  Wip,
+} from './mdx/react-dev-callouts.jsx';
+import {
+  BlogCard,
+  LearnMore,
+  ReadBlogPost,
+  YouWillLearnCard,
+} from './mdx/react-dev-cards.jsx';
+import {
+  Illustration,
+  IllustrationBlock,
+} from './mdx/react-dev-illustrations.jsx';
+import { CodeStep, Math, MathI, Recap } from './mdx/react-dev-primitives.jsx';
 import {
   borderVars,
   colorVars,
@@ -317,10 +342,33 @@ export function useMDXComponents(components) {
     // images, and video embeds — see src/shared/components/mdx/.
     Note,
     Pitfall,
+    Deprecated,
+    Wip,
+    RC,
+    Canary,
+    Experimental,
+    ExperimentalBadge,
+    CanaryBadge,
+    NextMajor,
+    NextMajorBadge,
+    RSC,
+    RSCBadge,
     DeepDive,
     YouWillLearn,
+    YouWillLearnCard,
+    BlogCard,
+    LearnMore,
+    ReadBlogPost,
+    Math,
+    MathI,
+    Recap,
+    CodeStep,
+    Illustration,
+    IllustrationBlock,
+    InlineToc,
     Figure,
     YouTubeEmbed,
+    YouTubeIframe: YouTubeEmbed,
     Intro,
     FullWidth,
     MaxWidth,
