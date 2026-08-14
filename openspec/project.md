@@ -13,14 +13,13 @@ with new pages via the feature-based `src/` structure.
 ## Tech stack
 
 - Language/runtime: JavaScript
-- Framework: Next.js (latest, App Router) — UI built from real
-  `@astryxdesign/core` components (looked up via the Astryx MCP server
-  `xds`, https://astryx.atmeta.com/mcp), except for the scoped MDX authoring
-  policy below
-- Style: Astryx theme tokens (`src/shared/components/theme.js`) drive all color/spacing;
-  StyleX is the sanctioned escape hatch for one-off layout overrides via the
-  `xstyle` prop only — see `docs/stylex-installation.md` (build tool setup)
-  and `docs/stylex-authoring.md` (style APIs, antipatterns)
+- Framework: Next.js (latest, App Router) — UI normally uses real
+  `@astryxdesign/core` components; the protected Docs shell and its MDX
+  authoring surface are the documented react.dev-parity exception below
+- Style: Astryx theme tokens (`src/shared/components/theme.js`) drive all
+  color/spacing. StyleX is the sanctioned styling runtime for local semantic
+  components and the `xstyle` escape hatch on Astryx components — see
+  `docs/stylex-installation.md` and `docs/stylex-authoring.md`
 - Theme: light only (no dark mode)
 - Database: none yet — static site
 - Data fetching: `@tanstack/react-query` for any client-side fetching/caching
@@ -61,8 +60,8 @@ build with messages that explain the fix.
   `TopNav`, `Text`, `Heading`, ...) — no hand-rolled `<div>`/`<nav>` markup
   where an Astryx component covers the case. Look up props/examples via the
   `xds` MCP server before writing a component from scratch.
-- React.dev copycat exception: while implementing
-  `openspec/changes/react-dev-docs-shell/`, TopNav, SideNav, Content, TOC, and
+- React.dev copycat exception: in the protected documentation experience,
+  TopNav, SideNav, Content, TOC, and
   components exposed through `useMDXComponents` may copy or adapt the semantic
   structure, behavior, and local controls of
   [react.dev](https://github.com/reactjs/react.dev) without replacing them with

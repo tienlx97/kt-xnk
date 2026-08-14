@@ -146,19 +146,19 @@ measurement before adoption.
 
 ## Verification plan (sprint contract)
 
-- [ ] Unit tests cover active navigation, mobile disclosure behavior, TOC and
+- [x] Unit tests cover active navigation, mobile disclosure behavior, TOC and
       MDX width grouping.
-- [ ] Source contract test asserts 64px header, 20rem rails, 56rem prose,
+- [x] Source contract test asserts 64px header, 20rem rails, 56rem prose,
       80rem content, and all seven exact responsive thresholds.
-- [ ] At 390px the mobile menu opens as a full-height overlay, locks page
+- [x] At 390px the mobile menu opens as a full-height overlay, locks page
       scrolling, closes on selection/Escape, and has no horizontal overflow.
-- [ ] At 1024px the sidebar is visible as a 20rem column and mobile controls are
+- [x] At 1024px the sidebar is visible as a 20rem column and mobile controls are
       absent.
-- [ ] At 1536px the TOC appears as a 20rem rail and prose centers in the main
+- [x] At 1536px the TOC appears as a 20rem rail and prose centers in the main
       column without changing the PageHeading axis.
-- [ ] Screenshots are captured at 374, 640, 768, 1024, 1280, 1536, and 1919px,
+- [x] Screenshots are captured at 374, 640, 768, 1024, 1280, 1536, and 1919px,
       plus one 2048px wide audit.
-- [ ] `./harness/verify.sh` passes.
+- [x] `./harness/verify.sh` passes.
 
 ## Resume protocol
 

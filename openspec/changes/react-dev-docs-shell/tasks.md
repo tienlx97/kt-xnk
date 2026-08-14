@@ -47,5 +47,5 @@ Rules:
 - [x] 4.1 Capture the full seven-breakpoint screenshot suite, record geometry
   measurements and intentional brand differences, and resolve all regressions —
   verify: evidence exists under a dated `harness/runs/` directory.
-- [ ] 4.2 Update architecture/project documentation, close every harness gap
+- [x] 4.2 Update architecture/project documentation, close every harness gap
   introduced by the port, pass `./harness/verify.sh`, and mark the proposal done.

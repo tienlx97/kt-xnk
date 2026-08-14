@@ -1,6 +1,6 @@
 # Proposal: React.dev Docs Copycat
 
-**Status:** in-progress
+**Status:** complete
 **Created:** 2026-08-14
 
 ## Why
@@ -31,6 +31,9 @@ StyleX, authentication, brand, routes, and Vietnamese content.
   upstream Pages Router serialization/evaluation implementation verbatim.
 - Add mechanical layout/MDX tests and browser evidence at representative
   breakpoint boundaries.
+
+Acceptance measurements, intentional differences, and verification evidence
+are recorded in `acceptance.md`.
 
 ## Out of scope
 

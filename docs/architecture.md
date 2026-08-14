@@ -22,6 +22,7 @@ browser client would.
                     types → config → api → hooks → components
 
 [content/docs (company-authored MDX)] → [docs feature loader] → [src/app routes]
+                                     ↘ [remark MaxWidth grouping] → [MDX registry]
 ```
 
 The layer order applies **twice, nested**: once inside each
@@ -85,11 +86,13 @@ Enforced by `harness/structure.rules.cjs` (dependency-cruiser), run via
 - `src/features/design-system/` — `components/{showcase-section.jsx,sections/*.jsx}`,
   the internal component showcase at `/design-system`.
 - `src/features/docs/` — filesystem discovery, trusted build-time MDX
-  compilation, and presentation for company documentation stored under
+  compilation, frontmatter/heading/TOC extraction, react.dev-compatible
+  `MaxWidth` grouping, and presentation for company documentation stored under
   `content/docs/{noi-quy,it}/`.
-- `src/shared/components/` — site chrome (`header.jsx`, `footer.jsx`) and theme
-  wiring (`theme.js` — no JSX, hence `.js` — plus `theme-provider.jsx` and
-  `astryx theme build` output).
+- `src/shared/components/` — semantic StyleX documentation shell
+  (`header.jsx`, `side-nav.jsx`, `protected-app-shell.jsx`, `footer.jsx`), MDX
+  registry/layout primitives, and theme wiring (`theme.js` — no JSX, hence
+  `.js` — plus `theme-provider.jsx` and `astryx theme build` output).
 - `src/shared/hooks/` — cross-cutting browser behavior, currently the
   React Docs-style active-section tracking used by the MDX table of contents.
 - `src/shared/config/` — `site.js` (site name, nav links).
@@ -104,6 +107,23 @@ Enforced by `harness/structure.rules.cjs` (dependency-cruiser), run via
 own `components → hooks → api → config → types` chain. No backend calls
 yet — the site is fully static at this stage; `api/` layers will appear
 once a feature needs data from the separate backend project.
+
+## Documentation shell
+
+The protected Docs surface follows the rendered behavior of the local
+`../react.dev` reference while retaining Next.js App Router, JavaScript,
+StyleX, KT-XNK authentication, brand, routes, and Vietnamese content. Its
+canonical geometry is a 64px sticky header, a 20rem SideNav from 1024px, a
+20rem TOC from 1536px, a 56rem prose axis inside an 80rem body, and 20/48px
+content insets at the 640px boundary. The complete contract and acceptance
+record live in `openspec/changes/react-dev-docs-shell/`.
+
+This surface is an explicit exception to the Astryx component-selection rule:
+semantic elements and local controls are preferred where required for
+reference parity. Astryx theme variables remain the source for design tokens;
+StyleX remains the only styling runtime. Source-contract tests under
+`src/shared/components/` protect geometry, responsive thresholds, semantic
+markup, and the absence of direct Astryx UI imports.
 
 ## Non-goals
 

@@ -121,3 +121,11 @@ test('keeps the scoped MDX UI semantic while retaining theme variables', () => {
   assert.match(combinedSource, /<pre/);
   assert.match(combinedSource, /<iframe/);
 });
+
+test('preserves Intro typography on its generated MDX paragraph', () => {
+  const mdxComponentsSource = mdxUiSources.at(1);
+  assert.match(mdxComponentsSource, /introParagraph/);
+  assert.match(mdxComponentsSource, /:is\(\[data-mdx-intro\] \*\)/);
+  assert.match(mdxComponentsSource, /--text-large-size/);
+  assert.match(mdxComponentsSource, /--text-supporting-leading/);
+});
