@@ -18,7 +18,7 @@
 
 ## 3. Guided learning UI
 
-- [ ] 3.1 Port `Challenges`, `Recipes`, `Hint`, `Solution`, DeepDive behavior,
+- [x] 3.1 Port `Challenges`, `Recipes`, `Hint`, `Solution`, DeepDive behavior,
   and challenge navigation/query state — verify: keyboard/browser flow and
   `./harness/verify.sh`.
 

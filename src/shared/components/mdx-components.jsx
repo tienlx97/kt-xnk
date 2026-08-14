@@ -17,6 +17,12 @@ import {
   PackageImport,
 } from './mdx/diagram-components.jsx';
 import { Figure } from './mdx/figure.jsx';
+import {
+  Challenges,
+  Hint as GuidedHint,
+  Recipes,
+  Solution as GuidedSolution,
+} from './mdx/guided-learning.jsx';
 import { HeadingAnchorIcon } from './mdx/heading-anchor-icon.jsx';
 import { imageStyles } from './mdx/image-styles.js';
 import { InlineToc } from './mdx/inline-toc.jsx';
@@ -276,6 +282,16 @@ function MdxImage({ src, alt }) {
 
 MdxImage.mdxName = 'img';
 
+/** @param {{ children: import('react').ReactNode }} props */
+function MdxHint({ children }) {
+  return <GuidedHint mdxType="Hint">{children}</GuidedHint>;
+}
+
+/** @param {{ children: import('react').ReactNode }} props */
+function MdxSolution({ children }) {
+  return <GuidedSolution mdxType="Solution">{children}</GuidedSolution>;
+}
+
 /**
  * Maps the HTML elements MDX compiles headings/paragraphs/links/etc. into
  * local authoring components. This registry and its component tree use local
@@ -370,6 +386,10 @@ export function useMDXComponents(components) {
     Illustration,
     IllustrationBlock,
     InlineToc,
+    Challenges,
+    Recipes,
+    Hint: MdxHint,
+    Solution: MdxSolution,
     CodeDiagram,
     ConsoleBlock,
     ConsoleBlockMulti,

@@ -7,6 +7,16 @@ This file is the handoff between sessions/agents — write for a reader with zer
 
 ## Harness gaps (mistakes that need a mechanical rule, not a manual fix)
 
+- **Resolved 2026-08-15:** upstream challenge parsing assumes component static
+  `mdxName` survives into the interactive parent. App Router strips that
+  server-component metadata at the RSC boundary. Registry wrappers now stamp
+  Hint/Solution intent as serializable props, while authored headings are
+  recognized from their rendered semantic h4 nodes; browser fixtures exercise
+  the real boundary instead of testing only local React elements.
+- **Resolved 2026-08-15:** DeepDive hash expansion initially raced the native
+  details `toggle` event during hydration. The disclosure now has one state
+  owner (its explicit button), while `useSyncExternalStore` supplies the URL
+  hash; reload acceptance covers direct challenge and DeepDive anchors.
 - **Resolved 2026-08-15:** unit-compiling the fenced-code metadata plugin did
   not prove that `@next/mdx` could resolve it. The first full build caught that
   plugin strings resolve from the loader package rather than the project root;
@@ -78,6 +88,26 @@ This file is the handoff between sessions/agents — write for a reader with zer
   the write-up will trip it, as happened while drafting that entry.)
 
 ---
+
+## 2026-08-15 — Codex
+
+- **Active change:** `react-dev-mdx-components-parity`, task 3.1.
+- **Task worked:** ported Challenges, Recipes, Hint, Solution, navigation tabs
+  and arrows, exclusive hint/solution disclosure, next-item scrolling, initial
+  hash selection, and the full react.dev DeepDive authored-heading disclosure.
+  Retained the existing title-prop DeepDive form for local content.
+- **Result:** all five guided-learning registry names are adapted without
+  Astryx. RSC-safe marker props replace upstream `mdxName` introspection where
+  App Router serialization removes it.
+- **Verification:** `./harness/verify.sh` passed every gate with 36 tests.
+  Evidence: `harness/runs/20260815-012535-159941/`; inspected interaction and
+  responsive screenshots:
+  `harness/runs/20260815-react-dev-mdx-components-task-3-1/`.
+- **Browser evidence:** Hint→Solution closes Hint, Next selects challenge 2,
+  direct `#preserve-the-input` selects challenge 2 after reload, direct
+  `#why-derived-state-matters` opens DeepDive after reload, and 390/1536px have
+  no horizontal overflow.
+- **Next step:** task 4.1 — Sandpack, SandpackRSC, and HTML-output Sandpack.
 
 ## 2026-08-15 — Codex
 
