@@ -1,11 +1,8 @@
 'use client';
 
-import { Icon } from '@astryxdesign/core/Icon';
-import { Text } from '@astryxdesign/core/Text';
 import {
   colorVars,
   fontWeightVars,
-  radiusVars,
   spacingVars,
 } from '@astryxdesign/core/theme/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
@@ -24,10 +21,15 @@ const styles = stylex.create({
     fontFamily: 'var(--font-family-body)',
     minHeight: '100%',
     paddingBlock: spacingVars['--spacing-4'],
+    paddingInlineEnd: {
+      default: 0,
+      '@media (min-width: 1024px)': '20px',
+    },
     width: '20rem',
   },
   mobileNav: {
     minHeight: '100%',
+    paddingInlineEnd: 0,
     width: '100%',
   },
   list: {
@@ -51,24 +53,26 @@ const styles = stylex.create({
       default: 'transparent',
       ':hover': colorVars['--color-background-muted'],
     },
-    borderRadius: `0 ${radiusVars['--radius-container']} ${radiusVars['--radius-container']} 0`,
+    borderRadius: {
+      default: 0,
+      '@media (min-width: 1024px)': '0 16px 16px 0',
+    },
     borderWidth: 0,
     color: colorVars['--color-text-primary'],
     cursor: 'pointer',
     display: 'flex',
     fontFamily: 'inherit',
-    fontSize: '0.9375rem',
+    fontSize: '1rem',
     fontWeight: fontWeightVars['--font-weight-bold'],
     justifyContent: 'space-between',
     lineHeight: 1.5,
-    minHeight: spacingVars['--spacing-10'],
     outline: {
       default: 'none',
       ':focus-visible': `2px solid ${colorVars['--color-accent']}`,
     },
     outlineOffset: '-2px',
     paddingBlock: spacingVars['--spacing-2'],
-    paddingInlineEnd: spacingVars['--spacing-3'],
+    paddingInlineEnd: spacingVars['--spacing-2'],
     paddingInlineStart: spacingVars['--spacing-5'],
     textAlign: 'start',
     textDecoration: 'none',
@@ -76,11 +80,10 @@ const styles = stylex.create({
   },
   childRow: {
     color: colorVars['--color-text-secondary'],
-    fontSize: '0.8125rem',
+    fontSize: '1rem',
     fontWeight: fontWeightVars['--font-weight-normal'],
     lineHeight: 1.5,
-    minHeight: spacingVars['--spacing-9'],
-    paddingInlineStart: spacingVars['--spacing-8'],
+    paddingInlineStart: spacingVars['--spacing-6'],
   },
   selected: {
     backgroundColor: {
@@ -90,9 +93,6 @@ const styles = stylex.create({
     color: colorVars['--color-text-accent'],
     fontWeight: fontWeightVars['--font-weight-bold'],
   },
-  selectedChild: {
-    fontSize: '0.8125rem',
-  },
   label: {
     minWidth: 0,
     overflow: 'hidden',
@@ -100,28 +100,70 @@ const styles = stylex.create({
     whiteSpace: 'nowrap',
   },
   chevron: {
+    display: 'block',
     flexShrink: 0,
-    transitionDuration: '200ms',
+    height: '16px',
+    transitionDuration: '250ms',
     transitionProperty: 'transform',
     transitionTimingFunction: 'ease-in-out',
+    width: '16px',
   },
   chevronExpanded: {
-    transform: 'rotate(180deg)',
+    transform: 'rotate(90deg)',
+  },
+  collapse: {
+    display: 'grid',
+    gridTemplateRows: '0fr',
+    opacity: 0.5,
+    transitionDuration: '250ms',
+    transitionProperty: 'grid-template-rows, opacity',
+    transitionTimingFunction: 'ease-in-out',
+  },
+  collapseExpanded: {
+    gridTemplateRows: '1fr',
+    opacity: 1,
+  },
+  collapseInner: {
+    minHeight: 0,
+    overflow: 'hidden',
+  },
+  sectionDivider: {
+    borderBlockEndColor: colorVars['--color-border'],
+    borderBlockEndStyle: 'solid',
+    borderBlockEndWidth: '1px',
+    marginBlockEnd: spacingVars['--spacing-2'],
+    marginBlockStart: spacingVars['--spacing-4'],
+    marginInlineStart: spacingVars['--spacing-5'],
   },
   sectionHeader: {
-    borderBlockStartColor: colorVars['--color-border'],
-    borderBlockStartStyle: 'solid',
-    borderBlockStartWidth: '1px',
     color: colorVars['--color-text-secondary'],
-    fontSize: '0.8125rem',
+    fontSize: '0.875rem',
     fontWeight: fontWeightVars['--font-weight-bold'],
     lineHeight: 1.5,
     marginBlockEnd: spacingVars['--spacing-1'],
-    marginBlockStart: spacingVars['--spacing-4'],
-    marginInline: spacingVars['--spacing-5'],
-    paddingBlockStart: spacingVars['--spacing-3'],
+    marginBlockStart: 0,
+    marginInlineEnd: 0,
+    marginInlineStart: spacingVars['--spacing-5'],
   },
 });
+
+/** @param {{ isExpanded: boolean }} props */
+function SideNavChevron({ isExpanded }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.5"
+      {...stylex.props(styles.chevron, isExpanded && styles.chevronExpanded)}
+    >
+      <path d="m9 18 6-6-6-6" />
+    </svg>
+  );
+}
 
 /**
  * React Docs-style route group. Groups with an overview `path` keep the parent
@@ -144,15 +186,8 @@ function SideNavGroup({ route, pathname, onNavigate }) {
 
   const label = (
     <>
-      <Text type="inherit" xstyle={styles.label}>
-        {route.title}
-      </Text>
-      <Icon
-        icon="chevronDown"
-        size="sm"
-        color="inherit"
-        xstyle={[styles.chevron, isExpanded && styles.chevronExpanded]}
-      />
+      <span {...stylex.props(styles.label)}>{route.title}</span>
+      <SideNavChevron isExpanded={isExpanded} />
     </>
   );
 
@@ -180,19 +215,28 @@ function SideNavGroup({ route, pathname, onNavigate }) {
           {label}
         </button>
       )}
-      {isExpanded && (
-        <ul id={childrenId} {...stylex.props(styles.list, styles.nestedList)}>
-          {route.routes?.map((child) => (
-            <SideNavLink
-              key={child.path}
-              route={child}
-              pathname={pathname}
-              isChild
-              onNavigate={onNavigate}
-            />
-          ))}
-        </ul>
-      )}
+      <div
+        aria-hidden={!isExpanded}
+        inert={isExpanded ? undefined : true}
+        {...stylex.props(
+          styles.collapse,
+          isExpanded && styles.collapseExpanded,
+        )}
+      >
+        <div {...stylex.props(styles.collapseInner)}>
+          <ul id={childrenId} {...stylex.props(styles.list, styles.nestedList)}>
+            {route.routes?.map((child) => (
+              <SideNavLink
+                key={child.path}
+                route={child}
+                pathname={pathname}
+                isChild
+                onNavigate={onNavigate}
+              />
+            ))}
+          </ul>
+        </div>
+      </div>
     </li>
   );
 }
@@ -214,12 +258,9 @@ function SideNavLink({ route, pathname, isChild = false, onNavigate }) {
           styles.row,
           isChild && styles.childRow,
           isSelected && styles.selected,
-          isChild && isSelected && styles.selectedChild,
         )}
       >
-        <Text type="inherit" xstyle={styles.label}>
-          {route.title}
-        </Text>
+        <span {...stylex.props(styles.label)}>{route.title}</span>
       </Link>
     </li>
   );
@@ -267,11 +308,19 @@ export function AppSideNav({
           return (
             <Fragment key={`${routeKey}-${index}`}>
               {route.hasSectionHeader === true ? (
-                <li role="presentation">
-                  <Text as="h3" type="inherit" xstyle={styles.sectionHeader}>
-                    {route.sectionHeader}
-                  </Text>
-                </li>
+                <Fragment>
+                  {index > 0 ? (
+                    <li
+                      role="separator"
+                      {...stylex.props(styles.sectionDivider)}
+                    />
+                  ) : null}
+                  <li role="presentation">
+                    <h3 {...stylex.props(styles.sectionHeader)}>
+                      {route.sectionHeader}
+                    </h3>
+                  </li>
+                </Fragment>
               ) : route.routes ? (
                 <SideNavGroup
                   route={route}
@@ -290,14 +339,9 @@ export function AppSideNav({
         })}
       </ul>
       {titles.map((title) => (
-        <Text
-          key={title}
-          as="p"
-          type="supporting"
-          xstyle={styles.sectionHeader}
-        >
+        <p key={title} {...stylex.props(styles.sectionHeader)}>
           {title}
-        </Text>
+        </p>
       ))}
     </nav>
   );

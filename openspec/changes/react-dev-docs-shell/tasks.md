@@ -18,7 +18,7 @@ Rules:
 - [x] 1.3 Port mobile TopNav/SideNav overlay behavior, including body scroll
   locking, Escape/route/resize close paths, and focus management — verify:
   browser flow and screenshots at 374/390/640/768px.
-- [ ] 1.4 Port desktop SideNav tree geometry, disclosure motion, active states,
+- [x] 1.4 Port desktop SideNav tree geometry, disclosure motion, active states,
   sticky scrolling, and section labels — verify: interaction tests and geometry
   screenshot at 1024/1280/1536px.
 

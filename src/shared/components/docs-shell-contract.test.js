@@ -10,6 +10,10 @@ const headerSource = await readFile(
   new URL('./header.jsx', import.meta.url),
   'utf8',
 );
+const sideNavSource = await readFile(
+  new URL('./side-nav.jsx', import.meta.url),
+  'utf8',
+);
 
 test('uses the react.dev shell geometry without Astryx shell UI', () => {
   assert.doesNotMatch(shellSource, /@astryxdesign\/core\/(AppShell|MobileNav)/);
@@ -43,4 +47,19 @@ test('manages mobile overlay focus without Astryx MobileNav state', () => {
   assert.match(shellSource, /firstInteractive\.focus\(\)/);
   assert.match(shellSource, /mobileToggleRef\.current\?\.focus\(\)/);
   assert.match(shellSource, /isMobile/);
+});
+
+test('ports the react.dev sidebar tree without Astryx UI primitives', () => {
+  assert.doesNotMatch(
+    sideNavSource,
+    /@astryxdesign\/core\/(Icon|Text|SideNav)/,
+  );
+  assert.match(sideNavSource, /'@media \(min-width: 1024px\)': '20px'/);
+  assert.match(
+    sideNavSource,
+    /'@media \(min-width: 1024px\)': '0 16px 16px 0'/,
+  );
+  assert.match(sideNavSource, /transitionDuration: '250ms'/);
+  assert.match(sideNavSource, /gridTemplateRows: '1fr'/);
+  assert.match(sideNavSource, /fontSize: '1rem'/);
 });
