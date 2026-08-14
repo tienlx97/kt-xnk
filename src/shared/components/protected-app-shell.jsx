@@ -187,6 +187,7 @@ export function ProtectedAppShell({
 
       {hasSideNav && isMobileNavOpen ? (
         <aside
+          id="mobile-docs-navigation"
           aria-label="Điều hướng tài liệu trên thiết bị di động"
           {...stylex.props(styles.mobileOverlay)}
         >

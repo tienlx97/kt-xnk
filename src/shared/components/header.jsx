@@ -1,7 +1,5 @@
 'use client';
 
-import { HStack } from '@astryxdesign/core/HStack';
-import { Icon } from '@astryxdesign/core/Icon';
 import {
   colorVars,
   fontWeightVars,
@@ -14,25 +12,51 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import { isNavLinkActive } from '../api/nav.js';
+import { useScrollShadow } from '../hooks/use-scroll-shadow.js';
 
 /** @typedef {import('../types/index.js').NavLink} NavLink */
 
 const styles = stylex.create({
   nav: {
     alignItems: 'center',
-    backgroundColor: colorVars['--color-background-surface'],
+    backdropFilter: 'blur(16px) saturate(200%)',
+    backgroundColor: `color-mix(in srgb, ${colorVars['--color-background-surface']} 90%, transparent)`,
     display: 'flex',
     fontFamily: 'var(--font-family-body)',
-    height: {
-      default: '64px',
+    height: '64px',
+    paddingInlineEnd: {
+      default: '6px',
+      '@media (min-width: 1024px)': '20px',
     },
-    paddingInline: {
-      default: spacingVars['--spacing-4'],
-      '@media (max-width: 1023px)': spacingVars['--spacing-3'],
+    paddingInlineStart: {
+      default: '6px',
+      '@media (min-width: 1024px)': '16px',
     },
+    transitionDuration: '300ms',
+    transitionProperty: 'box-shadow, background-color',
+    width: '100%',
+  },
+  scrolledNav: {
+    boxShadow: `0 1px 4px color-mix(in srgb, ${colorVars['--color-text-primary']} 18%, transparent)`,
+  },
+  inner: {
+    alignItems: 'center',
+    display: 'flex',
+    gap: {
+      default: 0,
+      '@media (min-width: 640px)': '12px',
+    },
+    height: '64px',
+    justifyContent: 'space-between',
     width: '100%',
   },
   brandArea: {
+    alignItems: 'center',
+    display: 'flex',
+    flex: {
+      default: '0 1 auto',
+      '@media (min-width: 1919px)': '1',
+    },
     minWidth: 0,
   },
   logoLink: {
@@ -52,8 +76,8 @@ const styles = stylex.create({
   },
   logo: {
     height: {
-      default: '2.5rem',
-      '@media (max-width: 639px)': '2rem',
+      default: '40px',
+      '@media (max-width: 639px)': '32px',
     },
     maxWidth: {
       default: null,
@@ -77,14 +101,24 @@ const styles = stylex.create({
       default: 'none',
       '@media (max-width: 1023px)': 'inline-flex',
     },
-    height: spacingVars['--spacing-10'],
+    height: '48px',
     justifyContent: 'center',
     outline: {
       default: 'none',
       ':focus-visible': `2px solid ${colorVars['--color-accent']}`,
     },
     padding: 0,
-    width: spacingVars['--spacing-10'],
+    transitionDuration: '100ms',
+    transitionProperty: 'transform, background-color, color',
+    width: '48px',
+  },
+  openMobileToggle: {
+    color: colorVars['--color-text-accent'],
+  },
+  mobileToggleIcon: {
+    display: 'block',
+    height: '24px',
+    width: '24px',
   },
   primaryList: {
     alignItems: 'center',
@@ -92,7 +126,7 @@ const styles = stylex.create({
       default: 'flex',
       '@media (max-width: 1023px)': 'none',
     },
-    gap: spacingVars['--spacing-1-5'],
+    gap: '6px',
     justifyContent: 'center',
     listStyle: 'none',
     margin: 0,
@@ -134,9 +168,39 @@ const styles = stylex.create({
     fontWeight: fontWeightVars['--font-weight-medium'],
   },
   endArea: {
-    marginInlineStart: 'auto',
+    alignItems: 'center',
+    display: 'flex',
+    flex: {
+      default: '0 0 auto',
+      '@media (min-width: 1919px)': '1',
+    },
+    gap: '6px',
+    justifyContent: 'flex-end',
+    minWidth: 0,
   },
 });
+
+/** @param {{ isOpen: boolean }} props */
+function MobileMenuIcon({ isOpen }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+      {...stylex.props(styles.mobileToggleIcon)}
+    >
+      {isOpen ? (
+        <path d="M6 6l12 12M18 6L6 18" />
+      ) : (
+        <path d="M4 7h16M4 12h16M4 17h16" />
+      )}
+    </svg>
+  );
+}
 
 /**
  * React Docs-inspired top navigation implemented directly with semantic
@@ -157,54 +221,68 @@ export function Header({
   onMobileNavToggle,
 }) {
   const pathname = usePathname();
+  const isScrolled = useScrollShadow();
 
   return (
-    <nav aria-label="Điều hướng chính" {...stylex.props(styles.nav)}>
-      <HStack gap={2} vAlign="center" xstyle={styles.brandArea}>
-        <button
-          type="button"
-          aria-label={isMobileNavOpen ? 'Đóng menu' : 'Mở menu'}
-          aria-expanded={isMobileNavOpen}
-          onClick={onMobileNavToggle}
-          {...stylex.props(styles.mobileToggle)}
-        >
-          <Icon icon={isMobileNavOpen ? 'close' : 'menu'} size="md" />
-        </button>
-        <Link href="/" aria-label={siteName} {...stylex.props(styles.logoLink)}>
-          <Image
-            src="/images/logo-dn-group.png"
-            alt={siteName}
-            width={132}
-            height={38}
-            priority
-            {...stylex.props(styles.logo)}
-          />
-        </Link>
-      </HStack>
+    <nav
+      aria-label="Điều hướng chính"
+      {...stylex.props(styles.nav, isScrolled && styles.scrolledNav)}
+    >
+      <div {...stylex.props(styles.inner)}>
+        <div {...stylex.props(styles.brandArea)}>
+          <button
+            type="button"
+            aria-label={isMobileNavOpen ? 'Đóng menu' : 'Mở menu'}
+            aria-controls="mobile-docs-navigation"
+            aria-expanded={isMobileNavOpen}
+            onClick={onMobileNavToggle}
+            {...stylex.props(
+              styles.mobileToggle,
+              isMobileNavOpen && styles.openMobileToggle,
+            )}
+          >
+            <MobileMenuIcon isOpen={isMobileNavOpen} />
+          </button>
+          <Link
+            href="/"
+            aria-label={siteName}
+            {...stylex.props(styles.logoLink)}
+          >
+            <Image
+              src="/images/logo-dn-group.png"
+              alt={siteName}
+              width={132}
+              height={38}
+              priority
+              {...stylex.props(styles.logo)}
+            />
+          </Link>
+        </div>
 
-      <HStack gap={2} vAlign="center" xstyle={styles.endArea}>
-        <ul {...stylex.props(styles.primaryList)}>
-          {navLinks.map((link) => {
-            const isSelected = isNavLinkActive(pathname, link.href);
+        <div {...stylex.props(styles.endArea)}>
+          <ul {...stylex.props(styles.primaryList)}>
+            {navLinks.map((link) => {
+              const isSelected = isNavLinkActive(pathname, link.href);
 
-            return (
-              <li key={link.href} {...stylex.props(styles.primaryItem)}>
-                <Link
-                  href={link.href}
-                  aria-current={isSelected ? 'page' : undefined}
-                  {...stylex.props(
-                    styles.primaryLink,
-                    isSelected && styles.selectedPrimaryLink,
-                  )}
-                >
-                  {link.label}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-        {endContent}
-      </HStack>
+              return (
+                <li key={link.href} {...stylex.props(styles.primaryItem)}>
+                  <Link
+                    href={link.href}
+                    aria-current={isSelected ? 'page' : undefined}
+                    {...stylex.props(
+                      styles.primaryLink,
+                      isSelected && styles.selectedPrimaryLink,
+                    )}
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+          {endContent}
+        </div>
+      </div>
     </nav>
   );
 }

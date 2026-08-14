@@ -12,7 +12,7 @@ Rules:
 - [x] 1.1 Establish the parity contract and replace the Astryx app frame with
   the react.dev three-region semantic StyleX grid — verify: source contract
   tests plus `./harness/verify.sh`.
-- [ ] 1.2 Port TopNav appearance and desktop behavior, including 64px sticky
+- [x] 1.2 Port TopNav appearance and desktop behavior, including 64px sticky
   header, scroll shadow, brand/nav/auth roles, and exact responsive visibility —
   verify: keyboard interaction tests and screenshots at 1024/1536/1919px.
 - [ ] 1.3 Port mobile TopNav/SideNav overlay behavior, including body scroll

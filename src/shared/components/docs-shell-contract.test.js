@@ -19,10 +19,21 @@ test('uses the react.dev shell geometry without Astryx shell UI', () => {
     /'@media \(min-width: 1024px\)': '20rem minmax\(0, 1fr\)'/,
   );
   assert.match(shellSource, /insetBlockStart: '64px'/);
-  assert.match(headerSource, /default: '64px'/);
+  assert.match(headerSource, /height: '64px'/);
 });
 
 test('keeps the exact react.dev mobile-to-desktop boundary', () => {
   assert.match(shellSource, /matchMedia\('\(max-width: 1023px\)'\)/);
   assert.match(shellSource, /'@media \(min-width: 1024px\)'/);
+});
+
+test('implements TopNav with semantic UI and react.dev desktop behavior', () => {
+  assert.doesNotMatch(
+    headerSource,
+    /@astryxdesign\/core\/(HStack|Icon|TopNav)/,
+  );
+  assert.match(headerSource, /backdropFilter: 'blur\(16px\) saturate\(200%\)'/);
+  assert.match(headerSource, /transitionDuration: '300ms'/);
+  assert.match(headerSource, /'@media \(min-width: 1919px\)'/);
+  assert.match(headerSource, /aria-controls="mobile-docs-navigation"/);
 });
