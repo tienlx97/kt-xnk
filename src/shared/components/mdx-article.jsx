@@ -25,17 +25,6 @@ const styles = stylex.create({
     maxWidth: '80rem',
     width: '100%',
   },
-  prose: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: spacingVars['--spacing-4'],
-    marginInline: {
-      default: 0,
-      '@media (min-width: 1536px)': 'auto',
-    },
-    maxWidth: '56rem',
-    width: '100%',
-  },
   layoutGrid: {
     alignItems: 'start',
     display: 'grid',
@@ -78,9 +67,7 @@ export function MdxArticle({ frontmatter, toc, Content, breadcrumbs = [] }) {
         />
         <div data-mdx-body {...stylex.props(styles.bodyOuter)}>
           <div data-mdx-body-inner {...stylex.props(styles.bodyInner)}>
-            <div data-mdx-prose {...stylex.props(styles.prose)}>
-              <RenderContent components={components} />
-            </div>
+            <RenderContent components={components} />
           </div>
         </div>
       </div>

@@ -35,7 +35,7 @@ Rules:
 - [x] 3.1 Record and test the react.dev component-registry parity matrix against
   the current KT-XNK MDX map — verify: every supported/missing/adapted component
   is mechanically classified.
-- [ ] 3.2 Port `MaxWidth` prose grouping and explicit full-width interruption
+- [x] 3.2 Port `MaxWidth` prose grouping and explicit full-width interruption
   behavior in an App-Router/MDX-3-compatible form — verify: fixture page DOM and
   geometry tests show stable ordering and axes.
 - [ ] 3.3 Reconcile frontmatter, heading ID, TOC, callout, media, and code-block

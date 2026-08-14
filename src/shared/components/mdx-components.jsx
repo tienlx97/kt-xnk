@@ -17,6 +17,7 @@ import {
 import * as stylex from '@stylexjs/stylex';
 
 import { Intro } from './intro.jsx';
+import { FullWidth, MaxWidth } from './mdx/content-width.jsx';
 import { DeepDive } from './mdx/deep-dive.jsx';
 import { Figure } from './mdx/figure.jsx';
 import { HeadingAnchorIcon } from './mdx/heading-anchor-icon.jsx';
@@ -184,7 +185,8 @@ function MdxStrong({ children }) {
 
 /**
  * Maps the HTML elements MDX compiles headings/paragraphs/links/etc. into
- * onto real Astryx components, per this project's no-raw-markup rule.
+ * local authoring components. Astryx primitives remain intentional here, but
+ * the MDX authoring policy also permits native or local react.dev-style UI.
  * @param {Record<string, import('react').ComponentType>} components
  */
 export function useMDXComponents(components) {
@@ -262,6 +264,8 @@ export function useMDXComponents(components) {
     Figure,
     YouTubeEmbed,
     Intro,
+    FullWidth,
+    MaxWidth,
     ...components,
   };
 }

@@ -9,6 +9,7 @@ import remarkFrontmatter from 'remark-frontmatter';
 import remarkMdxFrontmatter from 'remark-mdx-frontmatter';
 
 import { extractToc } from '../../../shared/api/toc.js';
+import remarkGroupContent from './remark-group-content.js';
 
 /** @typedef {{ title: string, description?: string, date?: string }} PostFrontmatter */
 /** @typedef {{ slug: string, absolutePath: string }} ContentEntry */
@@ -70,7 +71,11 @@ async function compileEntry(entry) {
     evaluate(source, {
       ...runtime,
       baseUrl: pathToFileURL(entry.absolutePath),
-      remarkPlugins: [remarkFrontmatter, remarkMdxFrontmatter],
+      remarkPlugins: [
+        remarkFrontmatter,
+        remarkMdxFrontmatter,
+        remarkGroupContent,
+      ],
       rehypePlugins: [rehypeSlug],
     }),
     extractToc(entry.absolutePath),
