@@ -85,6 +85,14 @@ test('ports the react.dev sidebar tree without Astryx UI primitives', () => {
   assert.match(sideNavSource, /gridTemplateRows: '1fr'/);
   assert.match(sideNavSource, /fontSize: '0\.9375rem'/);
   assert.match(sideNavSource, /fontSize: '0\.8125rem'/);
+  assert.match(
+    sideNavSource,
+    /childRow:[\s\S]*?fontSize: '0\.8125rem'[\s\S]*?fontWeight: fontWeightVars\['--font-weight-medium'\]/,
+  );
+  assert.match(
+    sideNavSource,
+    /selected:[\s\S]*?fontSize: '0\.9375rem'[\s\S]*?fontWeight: fontWeightVars\['--font-weight-bold'\]/,
+  );
 });
 
 test('ports content regions to semantic StyleX with exact width axes', () => {

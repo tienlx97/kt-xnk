@@ -43,7 +43,8 @@ computed styles now match the relevant upstream values:
 | Article body | 17px | 30px | 500 |
 | Intro | 20px | 32.5px | 500 |
 | Callout title | 24px | 30px | 700 |
-| SideNav route | 15px | 30px | 400/700 by state |
+| SideNav parent/selected route | 15px | 30px | 700 |
+| SideNav nested unselected route | 13px | 30px | 500 |
 | SideNav section label | 13px | 30px | 700 |
 | TOC link | 13px | 19.5px | 400/700 by state |
 | Breadcrumb | 13px | 30px | 700 |

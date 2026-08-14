@@ -80,8 +80,8 @@ const styles = stylex.create({
   },
   childRow: {
     color: colorVars['--color-text-secondary'],
-    fontSize: '0.9375rem',
-    fontWeight: fontWeightVars['--font-weight-normal'],
+    fontSize: '0.8125rem',
+    fontWeight: fontWeightVars['--font-weight-medium'],
     lineHeight: '30px',
     paddingInlineStart: spacingVars['--spacing-6'],
   },
@@ -91,6 +91,7 @@ const styles = stylex.create({
       ':hover': colorVars['--color-accent-muted'],
     },
     color: colorVars['--color-text-accent'],
+    fontSize: '0.9375rem',
     fontWeight: fontWeightVars['--font-weight-bold'],
   },
   label: {
