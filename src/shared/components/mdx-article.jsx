@@ -1,6 +1,4 @@
-import { Grid } from '@astryxdesign/core/Grid';
 import { spacingVars } from '@astryxdesign/core/theme/tokens.stylex';
-import { VStack } from '@astryxdesign/core/VStack';
 import * as stylex from '@stylexjs/stylex';
 
 import { useMDXComponents } from './mdx-components.jsx';
@@ -18,8 +16,8 @@ const styles = stylex.create({
   bodyOuter: {
     paddingBlockEnd: spacingVars['--spacing-12'],
     paddingInline: {
-      default: spacingVars['--spacing-5'],
-      '@media (min-width: 40rem)': spacingVars['--spacing-12'],
+      default: '20px',
+      '@media (min-width: 640px)': '48px',
     },
   },
   bodyInner: {
@@ -28,22 +26,29 @@ const styles = stylex.create({
     width: '100%',
   },
   prose: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: spacingVars['--spacing-4'],
     marginInline: {
       default: 0,
-      '@media (min-width: 96rem)': 'auto',
+      '@media (min-width: 1536px)': 'auto',
     },
     maxWidth: '56rem',
     width: '100%',
   },
   layoutGrid: {
     alignItems: 'start',
+    display: 'grid',
     gridTemplateColumns: {
       default: 'minmax(0, 1fr)',
-      '@media (min-width: 96rem)': 'minmax(0, 1fr) 20rem',
+      '@media (min-width: 1536px)': 'minmax(0, 1fr) 20rem',
     },
     width: '100%',
   },
   main: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: spacingVars['--spacing-6'],
     minWidth: 0,
   },
 });
@@ -64,22 +69,22 @@ export function MdxArticle({ frontmatter, toc, Content, breadcrumbs = [] }) {
   const RenderContent = /** @type {import('mdx/types').MDXContent} */ (Content);
 
   return (
-    <Grid gap={0} xstyle={styles.layoutGrid}>
-      <VStack data-mdx-main gap={6} xstyle={styles.main}>
+    <div {...stylex.props(styles.layoutGrid)}>
+      <div data-mdx-main {...stylex.props(styles.main)}>
         <MdxPageHeading
           title={frontmatter.title}
           date={frontmatter.date}
           breadcrumbs={breadcrumbs}
         />
-        <VStack data-mdx-body gap={0} xstyle={styles.bodyOuter}>
-          <VStack data-mdx-body-inner gap={0} xstyle={styles.bodyInner}>
-            <VStack data-mdx-prose gap={4} xstyle={styles.prose}>
+        <div data-mdx-body {...stylex.props(styles.bodyOuter)}>
+          <div data-mdx-body-inner {...stylex.props(styles.bodyInner)}>
+            <div data-mdx-prose {...stylex.props(styles.prose)}>
               <RenderContent components={components} />
-            </VStack>
-          </VStack>
-        </VStack>
-      </VStack>
+            </div>
+          </div>
+        </div>
+      </div>
       <TableOfContents items={toc} />
-    </Grid>
+    </div>
   );
 }

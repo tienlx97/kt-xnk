@@ -1,13 +1,11 @@
 'use client';
 
-import { Heading } from '@astryxdesign/core/Heading';
 import {
   colorVars,
   fontWeightVars,
   radiusVars,
   spacingVars,
 } from '@astryxdesign/core/theme/tokens.stylex';
-import { VStack } from '@astryxdesign/core/VStack';
 import * as stylex from '@stylexjs/stylex';
 import Link from 'next/link';
 import { useMemo } from 'react';
@@ -20,7 +18,7 @@ const styles = stylex.create({
   toc: {
     display: {
       default: 'none',
-      '@media (min-width: 96rem)': 'block',
+      '@media (min-width: 1536px)': 'block',
     },
     fontFamily: 'var(--font-family-body)',
     insetInlineEnd: 0,
@@ -111,10 +109,8 @@ export function TableOfContents({ items }) {
 
   return (
     <nav aria-label="Mục lục" {...stylex.props(styles.toc)}>
-      <Heading level={2} accessibilityLevel={2} xstyle={styles.heading}>
-        Mục lục
-      </Heading>
-      <VStack gap={0} xstyle={styles.scroller}>
+      <h2 {...stylex.props(styles.heading)}>Mục lục</h2>
+      <div {...stylex.props(styles.scroller)}>
         <ul {...stylex.props(styles.list)}>
           {visibleItems.map((item, index) => {
             const isActive = index === currentIndex;
@@ -138,7 +134,7 @@ export function TableOfContents({ items }) {
             );
           })}
         </ul>
-      </VStack>
+      </div>
     </nav>
   );
 }

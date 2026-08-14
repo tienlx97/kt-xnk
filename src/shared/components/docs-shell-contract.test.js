@@ -14,6 +14,15 @@ const sideNavSource = await readFile(
   new URL('./side-nav.jsx', import.meta.url),
   'utf8',
 );
+const contentSources = await Promise.all(
+  [
+    './copy-page-link-button.jsx',
+    './footer.jsx',
+    './mdx-article.jsx',
+    './mdx-page-heading.jsx',
+    './table-of-contents.jsx',
+  ].map((path) => readFile(new URL(path, import.meta.url), 'utf8')),
+);
 
 test('uses the react.dev shell geometry without Astryx shell UI', () => {
   assert.doesNotMatch(shellSource, /@astryxdesign\/core\/(AppShell|MobileNav)/);
@@ -62,4 +71,20 @@ test('ports the react.dev sidebar tree without Astryx UI primitives', () => {
   assert.match(sideNavSource, /transitionDuration: '250ms'/);
   assert.match(sideNavSource, /gridTemplateRows: '1fr'/);
   assert.match(sideNavSource, /fontSize: '1rem'/);
+});
+
+test('ports content regions to semantic StyleX with exact width axes', () => {
+  const combinedSource = contentSources.join('\n');
+  assert.doesNotMatch(
+    combinedSource,
+    /@astryxdesign\/core\/(Button|Grid|Heading|HStack|Icon|Section|Stack|Text|VStack)/,
+  );
+  assert.match(combinedSource, /default: '20px'/);
+  assert.match(combinedSource, /'@media \(min-width: 640px\)': '48px'/);
+  assert.match(combinedSource, /maxWidth: '56rem'/);
+  assert.match(combinedSource, /maxWidth: '80rem'/);
+  assert.match(
+    combinedSource,
+    /'@media \(min-width: 1536px\)': 'minmax\(0, 1fr\) 20rem'/,
+  );
 });

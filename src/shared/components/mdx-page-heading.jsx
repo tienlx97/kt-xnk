@@ -1,14 +1,8 @@
-import { Heading } from '@astryxdesign/core/Heading';
-import { HStack } from '@astryxdesign/core/HStack';
-import { Icon } from '@astryxdesign/core/Icon';
-import { StackItem } from '@astryxdesign/core/Stack';
-import { Text } from '@astryxdesign/core/Text';
 import {
   colorVars,
   fontWeightVars,
   spacingVars,
 } from '@astryxdesign/core/theme/tokens.stylex';
-import { VStack } from '@astryxdesign/core/VStack';
 import * as stylex from '@stylexjs/stylex';
 import Link from 'next/link';
 
@@ -48,31 +42,76 @@ const styles = stylex.create({
   },
   breadcrumbChevron: {
     color: colorVars['--color-icon-accent'],
+    display: 'block',
     flexShrink: 0,
+    height: '16px',
     marginInlineEnd: spacingVars['--spacing-1'],
+    width: '16px',
   },
   outer: {
-    paddingBlockStart: `calc(${spacingVars['--spacing-3']} + ${spacingVars['--spacing-0-5']})`,
+    paddingBlockStart: '14px',
     paddingInline: {
-      default: spacingVars['--spacing-5'],
-      '@media (min-width: 40rem)': spacingVars['--spacing-12'],
+      default: '20px',
+      '@media (min-width: 640px)': '48px',
     },
   },
   inner: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: spacingVars['--spacing-3'],
     marginInline: {
       default: 0,
-      '@media (min-width: 96rem)': 'auto',
+      '@media (min-width: 1536px)': 'auto',
     },
     maxWidth: '56rem',
     width: '100%',
   },
   title: {
+    color: colorVars['--color-text-primary'],
+    fontFamily: 'var(--font-family-display)',
     fontSize: 'var(--font-size-5xl)',
     fontWeight: fontWeightVars['--font-weight-bold'],
     lineHeight: 1.25,
+    margin: 0,
     overflowWrap: 'anywhere',
+    textWrap: 'balance',
+  },
+  headingActions: {
+    alignItems: 'flex-start',
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: spacingVars['--spacing-3'],
+    justifyContent: 'space-between',
+  },
+  breadcrumbGrow: {
+    flex: '1',
+    minWidth: 0,
+  },
+  date: {
+    color: colorVars['--color-text-secondary'],
+    fontFamily: 'var(--font-family-body)',
+    fontSize: '0.875rem',
+    lineHeight: 1.5,
+    margin: 0,
   },
 });
+
+function BreadcrumbChevron() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.5"
+      {...stylex.props(styles.breadcrumbChevron)}
+    >
+      <path d="m9 18 6-6-6-6" />
+    </svg>
+  );
+}
 
 /**
  * Breadcrumb presentation ported from react.dev's Breadcrumbs.tsx.
@@ -92,17 +131,9 @@ function MdxBreadcrumbs({ items }) {
                 {item.label}
               </Link>
             ) : (
-              <Text as="span" type="supporting" xstyle={styles.breadcrumbText}>
-                {item.label}
-              </Text>
+              <span {...stylex.props(styles.breadcrumbText)}>{item.label}</span>
             )}
-            {index < items.length - 1 ? (
-              <Icon
-                icon="chevronRight"
-                size="md"
-                xstyle={styles.breadcrumbChevron}
-              />
-            ) : null}
+            {index < items.length - 1 ? <BreadcrumbChevron /> : null}
           </li>
         ))}
       </ol>
@@ -120,21 +151,21 @@ function MdxBreadcrumbs({ items }) {
  */
 export function MdxPageHeading({ title, date, breadcrumbs = [] }) {
   return (
-    <VStack data-mdx-page-heading gap={0} xstyle={styles.outer}>
-      <VStack data-mdx-page-heading-inner gap={3} xstyle={styles.inner}>
-        <HStack hAlign="between" vAlign="start" gap={3} wrap="wrap">
-          <StackItem size="fill">
+    <div data-mdx-page-heading {...stylex.props(styles.outer)}>
+      <div data-mdx-page-heading-inner {...stylex.props(styles.inner)}>
+        <div {...stylex.props(styles.headingActions)}>
+          <div {...stylex.props(styles.breadcrumbGrow)}>
             {breadcrumbs.length > 0 ? (
               <MdxBreadcrumbs items={breadcrumbs} />
             ) : null}
-          </StackItem>
+          </div>
           <CopyPageLinkButton />
-        </HStack>
-        <Heading level={1} textWrap="balance" xstyle={styles.title}>
-          {title}
-        </Heading>
-        {date ? <Text type="supporting">Cập nhật ngày {date}</Text> : null}
-      </VStack>
-    </VStack>
+        </div>
+        <h1 {...stylex.props(styles.title)}>{title}</h1>
+        {date ? (
+          <p {...stylex.props(styles.date)}>Cập nhật ngày {date}</p>
+        ) : null}
+      </div>
+    </div>
   );
 }
