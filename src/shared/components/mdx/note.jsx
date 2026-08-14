@@ -1,3 +1,5 @@
+import * as stylex from '@stylexjs/stylex';
+
 import {
   borderVars,
   colorVars,
@@ -5,8 +7,7 @@ import {
   radiusVars,
   spacingVars,
   typographyVars,
-} from '@astryxdesign/core/theme/tokens.stylex';
-import * as stylex from '@stylexjs/stylex';
+} from './tokens.stylex.js';
 
 const styles = stylex.create({
   note: {

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const shellSource = await readFile(
@@ -34,6 +34,16 @@ const mdxUiSources = await Promise.all(
     './mdx/pitfall.jsx',
     './mdx/you-will-learn.jsx',
     './mdx/youtube-embed.jsx',
+  ].map((path) => readFile(new URL(path, import.meta.url), 'utf8')),
+);
+const mdxDirectory = new URL('./mdx/', import.meta.url);
+const mdxComponentTreeSources = await Promise.all(
+  [
+    './intro.jsx',
+    './mdx-components.jsx',
+    ...(await readdir(mdxDirectory, { recursive: true }))
+      .filter((path) => /\.(?:js|jsx)$/u.test(path))
+      .map((path) => `./mdx/${path}`),
   ].map((path) => readFile(new URL(path, import.meta.url), 'utf8')),
 );
 
@@ -138,10 +148,13 @@ test('matches react.dev TOC typography and sticky scroller geometry', () => {
   assert.match(tocSource, /top: 0/);
 });
 
-test('keeps the scoped MDX UI semantic while retaining theme variables', () => {
+test('keeps the complete MDX component tree semantic and Astryx-free', () => {
   const combinedSource = mdxUiSources.join('\n');
-  assert.doesNotMatch(combinedSource, /@astryxdesign\/core\/(?!theme\/)/);
-  assert.match(combinedSource, /@astryxdesign\/core\/theme\/tokens\.stylex/);
+  assert.doesNotMatch(
+    mdxComponentTreeSources.join('\n'),
+    /@astryxdesign\/core/,
+  );
+  assert.match(combinedSource, /\.\/mdx\/tokens\.stylex\.js/);
   assert.match(combinedSource, /<blockquote/);
   assert.match(combinedSource, /<details/);
   assert.match(combinedSource, /<pre/);

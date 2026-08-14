@@ -1,11 +1,12 @@
+import * as stylex from '@stylexjs/stylex';
+
 import {
   colorVars,
   fontWeightVars,
   radiusVars,
   spacingVars,
   typographyVars,
-} from '@astryxdesign/core/theme/tokens.stylex';
-import * as stylex from '@stylexjs/stylex';
+} from './tokens.stylex.js';
 
 const styles = stylex.create({
   pitfall: {

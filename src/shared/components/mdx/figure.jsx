@@ -1,7 +1,7 @@
-import { colorVars, spacingVars } from '@astryxdesign/core/theme/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
 
 import { imageStyles } from './image-styles.js';
+import { colorVars, spacingVars } from './tokens.stylex.js';
 
 const styles = stylex.create({
   figure: {

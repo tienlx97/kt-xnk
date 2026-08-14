@@ -1,5 +1,6 @@
-import { spacingVars } from '@astryxdesign/core/theme/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
+
+import { spacingVars } from './tokens.stylex.js';
 
 const styles = stylex.create({
   icon: {

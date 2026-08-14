@@ -62,15 +62,15 @@ build with messages that explain the fix.
   `xds` MCP server before writing a component from scratch.
 - React.dev copycat exception: in the protected documentation experience,
   TopNav, SideNav, Content, TOC, and
-  components exposed through `useMDXComponents` may copy or adapt the semantic
+  components exposed through `useMDXComponents` copy or adapt the semantic
   structure, behavior, and local controls of
   [react.dev](https://github.com/reactjs/react.dev) without replacing them with
-  Astryx equivalents solely for design-system compliance. Astryx is optional,
-  not mandatory, throughout this scoped documentation shell; native semantic
-  elements and local components are allowed. This exception relaxes only Astryx
-  component selection and exact reference geometry values; StyleX, theme
-  variables, accessibility, Server/Client Component boundaries, and the
-  feature-layer architecture remain mandatory.
+  Astryx equivalents solely for design-system compliance. The MDX registry and
+  its complete rendered component tree MUST NOT import Astryx; native semantic
+  elements, local components, StyleX, and the app theme's public CSS variables
+  are used instead. This exception relaxes only Astryx component selection and
+  exact reference geometry values; accessibility, Server/Client Component
+  boundaries, and the feature-layer architecture remain mandatory.
 - Styling: no inline `style`/`className`, no top-level media
   queries/pseudo-classes. Use StyleX (`xstyle` prop, see
   `docs/stylex-authoring.md` antipatterns) only for layout overrides Astryx

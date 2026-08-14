@@ -1,11 +1,3 @@
-import {
-  borderVars,
-  colorVars,
-  fontWeightVars,
-  radiusVars,
-  spacingVars,
-  typographyVars,
-} from '@astryxdesign/core/theme/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
 import NextLink from 'next/link';
 
@@ -17,12 +9,20 @@ import { HeadingAnchorIcon } from './mdx/heading-anchor-icon.jsx';
 import { imageStyles } from './mdx/image-styles.js';
 import { Note } from './mdx/note.jsx';
 import { Pitfall } from './mdx/pitfall.jsx';
+import {
+  borderVars,
+  colorVars,
+  fontWeightVars,
+  radiusVars,
+  spacingVars,
+  typographyVars,
+} from './mdx/tokens.stylex.js';
 import { YouWillLearn } from './mdx/you-will-learn.jsx';
 import { YouTubeEmbed } from './mdx/youtube-embed.jsx';
 
 // List/ListItem require a string `label`, not arbitrary rich children, so
 // they don't cover free-form MDX content — ul/ol/li stay native elements,
-// just restyled: the Astryx reset strips default markers/spacing, so
+// just restyled: the app reset strips default markers/spacing, so
 // unstyled they'd render as unbulleted, unindented paragraphs.
 const listStyles = stylex.create({
   ol: {
@@ -245,8 +245,8 @@ function MdxCode({ children }) {
 
 /**
  * Maps the HTML elements MDX compiles headings/paragraphs/links/etc. into
- * local authoring components. Astryx primitives remain intentional here, but
- * the MDX authoring policy also permits native or local react.dev-style UI.
+ * local authoring components. This registry and its component tree use local
+ * semantic UI plus StyleX only; Astryx imports are prohibited in this surface.
  * @param {Record<string, import('react').ComponentType>} components
  */
 export function useMDXComponents(components) {

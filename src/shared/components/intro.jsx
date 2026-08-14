@@ -1,9 +1,10 @@
+import * as stylex from '@stylexjs/stylex';
+
 import {
   colorVars,
   fontWeightVars,
   typographyVars,
-} from '@astryxdesign/core/theme/tokens.stylex';
-import * as stylex from '@stylexjs/stylex';
+} from './mdx/tokens.stylex.js';
 
 const styles = stylex.create({
   intro: {

@@ -1,6 +1,6 @@
 # Proposal: MDX component authoring policy
 
-**Status:** in-progress
+**Status:** complete
 **Created:** 2026-08-14
 
 ## Why
@@ -12,11 +12,11 @@ semantics, behavior, and visual structure without adding product value.
 
 ## What changes
 
-- Make Astryx optional for components exposed through `useMDXComponents`.
+- Prohibit Astryx imports throughout the component tree exposed through
+  `useMDXComponents`.
 - Allow native semantic elements and local React components when adapting
   react.dev MDX UI.
-- Keep a small set of neutral Astryx layout and typography primitives available
-  when they preserve the source design.
+- Use local StyleX variables backed by the app theme's public CSS properties.
 - Preserve all existing StyleX, token, accessibility, architecture, and
   Server/Client Component requirements.
 
@@ -31,3 +31,4 @@ semantics, behavior, and visual structure without adding product value.
 | Date | Decision | Why |
 |---|---|---|
 | 2026-08-14 | Scope the exception to components exposed through `useMDXComponents` | The requested freedom is for react.dev-inspired MDX UI, not the whole application. |
+| 2026-08-15 | Strengthen “optional” to “no Astryx imports” for the complete MDX tree | The user requested full react.dev component parity with StyleX as the adaptation layer and explicitly excluded Astryx. |

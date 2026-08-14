@@ -7,6 +7,11 @@ This file is the handoff between sessions/agents — write for a reader with zer
 
 ## Harness gaps (mistakes that need a mechanical rule, not a manual fix)
 
+- **Resolved 2026-08-15:** the MDX exception said Astryx was optional but did
+  not mechanically prevent new Astryx imports in nested authoring components.
+  The complete `useMDXComponents` tree is now recursively scanned by the source
+  contract, and local StyleX variables bridge theme CSS properties without an
+  Astryx module dependency.
 - **Resolved 2026-08-15:** SideNav disclosure ownership was not covered by a
   behavioral regression test. Each group kept independent local state, so
   opening IT did not collapse NỘI QUY. Task 4.4 hoisted one pathname-aware
@@ -63,6 +68,28 @@ This file is the handoff between sessions/agents — write for a reader with zer
   the write-up will trip it, as happened while drafting that entry.)
 
 ---
+
+## 2026-08-15 — Codex
+
+- **Active change:** `mdx-component-authoring-policy`, task 1.1.
+- **Task worked:** strengthened the user-requested MDX exception from “Astryx
+  optional” to “no Astryx imports” across the complete rendered registry tree.
+  Replaced nine token-module imports with a local StyleX token bridge and added
+  a recursive source contract covering current and future nested MDX modules.
+- **Result:** the existing MDX UI retains its theme, spacing, radius, font
+  weights, and typography while depending only on semantic/local React UI,
+  StyleX, and public theme CSS properties. Non-MDX application policy is
+  unchanged.
+- **Verification:** `./harness/verify.sh` passed every gate with 31 tests.
+  Evidence: `harness/runs/20260815-003824-123229/`; browser computed styles and
+  inspected screenshot:
+  `harness/runs/20260815-mdx-astryx-free-foundation/docs-1536-restored.png`.
+- **Skill influence:** `memory-recall` preserved the prior output-parity and
+  App-Router decisions; `vercel-react-best-practices` kept the server-rendered
+  MDX boundary intact; `frontend-design` and `agent-browser` caught and fixed a
+  first-pass token bridge that preserved color but collapsed spacing/radius.
+- **Next step:** execute the new full react.dev MDX component-registry parity
+  change, starting with its exact inventory and dependency contract.
 
 ## 2026-08-15 — Codex
 
