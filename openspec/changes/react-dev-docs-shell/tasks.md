@@ -44,7 +44,7 @@ Rules:
 
 ## 4. Acceptance and handoff
 
-- [ ] 4.1 Capture the full seven-breakpoint screenshot suite, record geometry
+- [x] 4.1 Capture the full seven-breakpoint screenshot suite, record geometry
   measurements and intentional brand differences, and resolve all regressions —
   verify: evidence exists under a dated `harness/runs/` directory.
 - [ ] 4.2 Update architecture/project documentation, close every harness gap
