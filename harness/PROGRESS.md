@@ -7,6 +7,12 @@ This file is the handoff between sessions/agents — write for a reader with zer
 
 ## Harness gaps (mistakes that need a mechanical rule, not a manual fix)
 
+- **Resolved 2026-08-14:** the initial react.dev copycat acceptance pinned
+  region geometry but not its typography scale. A user review correctly found
+  H1/H2, SideNav, TOC, body leading/weight, Intro, callout, caption, code, and
+  Footer mismatches. Task 4.3 fixed the instance and added source-contract
+  assertions for the exact upstream scale; browser evidence records computed
+  styles at 390px and 1536px.
 - **Resolved 2026-08-14:** MDX authoring components had no nested typography
   regression gate. On
   2026-08-14, browser inspection measured only the outer `Intro` wrapper and
