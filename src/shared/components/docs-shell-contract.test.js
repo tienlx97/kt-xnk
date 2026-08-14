@@ -88,3 +88,13 @@ test('ports content regions to semantic StyleX with exact width axes', () => {
     /'@media \(min-width: 1536px\)': 'minmax\(0, 1fr\) 20rem'/,
   );
 });
+
+test('matches react.dev TOC typography and sticky scroller geometry', () => {
+  const tocSource = contentSources.at(-1);
+  assert.match(tocSource, /fontSize: '0\.875rem'/);
+  assert.match(tocSource, /borderEndStartRadius: '12px'/);
+  assert.match(tocSource, /borderStartStartRadius: '12px'/);
+  assert.match(tocSource, /maxHeight: 'calc\(100vh - 7\.5rem\)'/);
+  assert.match(tocSource, /position: 'sticky'/);
+  assert.match(tocSource, /top: 0/);
+});

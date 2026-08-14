@@ -3,7 +3,6 @@
 import {
   colorVars,
   fontWeightVars,
-  radiusVars,
   spacingVars,
 } from '@astryxdesign/core/theme/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
@@ -28,9 +27,9 @@ const styles = stylex.create({
     top: 0,
   },
   heading: {
-    color: colorVars['--color-text-accent'],
+    color: colorVars['--color-text-secondary'],
     fontFamily: 'var(--font-family-body)',
-    fontSize: '0.8125rem',
+    fontSize: '0.875rem',
     fontWeight: fontWeightVars['--font-weight-bold'],
     letterSpacing: '0.025em',
     lineHeight: 1.5,
@@ -57,8 +56,11 @@ const styles = stylex.create({
     paddingInline: 0,
   },
   item: {
-    borderRadius: `${radiusVars['--radius-container']} 0 0 ${radiusVars['--radius-container']}`,
-    fontSize: '0.8125rem',
+    borderEndEndRadius: 0,
+    borderEndStartRadius: '12px',
+    borderStartEndRadius: 0,
+    borderStartStartRadius: '12px',
+    fontSize: '0.875rem',
     margin: 0,
     paddingInline: spacingVars['--spacing-2'],
   },

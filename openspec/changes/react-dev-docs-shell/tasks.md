@@ -27,7 +27,7 @@ Rules:
 - [x] 2.1 Port PageHeading, article, footer, and TOC region geometry without
   Astryx UI — verify: measured 20/48px insets, 56rem prose, 80rem body, and
   20rem TOC at breakpoint boundaries plus `./harness/verify.sh`.
-- [ ] 2.2 Match TOC sticky/scroller/active-link behavior and accessibility —
+- [x] 2.2 Match TOC sticky/scroller/active-link behavior and accessibility —
   verify: browser scroll flow at 1536 and 2048px.
 
 ## 3. MDX authoring contract
