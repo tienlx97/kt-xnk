@@ -7,25 +7,29 @@ This file is the handoff between sessions/agents — write for a reader with zer
 
 ## Harness gaps (mistakes that need a mechanical rule, not a manual fix)
 
-- MDX authoring components have no nested computed-style regression gate. On
+- **Resolved 2026-08-14:** MDX authoring components had no nested typography
+  regression gate. On
   2026-08-14, browser inspection measured only the outer `Intro` wrapper and
   missed that its generated MDX paragraph applied the body typography recipe
   again. The instance is fixed and the inner paragraph is now browser-measured;
-  add a Playwright assertion for both wrapper and rendered child styles when
-  browser tests become part of the gate.
-- MDX alignment has no visual/geometry regression gate. On 2026-08-14 the
+  the source contract now asserts the generated paragraph's Intro-specific
+  selector and typography variables; acceptance browser evidence also records
+  the rendered child's 20px/28.572px computed typography.
+- **Resolved 2026-08-14:** MDX alignment had no geometry regression gate. The
   outer `max-w-7xl` body frame was ported from react.dev without the generated
   `MaxWidth` (`max-w-4xl ms-0 2xl:mx-auto`) prose wrapper, so PageHeading and
   article text used different horizontal axes. The instance is fixed and
-  browser-measured at 390px, 1280px, and 2048px; add a Playwright geometry
-  assertion or screenshot baseline when browser tests become part of the gate.
-- MDX layout components do not yet have a DOM-structure regression test. On
+  browser-measured at 390px, 1280px, and 2048px; the source contract now pins
+  the 56rem/80rem axes and breakpoint geometry, and the acceptance suite records
+  all seven required widths plus 2048px.
+- **Resolved 2026-08-14:** MDX layout components lacked a DOM-structure
+  regression test. On
   2026-08-14, a rendered MDX fragment was placed directly inside the responsive
   CSS Grid; its multiple root nodes became independent grid items and split
   paragraphs/headings across the content and TOC columns. The instance is fixed
-  by an explicit content-column wrapper. Add a render-level test when the repo
-  adopts a JSX-capable component test runtime; the current Node test runner does
-  not transform JSX components.
+  by an explicit content-column wrapper. The MDX fixture test now compiles and
+  server-renders `MaxWidth → FullWidth → MaxWidth`, asserting DOM order and
+  keeping non-rendered module exports outside prose groups.
 - `harness/checks/project-readiness.sh`'s placeholder scan (angle-bracket
   CLI-argument tokens, an unfilled date-format token, etc. — see the script
   for the exact pattern) didn't account for tool-generated content blocks —
