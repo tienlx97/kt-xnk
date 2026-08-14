@@ -1,13 +1,38 @@
-import { Banner } from '@astryxdesign/core/Banner';
+import {
+  colorVars,
+  fontWeightVars,
+  radiusVars,
+  spacingVars,
+  typographyVars,
+} from '@astryxdesign/core/theme/tokens.stylex';
+import * as stylex from '@stylexjs/stylex';
 
-/**
- * Warning callout for MDX content — react.dev's `<Pitfall>`, built on
- * Astryx's Banner instead of a custom-styled box.
- * @param {{ title?: string, children: import('react').ReactNode }} props
- */
+const styles = stylex.create({
+  pitfall: {
+    backgroundColor: colorVars['--color-warning-muted'],
+    borderInlineStartColor: colorVars['--color-warning'],
+    borderInlineStartStyle: 'solid',
+    borderInlineStartWidth: '4px',
+    borderRadius: radiusVars['--radius-container'],
+    display: 'flex',
+    flexDirection: 'column',
+    gap: spacingVars['--spacing-2'],
+    padding: spacingVars['--spacing-5'],
+  },
+  title: {
+    color: colorVars['--color-text-primary'],
+    fontFamily: typographyVars['--font-family-heading'],
+    fontSize: '1.125rem',
+    fontWeight: fontWeightVars['--font-weight-bold'],
+  },
+});
+
+/** @param {{ title?: string, children: import('react').ReactNode }} props */
 export function Pitfall({ title = 'Cẩn thận', children }) {
-  // Banner's `children` slot is a collapsed-by-default detail section
-  // (chevron toggle) — wrong for a callout that should just always show its
-  // content. `description` renders inline instead, no interaction needed.
-  return <Banner status="warning" title={title} description={children} />;
+  return (
+    <aside aria-label={title} {...stylex.props(styles.pitfall)}>
+      <strong {...stylex.props(styles.title)}>{title}</strong>
+      {children}
+    </aside>
+  );
 }

@@ -38,7 +38,7 @@ Rules:
 - [x] 3.2 Port `MaxWidth` prose grouping and explicit full-width interruption
   behavior in an App-Router/MDX-3-compatible form — verify: fixture page DOM and
   geometry tests show stable ordering and axes.
-- [ ] 3.3 Reconcile frontmatter, heading ID, TOC, callout, media, and code-block
+- [x] 3.3 Reconcile frontmatter, heading ID, TOC, callout, media, and code-block
   authoring behavior with the parity matrix — verify: MDX API tests and fixture
   screenshots.
 

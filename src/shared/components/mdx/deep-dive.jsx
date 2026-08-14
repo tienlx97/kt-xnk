@@ -1,18 +1,39 @@
-import { Card } from '@astryxdesign/core/Card';
-import { Collapsible } from '@astryxdesign/core/Collapsible';
+import {
+  colorVars,
+  fontWeightVars,
+  radiusVars,
+  spacingVars,
+} from '@astryxdesign/core/theme/tokens.stylex';
+import * as stylex from '@stylexjs/stylex';
 
-/**
- * Expandable "read more" section for MDX content — react.dev's
- * `<DeepDive>`, built on Astryx's Collapsible (collapsed by default,
- * unlike Collapsible's own default) inside a Card for visual separation.
- * @param {{ title: string, children: import('react').ReactNode }} props
- */
+const styles = stylex.create({
+  details: {
+    borderColor: colorVars['--color-border'],
+    borderRadius: radiusVars['--radius-container'],
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    padding: spacingVars['--spacing-4'],
+  },
+  summary: {
+    color: colorVars['--color-text-primary'],
+    cursor: 'pointer',
+    fontWeight: fontWeightVars['--font-weight-bold'],
+    outline: {
+      default: 'none',
+      ':focus-visible': `2px solid ${colorVars['--color-accent']}`,
+    },
+  },
+  content: {
+    marginBlockStart: spacingVars['--spacing-4'],
+  },
+});
+
+/** @param {{ title: string, children: import('react').ReactNode }} props */
 export function DeepDive({ title, children }) {
   return (
-    <Card padding={4}>
-      <Collapsible trigger={title} defaultIsOpen={false}>
-        {children}
-      </Collapsible>
-    </Card>
+    <details {...stylex.props(styles.details)}>
+      <summary {...stylex.props(styles.summary)}>{title}</summary>
+      <div {...stylex.props(styles.content)}>{children}</div>
+    </details>
   );
 }

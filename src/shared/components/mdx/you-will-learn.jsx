@@ -1,20 +1,40 @@
-import { Card } from '@astryxdesign/core/Card';
-import { Heading } from '@astryxdesign/core/Heading';
-import { VStack } from '@astryxdesign/core/VStack';
+import {
+  colorVars,
+  fontWeightVars,
+  radiusVars,
+  spacingVars,
+  typographyVars,
+} from '@astryxdesign/core/theme/tokens.stylex';
+import * as stylex from '@stylexjs/stylex';
 
-/**
- * Intro summary box for MDX content — react.dev's `<YouWillLearn>`.
- * Children are typically a markdown list (already styled by the `ul`/`li`
- * mapping in src/mdx-components.jsx).
- * @param {{ title?: string, children: import('react').ReactNode }} props
- */
+const styles = stylex.create({
+  callout: {
+    backgroundColor: colorVars['--color-background-muted'],
+    borderColor: colorVars['--color-border'],
+    borderRadius: radiusVars['--radius-container'],
+    borderStyle: 'solid',
+    borderWidth: '1px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: spacingVars['--spacing-2'],
+    padding: spacingVars['--spacing-4'],
+  },
+  title: {
+    color: colorVars['--color-text-primary'],
+    fontFamily: typographyVars['--font-family-heading'],
+    fontSize: '1.5rem',
+    fontWeight: fontWeightVars['--font-weight-bold'],
+    lineHeight: 1.25,
+    margin: 0,
+  },
+});
+
+/** @param {{ title?: string, children: import('react').ReactNode }} props */
 export function YouWillLearn({ title = 'Bạn sẽ học được', children }) {
   return (
-    <Card padding={4}>
-      <VStack gap={2}>
-        <Heading level={2}>{title}</Heading>
-        {children}
-      </VStack>
-    </Card>
+    <aside aria-label={title} {...stylex.props(styles.callout)}>
+      <h2 {...stylex.props(styles.title)}>{title}</h2>
+      {children}
+    </aside>
   );
 }

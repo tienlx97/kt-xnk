@@ -1,14 +1,11 @@
-import { HStack } from '@astryxdesign/core/HStack';
-import { Icon } from '@astryxdesign/core/Icon';
-import { Text } from '@astryxdesign/core/Text';
 import {
   borderVars,
   colorVars,
+  fontWeightVars,
   radiusVars,
   spacingVars,
   typographyVars,
 } from '@astryxdesign/core/theme/tokens.stylex';
-import { VStack } from '@astryxdesign/core/VStack';
 import * as stylex from '@stylexjs/stylex';
 
 const styles = stylex.create({
@@ -16,53 +13,71 @@ const styles = stylex.create({
     backgroundColor: colorVars['--color-accent-muted'],
     borderColor: colorVars['--color-border'],
     borderRadius: {
-      default: radiusVars['--radius-none'],
-      '@media (min-width: 40rem)': radiusVars['--radius-container'],
+      default: 0,
+      '@media (min-width: 640px)': radiusVars['--radius-container'],
     },
     borderStyle: 'solid',
     borderWidth: borderVars['--border-width'],
     color: colorVars['--color-text-primary'],
+    display: 'flex',
+    flexDirection: 'column',
+    gap: spacingVars['--spacing-2'],
     marginBlock: spacingVars['--spacing-4'],
     marginInline: {
-      default: `calc(-1 * ${spacingVars['--spacing-5']})`,
-      '@media (min-width: 40rem)': 0,
+      default: '-20px',
+      '@media (min-width: 640px)': 0,
     },
     paddingBlock: spacingVars['--spacing-5'],
     paddingInline: {
-      default: spacingVars['--spacing-5'],
-      '@media (min-width: 40rem)': spacingVars['--spacing-6'],
+      default: '20px',
+      '@media (min-width: 640px)': spacingVars['--spacing-6'],
     },
+  },
+  header: {
+    alignItems: 'center',
+    display: 'flex',
+    gap: spacingVars['--spacing-2'],
+  },
+  icon: {
+    color: colorVars['--color-icon-accent'],
+    flexShrink: 0,
+    height: '20px',
+    width: '20px',
   },
   title: {
     color: colorVars['--color-text-accent'],
     fontFamily: typographyVars['--font-family-heading'],
+    fontSize: '1.125rem',
+    fontWeight: fontWeightVars['--font-weight-bold'],
   },
 });
 
-/**
- * React.dev-inspired informational callout for MDX content. It deliberately
- * stays server-rendered: a note is always visible and has no interaction to
- * hydrate. Astryx layout/icon/text primitives provide its structure while
- * StyleX theme tokens carry the KT-XNK visual identity.
- * @param {{ title?: string, children: import('react').ReactNode }} props
- */
+/** @param {{ title?: string, children: import('react').ReactNode }} props */
 export function Note({ title = 'Lưu ý', children }) {
   return (
-    <VStack
-      as="aside"
+    <aside
       role="note"
       aria-label={title}
       data-mdx-note
-      gap={2}
-      xstyle={styles.note}
+      {...stylex.props(styles.note)}
     >
-      <HStack as="header" gap={2} vAlign="center">
-        <Icon icon="info" size="lg" color="accent" />
-        <Text as="span" type="large" weight="bold" xstyle={styles.title}>
-          {title}
-        </Text>
-      </HStack>
+      <header {...stylex.props(styles.header)}>
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.75"
+          {...stylex.props(styles.icon)}
+        >
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 11v5M12 8h.01" />
+        </svg>
+        <span {...stylex.props(styles.title)}>{title}</span>
+      </header>
       {children}
-    </VStack>
+    </aside>
   );
 }

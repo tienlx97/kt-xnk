@@ -1,20 +1,23 @@
-import { AspectRatio } from '@astryxdesign/core/AspectRatio';
+import * as stylex from '@stylexjs/stylex';
 
-/**
- * Responsive video embed for MDX content — react.dev's `<YouTubeIframe>`.
- * youtube-nocookie.com avoids setting tracking cookies until playback
- * starts.
- * @param {{ id: string, title: string }} props
- */
+const styles = stylex.create({
+  frame: {
+    aspectRatio: '16 / 9',
+    borderWidth: 0,
+    display: 'block',
+    width: '100%',
+  },
+});
+
+/** @param {{ id: string, title: string }} props */
 export function YouTubeEmbed({ id, title }) {
   return (
-    <AspectRatio ratio={16 / 9}>
-      <iframe
-        src={`https://www.youtube-nocookie.com/embed/${id}`}
-        title={title}
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        allowFullScreen
-      />
-    </AspectRatio>
+    <iframe
+      src={`https://www.youtube-nocookie.com/embed/${id}`}
+      title={title}
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowFullScreen
+      {...stylex.props(styles.frame)}
+    />
   );
 }

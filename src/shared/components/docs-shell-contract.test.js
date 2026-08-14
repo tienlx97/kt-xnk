@@ -23,6 +23,19 @@ const contentSources = await Promise.all(
     './table-of-contents.jsx',
   ].map((path) => readFile(new URL(path, import.meta.url), 'utf8')),
 );
+const mdxUiSources = await Promise.all(
+  [
+    './intro.jsx',
+    './mdx-components.jsx',
+    './mdx/deep-dive.jsx',
+    './mdx/figure.jsx',
+    './mdx/heading-anchor-icon.jsx',
+    './mdx/note.jsx',
+    './mdx/pitfall.jsx',
+    './mdx/you-will-learn.jsx',
+    './mdx/youtube-embed.jsx',
+  ].map((path) => readFile(new URL(path, import.meta.url), 'utf8')),
+);
 
 test('uses the react.dev shell geometry without Astryx shell UI', () => {
   assert.doesNotMatch(shellSource, /@astryxdesign\/core\/(AppShell|MobileNav)/);
@@ -97,4 +110,14 @@ test('matches react.dev TOC typography and sticky scroller geometry', () => {
   assert.match(tocSource, /maxHeight: 'calc\(100vh - 7\.5rem\)'/);
   assert.match(tocSource, /position: 'sticky'/);
   assert.match(tocSource, /top: 0/);
+});
+
+test('keeps the scoped MDX UI semantic while retaining theme variables', () => {
+  const combinedSource = mdxUiSources.join('\n');
+  assert.doesNotMatch(combinedSource, /@astryxdesign\/core\/(?!theme\/)/);
+  assert.match(combinedSource, /@astryxdesign\/core\/theme\/tokens\.stylex/);
+  assert.match(combinedSource, /<blockquote/);
+  assert.match(combinedSource, /<details/);
+  assert.match(combinedSource, /<pre/);
+  assert.match(combinedSource, /<iframe/);
 });

@@ -1,25 +1,33 @@
-import { Text } from '@astryxdesign/core/Text';
-import { VStack } from '@astryxdesign/core/VStack';
+import { colorVars, spacingVars } from '@astryxdesign/core/theme/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
 
 import { imageStyles } from './image-styles.js';
 
-/**
- * Captioned image for MDX content — react.dev's `<Illustration>`. Plain
- * `<img>` rather than next/image: post authors give a `src`/`alt` without
- * intrinsic dimensions, which next/image requires.
- * @param {{ src: string, alt: string, caption?: string }} props
- */
+const styles = stylex.create({
+  figure: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: spacingVars['--spacing-2'],
+    margin: 0,
+  },
+  caption: {
+    color: colorVars['--color-text-secondary'],
+    fontFamily: 'var(--font-family-body)',
+    fontSize: '0.875rem',
+    lineHeight: 1.5,
+    textAlign: 'center',
+  },
+});
+
+/** @param {{ src: string, alt: string, caption?: string }} props */
 export function Figure({ src, alt, caption }) {
   return (
-    <VStack gap={2} as="figure">
-      {/* eslint-disable-next-line @next/next/no-img-element -- see caption above */}
+    <figure {...stylex.props(styles.figure)}>
+      {/* eslint-disable-next-line @next/next/no-img-element -- authored MDX has no intrinsic dimensions */}
       <img src={src} alt={alt} {...stylex.props(imageStyles.img)} />
       {caption ? (
-        <Text as="p" type="supporting" justify="center">
-          {caption}
-        </Text>
+        <figcaption {...stylex.props(styles.caption)}>{caption}</figcaption>
       ) : null}
-    </VStack>
+    </figure>
   );
 }

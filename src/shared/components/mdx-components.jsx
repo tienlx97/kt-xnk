@@ -1,10 +1,3 @@
-import { Blockquote } from '@astryxdesign/core/Blockquote';
-import { Code } from '@astryxdesign/core/Code';
-import { CodeBlock } from '@astryxdesign/core/CodeBlock';
-import { Divider } from '@astryxdesign/core/Divider';
-import { Heading } from '@astryxdesign/core/Heading';
-import { Link } from '@astryxdesign/core/Link';
-import { Text } from '@astryxdesign/core/Text';
 import {
   borderVars,
   colorVars,
@@ -15,6 +8,7 @@ import {
   typographyVars,
 } from '@astryxdesign/core/theme/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
+import NextLink from 'next/link';
 
 import { Intro } from './intro.jsx';
 import { FullWidth, MaxWidth } from './mdx/content-width.jsx';
@@ -49,9 +43,20 @@ const listStyles = stylex.create({
 
 const contentStyles = stylex.create({
   heading: {
+    color: colorVars['--color-text-primary'],
+    fontFamily: typographyVars['--font-family-heading'],
+    fontWeight: fontWeightVars['--font-weight-bold'],
+    lineHeight: 1.25,
+    margin: 0,
     paddingInlineEnd: spacingVars['--spacing-5'],
     scrollMarginTop: `calc(4rem + ${spacingVars['--spacing-5']})`,
   },
+  h1: { fontSize: '3rem' },
+  h2: { fontSize: '1.5rem' },
+  h3: { fontSize: '1.25rem' },
+  h4: { fontSize: '1.125rem' },
+  h5: { fontSize: '1rem' },
+  h6: { fontSize: '0.875rem' },
   headingAnchor: {
     color: colorVars['--color-text-accent'],
     display: 'inline-block',
@@ -66,7 +71,13 @@ const contentStyles = stylex.create({
     paddingBlockEnd: spacingVars['--spacing-2'],
   },
   link: {
+    color: colorVars['--color-text-accent'],
+    outline: {
+      default: 'none',
+      ':focus-visible': `2px solid ${colorVars['--color-accent']}`,
+    },
     textDecorationColor: colorVars['--color-accent'],
+    textDecorationLine: 'underline',
     textDecorationThickness: borderVars['--border-width'],
     textUnderlineOffset: spacingVars['--spacing-0-5'],
   },
@@ -76,6 +87,43 @@ const contentStyles = stylex.create({
     borderRadius: radiusVars['--radius-container'],
     paddingBlock: spacingVars['--spacing-3'],
     paddingInlineEnd: spacingVars['--spacing-4'],
+    paddingInlineStart: spacingVars['--spacing-6'],
+  },
+  paragraph: {
+    fontFamily: typographyVars['--font-family-body'],
+    fontSize: '1.0625rem',
+    lineHeight: 1.5,
+    margin: 0,
+    whiteSpace: 'pre-wrap',
+  },
+  inlineCode: {
+    backgroundColor: colorVars['--color-background-muted'],
+    borderRadius: radiusVars['--radius-element'],
+    fontFamily: 'var(--font-family-code)',
+    fontSize: '0.875em',
+    paddingBlock: spacingVars['--spacing-0-5'],
+    paddingInline: spacingVars['--spacing-1'],
+  },
+  codeBlock: {
+    backgroundColor: colorVars['--color-background-muted'],
+    borderColor: colorVars['--color-border'],
+    borderRadius: radiusVars['--radius-container'],
+    borderStyle: 'solid',
+    borderWidth: borderVars['--border-width'],
+    fontFamily: 'var(--font-family-code)',
+    fontSize: '0.875rem',
+    lineHeight: 1.6,
+    margin: 0,
+    overflowX: 'auto',
+    padding: spacingVars['--spacing-4'],
+    whiteSpace: 'pre',
+  },
+  divider: {
+    borderBlockEndColor: colorVars['--color-border'],
+    borderBlockEndStyle: 'solid',
+    borderBlockEndWidth: borderVars['--border-width'],
+    borderBlockStartWidth: 0,
+    marginBlock: spacingVars['--spacing-6'],
   },
   emphasis: {
     color: colorVars['--color-text-accent'],
@@ -115,13 +163,23 @@ function MdxHeading({ level, id, children, xstyle }) {
       ? `Liên kết đến mục ${children}`
       : 'Liên kết đến mục này';
   const hasPageAnchor = level !== 1 && Boolean(id);
+  const HeadingTag = /** @type {'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'} */ (
+    `h${level}`
+  );
+  const levelStyle = [
+    contentStyles.h1,
+    contentStyles.h2,
+    contentStyles.h3,
+    contentStyles.h4,
+    contentStyles.h5,
+    contentStyles.h6,
+  ][level - 1];
 
   return (
-    <Heading
-      level={level}
+    <HeadingTag
       id={id}
       data-mdx-heading
-      xstyle={[contentStyles.heading, xstyle]}
+      {...stylex.props(contentStyles.heading, levelStyle, xstyle)}
     >
       {children}
       {hasPageAnchor ? (
@@ -134,7 +192,7 @@ function MdxHeading({ level, id, children, xstyle }) {
           <HeadingAnchorIcon />
         </a>
       ) : null}
-    </Heading>
+    </HeadingTag>
   );
 }
 
@@ -149,7 +207,11 @@ function Pre({ children }) {
   const language = className.replace('language-', '') || 'plaintext';
   const code = String(children?.props?.children ?? '').replace(/\n$/, '');
 
-  return <CodeBlock code={code} language={language} />;
+  return (
+    <pre data-language={language} {...stylex.props(contentStyles.codeBlock)}>
+      <code>{code}</code>
+    </pre>
+  );
 }
 
 /**
@@ -157,15 +219,9 @@ function Pre({ children }) {
  */
 function MdxLink({ href, children }) {
   return (
-    <Link
-      href={href}
-      color="accent"
-      hasUnderline
-      type="inherit"
-      xstyle={contentStyles.link}
-    >
+    <NextLink href={href ?? '#'} {...stylex.props(contentStyles.link)}>
       {children}
-    </Link>
+    </NextLink>
   );
 }
 
@@ -173,7 +229,11 @@ function MdxLink({ href, children }) {
  * @param {{ children: import('react').ReactNode }} props
  */
 function MdxBlockquote({ children }) {
-  return <Blockquote xstyle={contentStyles.blockquote}>{children}</Blockquote>;
+  return (
+    <blockquote {...stylex.props(contentStyles.blockquote)}>
+      {children}
+    </blockquote>
+  );
 }
 
 /**
@@ -181,6 +241,11 @@ function MdxBlockquote({ children }) {
  */
 function MdxStrong({ children }) {
   return <strong {...stylex.props(contentStyles.emphasis)}>{children}</strong>;
+}
+
+/** @param {{ children: import('react').ReactNode }} props */
+function MdxCode({ children }) {
+  return <code {...stylex.props(contentStyles.inlineCode)}>{children}</code>;
 }
 
 /**
@@ -231,16 +296,18 @@ export function useMDXComponents(components) {
     ),
     /** @param {{ children: import('react').ReactNode }} props */
     p: ({ children }) => (
-      <Text as="p" type="body" xstyle={contentStyles.introParagraph}>
+      <p
+        {...stylex.props(contentStyles.paragraph, contentStyles.introParagraph)}
+      >
         {children}
-      </Text>
+      </p>
     ),
     a: MdxLink,
     strong: MdxStrong,
     blockquote: MdxBlockquote,
-    code: Code,
+    code: MdxCode,
     pre: Pre,
-    hr: Divider,
+    hr: () => <hr {...stylex.props(contentStyles.divider)} />,
     /** @param {{ children: import('react').ReactNode }} props */
     ul: ({ children }) => <ul {...stylex.props(listStyles.ul)}>{children}</ul>,
     /** @param {{ children: import('react').ReactNode }} props */

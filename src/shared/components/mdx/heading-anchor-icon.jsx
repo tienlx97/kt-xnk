@@ -1,18 +1,17 @@
-'use client';
-
-import { Icon } from '@astryxdesign/core/Icon';
 import { spacingVars } from '@astryxdesign/core/theme/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
 
 const styles = stylex.create({
   icon: {
     display: 'inline',
+    height: '20px',
     marginInlineStart: spacingVars['--spacing-2'],
     opacity: {
       default: 0,
       ':is([data-mdx-heading]:focus-within *)': 1,
       ':is([data-mdx-heading]:hover *)': 1,
     },
+    width: '20px',
   },
 });
 
@@ -33,11 +32,6 @@ function ReactDocsChainLink(props) {
 
 export function HeadingAnchorIcon() {
   return (
-    <Icon
-      icon={ReactDocsChainLink}
-      size="md"
-      color="accent"
-      xstyle={styles.icon}
-    />
+    <ReactDocsChainLink aria-hidden="true" {...stylex.props(styles.icon)} />
   );
 }
