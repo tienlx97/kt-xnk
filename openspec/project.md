@@ -15,7 +15,8 @@ with new pages via the feature-based `src/` structure.
 - Language/runtime: JavaScript
 - Framework: Next.js (latest, App Router) — UI built from real
   `@astryxdesign/core` components (looked up via the Astryx MCP server
-  `xds`, https://astryx.atmeta.com/mcp), not hand-rolled markup
+  `xds`, https://astryx.atmeta.com/mcp), except for the scoped MDX authoring
+  policy below
 - Style: Astryx theme tokens (`src/shared/components/theme.js`) drive all color/spacing;
   StyleX is the sanctioned escape hatch for one-off layout overrides via the
   `xstyle` prop only — see `docs/stylex-installation.md` (build tool setup)
@@ -60,6 +61,17 @@ build with messages that explain the fix.
   `TopNav`, `Text`, `Heading`, ...) — no hand-rolled `<div>`/`<nav>` markup
   where an Astryx component covers the case. Look up props/examples via the
   `xds` MCP server before writing a component from scratch.
+- React.dev copycat exception: while implementing
+  `openspec/changes/react-dev-docs-shell/`, TopNav, SideNav, Content, TOC, and
+  components exposed through `useMDXComponents` may copy or adapt the semantic
+  structure, behavior, and local controls of
+  [react.dev](https://github.com/reactjs/react.dev) without replacing them with
+  Astryx equivalents solely for design-system compliance. Astryx is optional,
+  not mandatory, throughout this scoped documentation shell; native semantic
+  elements and local components are allowed. This exception relaxes only Astryx
+  component selection and exact reference geometry values; StyleX, theme
+  variables, accessibility, Server/Client Component boundaries, and the
+  feature-layer architecture remain mandatory.
 - Styling: no inline `style`/`className`, no top-level media
   queries/pseudo-classes. Use StyleX (`xstyle` prop, see
   `docs/stylex-authoring.md` antipatterns) only for layout overrides Astryx

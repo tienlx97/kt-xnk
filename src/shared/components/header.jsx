@@ -1,6 +1,5 @@
 'use client';
 
-import { useAppShellMobile } from '@astryxdesign/core/AppShell';
 import { HStack } from '@astryxdesign/core/HStack';
 import { Icon } from '@astryxdesign/core/Icon';
 import {
@@ -25,8 +24,7 @@ const styles = stylex.create({
     display: 'flex',
     fontFamily: 'var(--font-family-body)',
     height: {
-      default: `calc(${spacingVars['--spacing-12']} + ${spacingVars['--spacing-4']})`,
-      '@media (max-width: 1023px)': `calc(${spacingVars['--spacing-12']} + ${spacingVars['--spacing-2']})`,
+      default: '64px',
     },
     paddingInline: {
       default: spacingVars['--spacing-4'],
@@ -143,11 +141,22 @@ const styles = stylex.create({
 /**
  * React Docs-inspired top navigation implemented directly with semantic
  * markup and StyleX rather than Astryx TopNav components.
- * @param {{ siteName: string, navLinks: NavLink[], endContent?: import('react').ReactNode }} props
+ * @param {{
+ *   siteName: string,
+ *   navLinks: NavLink[],
+ *   endContent?: import('react').ReactNode,
+ *   isMobileNavOpen: boolean,
+ *   onMobileNavToggle: () => void,
+ * }} props
  */
-export function Header({ siteName, navLinks, endContent }) {
+export function Header({
+  siteName,
+  navLinks,
+  endContent,
+  isMobileNavOpen,
+  onMobileNavToggle,
+}) {
   const pathname = usePathname();
-  const { isMobileNavOpen, toggleMobileNav } = useAppShellMobile();
 
   return (
     <nav aria-label="Điều hướng chính" {...stylex.props(styles.nav)}>
@@ -156,7 +165,7 @@ export function Header({ siteName, navLinks, endContent }) {
           type="button"
           aria-label={isMobileNavOpen ? 'Đóng menu' : 'Mở menu'}
           aria-expanded={isMobileNavOpen}
-          onClick={toggleMobileNav}
+          onClick={onMobileNavToggle}
           {...stylex.props(styles.mobileToggle)}
         >
           <Icon icon={isMobileNavOpen ? 'close' : 'menu'} size="md" />

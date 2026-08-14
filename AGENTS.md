@@ -72,6 +72,7 @@ Writing the same fix twice by hand is a harness failure.
 - Never edit `openspec/archive/`.
 - Prefer existing patterns; you replicate what you see, so only replicate what
   `harness/GOLDEN_RULES.md` grades as A.
+- **React.dev copycat exception:** for `openspec/changes/react-dev-docs-shell/`, TopNav, SideNav, Content, TOC, and components exposed through `useMDXComponents` may copy/adapt react.dev with semantic native or local UI; Astryx is optional. This scoped rule overrides the generic Astryx-only/no-raw-layout guidance below; StyleX, theme variables, accessibility, and architecture rules still apply.
 - **Shared memory is files, not agent memory.** This repo is worked by multiple
   agents (Claude Code, Codex, humans). Durable knowledge lives ONLY in repo
   files: `harness/PROGRESS.md`, `docs/adr/`, `openspec/`. The sanctioned recall

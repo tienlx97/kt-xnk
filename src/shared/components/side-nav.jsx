@@ -1,6 +1,5 @@
 'use client';
 
-import { useAppShellMobile } from '@astryxdesign/core/AppShell';
 import { Icon } from '@astryxdesign/core/Icon';
 import { Text } from '@astryxdesign/core/Text';
 import {
@@ -124,9 +123,9 @@ const styles = stylex.create({
  * React Docs-style route group. Groups with an overview `path` keep the parent
  * row as a navigable link. Pure category groups omit `path` and use the full
  * row as a disclosure button.
- * @param {{ route: SidebarRouteItem, pathname: string }} props
+ * @param {{ route: SidebarRouteItem, pathname: string, onNavigate: () => void }} props
  */
-function SideNavGroup({ route, pathname }) {
+function SideNavGroup({ route, pathname, onNavigate }) {
   const routePath = route.path;
   const containsActiveRoute =
     (routePath ? isNavLinkActive(pathname, routePath) : false) ||
@@ -136,7 +135,6 @@ function SideNavGroup({ route, pathname }) {
       false);
   const [isExpanded, setIsExpanded] = useState(containsActiveRoute);
   const isSelected = routePath ? pathname === routePath : false;
-  const { closeMobileNav } = useAppShellMobile();
   const groupKey = routePath?.slice(1) ?? route.title ?? 'group';
   const childrenId = `side-nav-${groupKey.toLowerCase().replaceAll(/[^a-z0-9]+/g, '-')}-children`;
 
@@ -162,7 +160,7 @@ function SideNavGroup({ route, pathname }) {
           aria-current={isSelected ? 'page' : undefined}
           aria-controls={childrenId}
           aria-expanded={isExpanded}
-          onClick={closeMobileNav}
+          onClick={onNavigate}
           {...stylex.props(styles.row, isSelected && styles.selected)}
         >
           {label}
@@ -186,6 +184,7 @@ function SideNavGroup({ route, pathname }) {
               route={child}
               pathname={pathname}
               isChild
+              onNavigate={onNavigate}
             />
           ))}
         </ul>
@@ -195,19 +194,18 @@ function SideNavGroup({ route, pathname }) {
 }
 
 /**
- * @param {{ route: SidebarRouteItem, pathname: string, isChild?: boolean }} props
+ * @param {{ route: SidebarRouteItem, pathname: string, isChild?: boolean, onNavigate: () => void }} props
  */
-function SideNavLink({ route, pathname, isChild = false }) {
+function SideNavLink({ route, pathname, isChild = false, onNavigate }) {
   const routePath = route.path ?? '/';
   const isSelected = pathname === routePath;
-  const { closeMobileNav } = useAppShellMobile();
 
   return (
     <li {...stylex.props(styles.item)}>
       <Link
         href={routePath}
         aria-current={isSelected ? 'page' : undefined}
-        onClick={closeMobileNav}
+        onClick={onNavigate}
         {...stylex.props(
           styles.row,
           isChild && styles.childRow,
@@ -229,9 +227,13 @@ function SideNavLink({ route, pathname, isChild = false }) {
  * The registry schema intentionally matches react.dev's `sidebar*.json`
  * files: a root route tree containing links, nested `routes`, and optional
  * section-header records.
- * @param {{ routeTrees: import('../types/index.js').SidebarRouteTree[], titles?: string[] }} props
+ * @param {{
+ *   routeTrees: import('../types/index.js').SidebarRouteTree[],
+ *   titles?: string[],
+ *   onNavigate?: () => void,
+ * }} props
  */
-export function AppSideNav({ routeTrees, titles = [] }) {
+export function AppSideNav({ routeTrees, titles = [], onNavigate = () => {} }) {
   const pathname = usePathname();
   const activeRouteTree = routeTrees.find((routeTree) =>
     isNavLinkActive(pathname, routeTree.path),
@@ -258,9 +260,17 @@ export function AppSideNav({ routeTrees, titles = [] }) {
                   </Text>
                 </li>
               ) : route.routes ? (
-                <SideNavGroup route={route} pathname={pathname} />
+                <SideNavGroup
+                  route={route}
+                  pathname={pathname}
+                  onNavigate={onNavigate}
+                />
               ) : !route.path ? null : (
-                <SideNavLink route={route} pathname={pathname} />
+                <SideNavLink
+                  route={route}
+                  pathname={pathname}
+                  onNavigate={onNavigate}
+                />
               )}
             </Fragment>
           );
