@@ -64,6 +64,354 @@ This file is the handoff between sessions/agents — write for a reader with zer
 
 ---
 
+## 2026-08-15 — Codex
+
+- **Active change:** reopened `react-dev-docs-shell` for task 4.4 after user
+  review found multiple SideNav groups could remain expanded together.
+- **Task worked:** replaced independent `SideNavGroup` state with one exclusive,
+  pathname-aware accordion selection owned by `AppSideNav`. Child route matches
+  now take precedence over broad parent paths, so `/docs/may-tinh` opens IT
+  instead of NỘI QUY. Added pure state tests and a source regression contract.
+- **Result:** opening IT collapses NỘI QUY, clicking IT again closes it, and a
+  route change reopens only the group containing the active page. Parent group
+  font size remains 15px throughout.
+- **Verification:** `./harness/verify.sh` passed every gate with 31 tests.
+  Evidence: `harness/runs/20260815-002812-112821/`; inspected browser screenshots
+  and click-state evidence:
+  `harness/runs/20260815-react-dev-docs-shell-side-nav-accordion/`.
+- **Skill influence:** `vercel-react-best-practices` led to derived pathname
+  state without effect synchronization; `agent-browser` verified the real
+  `aria-expanded`, `aria-hidden`, route-change, and computed-font behavior.
+- **Next step:** none for this correction.
+
+## 2026-08-14 — Codex
+
+- **Active change:** reopened `react-dev-docs-shell` for task 4.3 after user
+  review found typography parity was incomplete.
+- **Task worked:** audited the pinned local react.dev Tailwind scale and every
+  scoped typography consumer, then aligned PageHeading/MDX H1–H5, body prose,
+  Intro, callout titles/content, inline/fenced code, figure captions, Header,
+  SideNav, TOC, breadcrumbs, copy action, and Footer. Corrected a StyleX merge
+  bug where an Intro-only conditional style with null defaults suppressed the
+  base paragraph typography outside Intro.
+- **Result:** task 4.3 is complete and the proposal is complete again. Runtime
+  at both 390px and 1536px reports H1 40/50, H2 28/40, H3 24/36, body 17/30
+  weight 500, Intro 20/32.5 weight 500, SideNav 15px, TOC 13px, breadcrumb and
+  copy action 13px, and callout title 24/30.
+- **Verification:** `./harness/verify.sh` passed every gate with 29 tests.
+  Evidence: `harness/runs/20260814-235853-85234/`; computed-style screenshots:
+  `harness/runs/20260814-react-dev-docs-shell-typography/`.
+- **Skill influence:** `frontend-design` kept typography subordinate to the
+  pinned reference instead of the Astryx scale; `agent-browser` exposed the
+  rendered StyleX conditional-merge bug that source inspection alone missed.
+- **Next step:** none for this correction.
+
+## 2026-08-14 — Codex
+
+- **Active change:** `react-dev-docs-shell`, task 4.2.
+- **Task worked:** completed the durable handoff in `docs/architecture.md`,
+  `openspec/project.md`, the change proposal/design, and `acceptance.md`.
+  Converted the Docs/Astryx exception from an implementation-only allowance to
+  the documented long-term architecture contract. Closed all three shell/MDX
+  harness gaps with source assertions, a server-rendered MDX grouping fixture,
+  and the recorded browser acceptance suite.
+- **Result:** task 4.2 and the `react-dev-docs-shell` change are complete. All
+  tasks are checked, the proposal is marked complete, and the implementation
+  retains Next.js App Router, JavaScript, StyleX, KT-XNK auth/brand/routes, and
+  Vietnamese content while matching the agreed react.dev shell behavior.
+- **Verification:** `./harness/verify.sh` passed every gate with 28 unit/API/
+  contract tests. Evidence: `harness/runs/20260814-234536-74910/` plus the
+  seven-breakpoint acceptance images under
+  `harness/runs/20260814-react-dev-docs-shell-acceptance/`.
+- **Next step:** none for this change. Future react.dev registry additions are
+  explicitly classified in `mdx-component-matrix.json` and can be proposed as
+  separate changes without reopening this shell port.
+
+## 2026-08-14 — Codex
+
+- **Active change:** `react-dev-docs-shell`, task 4.1.
+- **Task worked:** captured and visually inspected the complete acceptance suite
+  at 374, 640, 768, 1024, 1280, 1536, and 1919px, plus a 2048px wide-screen
+  audit. Runtime measurements recorded header, SideNav, main, TOC, mobile-toggle,
+  and horizontal-overflow geometry at every width.
+- **Result:** task 4.1 is complete and checked. The 1024px boundary switches
+  from mobile navigation to the 320px SideNav; the 1536px boundary adds the
+  320px TOC; every measured viewport has zero horizontal overflow. Intentional
+  differences from react.dev are KT-XNK branding, navigation labels, routes,
+  authentication behavior, and Vietnamese document content.
+- **Verification:** `./harness/verify.sh` passed every gate. Evidence:
+  `harness/runs/20260814-234215-72533/`. The screenshot suite is under
+  `harness/runs/20260814-react-dev-docs-shell-acceptance/`.
+- **Next step:** task 4.2 — update durable architecture/project handoff docs,
+  close the change, and run the final verification gate.
+
+## 2026-08-14 — Codex
+
+- **Active change:** `react-dev-docs-shell`, task 3.3.
+- **Task worked:** reconciled the remaining authoring surface with the parity
+  matrix. Headings, paragraphs, links, quotes, inline/preformatted code,
+  dividers, Intro, callouts, disclosures, figures, and YouTube embeds now use
+  semantic HTML plus StyleX/theme variables without Astryx UI components.
+  Heading anchors retain the local chain-link SVG and frontmatter/TOC behavior
+  remains covered by the MDX API tests.
+- **Result:** task 3.3 is complete and checked. The scoped MDX source contract
+  rejects direct Astryx component imports while retaining Astryx theme tokens.
+- **Verification:** `./harness/verify.sh` passed every gate. Evidence:
+  `harness/runs/20260814-234103-70903/`. Browser QA measured the mobile callout
+  as a full-width 390px `aside[role=note]` with zero radius, the desktop callout
+  as 896px with 12px radius, Intro text as 20px/28.572px, and zero horizontal
+  overflow. Screenshots are under
+  `harness/runs/20260814-react-dev-docs-shell-task-3-3/`.
+- **Next step:** task 4.1 — capture the complete seven-breakpoint acceptance
+  suite and record shell geometry and intentional brand differences.
+
+## 2026-08-14 — Codex
+
+- **Active change:** `react-dev-docs-shell`, task 3.2.
+- **Task worked:** ported react.dev's `wrapChildrenInMaxWidthContainers` as an
+  MDX-3 remark AST transform. Ordinary top-level runs become `MaxWidth`; the
+  exact upstream interruption set (`Sandpack`, `FullWidth`, `Illustration`,
+  `IllustrationBlock`, `Challenges`, `Recipes`) remains in the 80rem frame.
+  Added semantic `MaxWidth`/`FullWidth` mappings and removed the old unconditional
+  56rem wrapper from `MdxArticle`.
+- **Result:** task 3.2 is complete and checked. A non-routed MDX fixture compiles
+  and server-renders as MaxWidth→FullWidth→MaxWidth in source order; frontmatter
+  and export nodes remain outside render groups.
+- **Verification:** `./harness/verify.sh` passed every gate. Evidence:
+  `harness/runs/20260814-233456-65871/`. At 2048px runtime body=1280px,
+  prose=896px, PageHeading/prose axis delta=0; at 390px prose=350px at x=20
+  with zero overflow. Screenshots are under
+  `harness/runs/20260814-react-dev-docs-shell-task-3-2/`.
+- **Next step:** task 3.3 — reconcile the remaining frontmatter/heading/TOC,
+  callout, media, and code authoring behavior against the parity matrix.
+
+## 2026-08-14 — Codex
+
+- **Active change:** `react-dev-docs-shell`, task 3.1.
+- **Task worked:** added `mdx-component-matrix.json`, a complete classification
+  of the pinned react.dev `MDXComponents` registry into supported, adapted,
+  planned, and intentionally omitted entries, with local names and rationale.
+  Added a mechanical test that compares the exact upstream inventory and proves
+  every supported/adapted claim exists in the local `useMDXComponents` map.
+- **Result:** task 3.1 is complete and checked. Generic gaps are queued for later
+  milestones while React product/release-specific components are explicit
+  non-goals rather than silent omissions.
+- **Verification:** `./harness/verify.sh` passed every gate. Evidence:
+  `harness/runs/20260814-232940-61874/`.
+- **Next step:** task 3.2 — add semantic `MaxWidth`/`FullWidth` MDX primitives and
+  an App-Router/MDX-3-compatible grouping contract with fixture geometry tests.
+
+## 2026-08-14 — Codex
+
+- **Active change:** `react-dev-docs-shell`, task 2.2.
+- **Task worked:** completed the TOC parity audit against react.dev `Toc.tsx`
+  and `useTocHighlight.tsx`. Corrected heading/item typography to 14px,
+  secondary heading color, and exact 12px start-side active radius while
+  retaining the behavior-equivalent 85px active offset and the more efficient
+  animation-frame scroll coalescing.
+- **Result:** task 2.2 is complete and checked. Sticky geometry, bounded
+  overscroll scroller, nested indentation, active styling, link semantics, and
+  bottom-of-page selection are verified.
+- **Verification:** `./harness/verify.sh` passed every gate. Evidence:
+  `harness/runs/20260814-232649-59904/`. At 1536px TOC top=0, heading y=80,
+  max height=780px for a 900px viewport, active font=14px and radius=
+  `12px 0 0 12px`; clicking item 3 selected it. At 2048px page-end scrolling
+  selected the final item. Screenshots are in
+  `harness/runs/20260814-react-dev-docs-shell-task-2-2/`.
+- **Next step:** task 3.1 — generate and test a react.dev MDX component-registry
+  parity matrix before changing MDX grouping behavior.
+
+## 2026-08-14 — Codex
+
+- **Active change:** `react-dev-docs-shell`, task 2.1.
+- **Task worked:** replaced Astryx Grid/VStack/Heading/HStack/Icon/Stack/Text,
+  Button, and Section usage across the MDX article frame, PageHeading,
+  copy-link action, TOC frame, and Footer with semantic local HTML and StyleX.
+  Converted responsive conditions to exact pixel thresholds and ported the
+  upstream footer divider/padding rhythm.
+- **Result:** task 2.1 is complete and checked. Content keeps 20/48px insets,
+  56rem heading/prose, 80rem body, and a 20rem TOC rail; the copy action and
+  breadcrumb chevron are accessible native controls/local SVGs.
+- **Verification:** `./harness/verify.sh` passed every gate. Evidence:
+  `harness/runs/20260814-232430-57476/`. Browser QA measured 20px at 390,
+  48px at 640, 320/896/320px regions at 1536, and at 2048 a 1280px body plus
+  896px PageHeading/prose with axis delta 0. Screenshots are in
+  `harness/runs/20260814-react-dev-docs-shell-task-2-1/`.
+- **Next step:** task 2.2 — audit and match the upstream TOC sticky/scroller and
+  active-link behavior at 1536/2048px after the semantic frame migration.
+
+## 2026-08-14 — Codex
+
+- **Active change:** `react-dev-docs-shell`, task 1.4.
+- **Task worked:** removed direct Astryx Icon/Text use from SideNav and matched
+  react.dev's SidebarLink/SidebarRouteTree geometry: 16px text, 8px block
+  padding, 20/24px nesting starts, desktop 20px end inset, 16px end radius,
+  local SVG directional arrow, and a 250ms opacity/grid collapse that keeps
+  closed descendants inert.
+- **Result:** task 1.4 is complete and checked. Desktop SideNav remains sticky in
+  the shell, mobile retains full-width rows, and active/disclosure states use
+  semantic local elements plus StyleX/theme variables only.
+- **Verification:** `./harness/verify.sh` passed every gate. Evidence:
+  `harness/runs/20260814-232035-54327/`. At 1024px the rail measured 320px,
+  selected row 300px, font 16px, and radius `0 16px 16px 0`; the IT disclosure
+  settled to 378px with `inert=false`. Screenshots at 1024/1280/1536px are in
+  `harness/runs/20260814-react-dev-docs-shell-task-1-4/`.
+- **Next step:** task 2.1 — port PageHeading, article, footer, and TOC region
+  geometry to semantic StyleX components without Astryx UI.
+
+## 2026-08-14 — Codex
+
+- **Active change:** `react-dev-docs-shell`, task 1.3.
+- **Task worked:** completed mobile overlay accessibility and breakpoint
+  behavior. Added explicit toggle/overlay refs, moved focus into the first route
+  control on open, restored focus to the menu toggle on close, and made the
+  SideNav fill the mobile viewport instead of retaining its 20rem desktop width.
+- **Result:** task 1.3 is complete and checked. Escape, route selection, and the
+  1024px boundary all close the overlay and restore body scrolling.
+- **Verification:** `./harness/verify.sh` passed every gate. Evidence:
+  `harness/runs/20260814-231753-51831/`. Browser QA at 374/390/640/768px
+  confirmed full-width overlay geometry and zero horizontal overflow; opening
+  focuses `NỘI QUY`, Escape returns focus to `Mở menu`, selecting `Giờ làm việc`
+  navigates and closes, and resizing 768→1024 closes and hides the toggle.
+  Screenshots are under
+  `harness/runs/20260814-react-dev-docs-shell-task-1-3/`.
+- **Next step:** task 1.4 — remove Astryx Icon/Text from desktop SideNav and
+  match the upstream tree's sticky scrolling, disclosure affordances, spacing,
+  active states, and section labels.
+
+## 2026-08-14 — Codex
+
+- **Active change:** `react-dev-docs-shell`, task 1.2.
+- **Task worked:** ported the react.dev TopNav desktop structure into
+  `header.jsx`. Removed direct Astryx `HStack`/`Icon` UI, replaced them with
+  semantic flex regions and a local accessible SVG menu glyph, matched the 64px
+  bar, 6px mobile and 16/20px desktop edge insets, 48px mobile control, 300ms
+  backdrop/shadow transition, and the 1919px wide-layout flex threshold. Added
+  `useScrollShadow` with `useSyncExternalStore` and a passive scroll listener so
+  only the boolean shadow state is subscribed to without an effect-driven
+  initial update.
+- **Result:** task 1.2 is complete and checked. KT-XNK brand/nav/account content
+  remains as the intentional product substitution; Header itself uses semantic
+  local UI plus StyleX and Astryx theme variables only.
+- **Verification:** `./harness/verify.sh` passed every gate. Evidence:
+  `harness/runs/20260814-231443-49141/`. Browser QA measured a 64px sticky
+  header, desktop nav visible/mobile toggle hidden at exactly 1024px, shadow
+  changing from none to a 1px/4px layer after scroll while header top remains 0,
+  and keyboard Tab focusing the logo with a 2px accent outline. Screenshots:
+  `harness/runs/20260814-react-dev-docs-shell-task-1-2/topnav-1024.png`,
+  `topnav-1536.png`, and `topnav-1919.png`.
+- **Next step:** task 1.3 — complete mobile overlay focus management and verify
+  route/resize close paths across 374/390/640/768px.
+
+## 2026-08-14 — Codex
+
+- **Active change:** `react-dev-docs-shell`, task 1.1 verification closure.
+- **Task worked:** applied the user's decision to keep the intentionally minimal
+  Docs landing page and delete the obsolete landing-specific unit test rather
+  than restore the removed `NỘI QUY`/`IT` content.
+- **Result:** task 1.1 is complete and checked. The semantic StyleX shell,
+  source contract test, OpenSpec design/spec/task map, and previously recorded
+  desktop/mobile browser evidence now meet the repository definition of done.
+- **Verification:** `./harness/verify.sh` passed every gate. Evidence:
+  `harness/runs/20260814-230945-45205/`.
+- **Next step:** task 1.2 — remove remaining Astryx UI from `header.jsx` and
+  port react.dev TopNav's desktop appearance, sticky scroll shadow, responsive
+  visibility, and keyboard behavior.
+
+## 2026-08-14 — Codex
+
+- **Active change:** `react-dev-docs-shell` (user-facing name: React.dev Docs
+  Copycat).
+- **Task worked:** task 1.1, the parity contract and semantic shell foundation.
+  Added proposal/design/specs/tasks with the pinned `../react.dev` source map,
+  exact breakpoint and geometry contract, App Router/MDX 3 compatibility
+  decisions, risks, verification matrix, and resume protocol. Replaced Astryx
+  `AppShell`/`MobileNav` with a local StyleX grid while retaining the existing
+  Server Component auth boundary and opaque `children` composition.
+- **Implementation state:** the header is a 64px sticky region; Docs/Tutorial
+  routes gain a 20rem desktop sidebar at 1024px; non-docs routes remain
+  single-column; the mobile route tree is a fixed overlay beneath the header.
+  Mobile state closes naturally on pathname changes and explicitly on Escape or
+  crossing the 1024px desktop boundary. Opening preserves/restores body overflow
+  and padding to avoid a scrollbar-width layout shift. Header and SideNav now
+  receive shell state via props instead of Astryx context.
+- **Mechanical verification:** the new source contract tests pass. Lint,
+  typecheck, dependency structure, harness tests, production build, readiness,
+  memory-secret checks, and bundle quality thresholds pass. The complete gate
+  remains red only because the user-owned `content/docs/index.mdx` currently
+  contains no `NỘI QUY`/`IT` headings while the pre-existing Docs API test still
+  requires both. Gate evidence: `harness/runs/20260814-230604-41052/`. Task 1.1
+  is intentionally unchecked under Golden Rule 1.
+- **Browser evidence:** at 1536x900, header=64px, desktop sidebar=320px and main
+  begins at x=320; at 390x844, the overlay spans x=0..390 and y=64..844,
+  document horizontal overflow is 0, body overflow changes to `hidden`, and
+  Escape removes the overlay and restores `visible`. Screenshots:
+  `harness/runs/20260814-react-dev-docs-shell-task-1-1/docs-shell-1536.png` and
+  `docs-shell-mobile-open-390.png`.
+- **Skill influence:** `frontend-design` kept the visual plan subordinate to the
+  explicit react.dev reference instead of inventing a new aesthetic;
+  `vercel-react-best-practices` kept MDX/page content server-rendered and made
+  route-close state derived rather than a synchronous state-setting effect;
+  `agent-browser` supplied runtime geometry and interaction evidence.
+- **Discovered:** `header.jsx`, `side-nav.jsx`, `mdx-article.jsx`,
+  `mdx-page-heading.jsx`, `table-of-contents.jsx`, and `footer.jsx` still use
+  Astryx UI primitives. Their removal and parity refinements are explicitly
+  tasks 1.2–2.2 and must not be represented as complete. The landing-content
+  mismatch predates this change and was not altered.
+- **Next step:** reconcile or receive direction on the user-owned Docs landing
+  content/test mismatch, rerun `./harness/verify.sh`, then check task 1.1 and
+  proceed to task 1.2. Resume from
+  `openspec/changes/react-dev-docs-shell/tasks.md` and its `design.md`.
+
+## 2026-08-14 — Codex
+
+- **Active change:** complete Vietnamese coverage for the Optimistic font stack.
+- **Task worked:** replaced narrow Vietnamese `unicode-range` overlays with
+  dedicated Vietnamese-first Text and Display families, kept the Western
+  Optimistic families as secondary coverage, and added six Vietnamese italic
+  subsets generated at the upstream faces' -11° angle. Added a reproducible
+  FontTools generation script and a regression test covering every configured
+  family, weight, style, and asset.
+- **Result:** implementation and browser QA are complete. Chromium's platform
+  font audit reports 0 system fallbacks across 24 combinations: Text 400/500/700
+  and Display 500/600/700, each in normal/italic and NFC/NFD. Visual inspection
+  confirms consistent Vietnamese marks, slant, weight, and spacing.
+- **Verification:** the font regression test, lint, typecheck, structure,
+  harness tests, build, and quality thresholds pass. Full verification remains
+  blocked only by the pre-existing Docs landing-page edit/test mismatch: the
+  content no longer has a `NỘI QUY` heading while its TOC test still requires
+  one. Evidence: `harness/runs/20260814-224847-28951/`; visual evidence:
+  `harness/runs/20260814-vietnamese-font-coverage/font-audit-1440.png`.
+- **Discovered:** no official Vietnamese italic files exist in react.dev's font
+  download list or CDN; this is why the local subsets are generated rather than
+  downloaded. The unrelated Docs mismatch was not changed.
+- **Next step:** after the Docs content/test mismatch is reconciled, rerun the
+  full gate, mark `vietnamese-font-coverage` task 1.1 complete, and close the
+  proposal.
+
+## 2026-08-14 — Codex
+
+- **Active change:** scoped MDX component authoring policy for react.dev ports.
+- **Task worked:** added an AI-visible exception that makes Astryx optional for
+  components exposed through `useMDXComponents`. Native semantic elements and
+  local controls are allowed; neutral Astryx layout/typography primitives remain
+  available, while controls/chrome such as `Button`, `IconButton`, `Banner`, and
+  `Card` are not mandatory. StyleX tokens, accessibility, architecture, and
+  Server/Client Component boundaries remain required.
+- **Result:** instruction, project convention, OpenSpec proposal/spec/task, and
+  the nearby MDX map documentation are consistent. Task 1.1 remains unchecked
+  because the repository's definition of done requires the full gate to pass.
+- **Verification:** readiness, lint, typecheck, structure, harness tests, build,
+  and quality thresholds pass. The full gate is blocked by a pre-existing
+  `content/docs/index.mdx` edit that removes the `NỘI QUY` heading while
+  `src/features/docs/api/content.test.js` still requires it. Evidence:
+  `harness/runs/20260814-223557-19771/`.
+- **Discovered:** reconcile the Docs landing-page content with its TOC test;
+  not changed because it is outside the authoring-policy task and overlaps
+  user-owned work.
+- **Next step:** once the unrelated Docs content/test mismatch is resolved,
+  rerun `./harness/verify.sh`, mark task 1.1 complete, and close the proposal.
+
 ## 2026-08-14 — Codex
 
 - **Active change:** finalize the MDX navigation/content work for publication.

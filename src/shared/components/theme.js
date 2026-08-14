@@ -35,14 +35,14 @@ export const ktxnkTheme = defineTheme({
   typography: {
     scale: { base: 17, ratio: 1.2 },
     body: {
-      family: 'Optimistic Text',
+      family: 'Optimistic Text Vietnamese',
       fallbacks:
-        '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+        '"Optimistic Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
     },
     heading: {
-      family: 'Optimistic Display',
+      family: 'Optimistic Display Vietnamese',
       fallbacks:
-        '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+        '"Optimistic Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
     },
     code: {
       family: 'Source Code Pro',
