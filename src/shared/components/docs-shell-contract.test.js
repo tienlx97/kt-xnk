@@ -119,6 +119,15 @@ test('ports content regions to semantic StyleX with exact width axes', () => {
 test('matches react.dev TOC typography and sticky scroller geometry', () => {
   const tocSource = contentSources.at(-1);
   assert.match(tocSource, /fontSize: '0\.8125rem'/);
+  assert.match(
+    tocSource,
+    /fontWeight: fontWeightVars\['--font-weight-medium'\]/,
+  );
+  const activeLinkStyle = tocSource.match(
+    /activeLink: \{([\s\S]*?)\n\s{2}\},/u,
+  )?.[1];
+  assert.ok(activeLinkStyle);
+  assert.doesNotMatch(activeLinkStyle, /fontSize/);
   assert.match(tocSource, /borderEndStartRadius: '12px'/);
   assert.match(tocSource, /borderStartStartRadius: '12px'/);
   assert.match(tocSource, /maxHeight: 'calc\(100vh - 7\.5rem\)'/);

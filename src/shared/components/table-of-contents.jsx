@@ -76,7 +76,7 @@ const styles = stylex.create({
       ':hover': colorVars['--color-text-accent'],
     },
     display: 'block',
-    fontWeight: fontWeightVars['--font-weight-normal'],
+    fontWeight: fontWeightVars['--font-weight-medium'],
     lineHeight: 1.5,
     outline: {
       default: 'none',

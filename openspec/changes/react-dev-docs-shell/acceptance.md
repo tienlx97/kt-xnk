@@ -46,7 +46,7 @@ computed styles now match the relevant upstream values:
 | SideNav parent route | 15px | 30px | 700 |
 | SideNav nested route | 13px | 30px | 500/700 by state |
 | SideNav section label | 13px | 30px | 700 |
-| TOC link | 13px | 19.5px | 400/700 by state |
+| TOC link | 13px | 19.5px | 500/700 by state |
 | Breadcrumb | 13px | 30px | 700 |
 | Copy action | 13px | 16.25px | 700 |
 | Code block | 13.6px | 24px | 400 |
