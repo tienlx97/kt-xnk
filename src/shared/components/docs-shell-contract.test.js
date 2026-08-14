@@ -37,3 +37,10 @@ test('implements TopNav with semantic UI and react.dev desktop behavior', () => 
   assert.match(headerSource, /'@media \(min-width: 1919px\)'/);
   assert.match(headerSource, /aria-controls="mobile-docs-navigation"/);
 });
+
+test('manages mobile overlay focus without Astryx MobileNav state', () => {
+  assert.match(shellSource, /mobileOverlayRef/);
+  assert.match(shellSource, /firstInteractive\.focus\(\)/);
+  assert.match(shellSource, /mobileToggleRef\.current\?\.focus\(\)/);
+  assert.match(shellSource, /isMobile/);
+});

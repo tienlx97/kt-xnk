@@ -210,6 +210,7 @@ function MobileMenuIcon({ isOpen }) {
  *   navLinks: NavLink[],
  *   endContent?: import('react').ReactNode,
  *   isMobileNavOpen: boolean,
+ *   mobileToggleRef: import('react').RefObject<HTMLButtonElement | null>,
  *   onMobileNavToggle: () => void,
  * }} props
  */
@@ -218,6 +219,7 @@ export function Header({
   navLinks,
   endContent,
   isMobileNavOpen,
+  mobileToggleRef,
   onMobileNavToggle,
 }) {
   const pathname = usePathname();
@@ -231,6 +233,7 @@ export function Header({
       <div {...stylex.props(styles.inner)}>
         <div {...stylex.props(styles.brandArea)}>
           <button
+            ref={mobileToggleRef}
             type="button"
             aria-label={isMobileNavOpen ? 'Đóng menu' : 'Mở menu'}
             aria-controls="mobile-docs-navigation"

@@ -15,7 +15,7 @@ Rules:
 - [x] 1.2 Port TopNav appearance and desktop behavior, including 64px sticky
   header, scroll shadow, brand/nav/auth roles, and exact responsive visibility —
   verify: keyboard interaction tests and screenshots at 1024/1536/1919px.
-- [ ] 1.3 Port mobile TopNav/SideNav overlay behavior, including body scroll
+- [x] 1.3 Port mobile TopNav/SideNav overlay behavior, including body scroll
   locking, Escape/route/resize close paths, and focus management — verify:
   browser flow and screenshots at 374/390/640/768px.
 - [ ] 1.4 Port desktop SideNav tree geometry, disclosure motion, active states,

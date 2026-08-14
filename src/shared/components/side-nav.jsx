@@ -26,6 +26,10 @@ const styles = stylex.create({
     paddingBlock: spacingVars['--spacing-4'],
     width: '20rem',
   },
+  mobileNav: {
+    minHeight: '100%',
+    width: '100%',
+  },
   list: {
     display: 'flex',
     flexDirection: 'column',
@@ -230,10 +234,16 @@ function SideNavLink({ route, pathname, isChild = false, onNavigate }) {
  * @param {{
  *   routeTrees: import('../types/index.js').SidebarRouteTree[],
  *   titles?: string[],
+ *   isMobile?: boolean,
  *   onNavigate?: () => void,
  * }} props
  */
-export function AppSideNav({ routeTrees, titles = [], onNavigate = () => {} }) {
+export function AppSideNav({
+  routeTrees,
+  titles = [],
+  isMobile = false,
+  onNavigate = () => {},
+}) {
   const pathname = usePathname();
   const activeRouteTree = routeTrees.find((routeTree) =>
     isNavLinkActive(pathname, routeTree.path),
@@ -242,7 +252,10 @@ export function AppSideNav({ routeTrees, titles = [], onNavigate = () => {} }) {
   if (!activeRouteTree) return null;
 
   return (
-    <nav aria-label="Điều hướng tài liệu" {...stylex.props(styles.nav)}>
+    <nav
+      aria-label="Điều hướng tài liệu"
+      {...stylex.props(styles.nav, isMobile && styles.mobileNav)}
+    >
       <ul {...stylex.props(styles.list)}>
         {activeRouteTree.routes.map((route, index) => {
           const routeKey =

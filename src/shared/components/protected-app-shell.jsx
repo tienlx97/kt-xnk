@@ -3,7 +3,7 @@
 import { colorVars, spacingVars } from '@astryxdesign/core/theme/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { isNavLinkActive } from '../api/nav.js';
 import { Footer } from './footer.jsx';
@@ -100,6 +100,11 @@ export function ProtectedAppShell({
   const [openMobileNavPathname, setOpenMobileNavPathname] = useState(
     /** @type {string | null} */ (null),
   );
+  const mobileToggleRef = useRef(
+    /** @type {HTMLButtonElement | null} */ (null),
+  );
+  const mobileOverlayRef = useRef(/** @type {HTMLElement | null} */ (null));
+  const wasMobileNavOpenRef = useRef(false);
   const isMobileNavOpen = openMobileNavPathname === pathname;
   const hasSideNav = SIDE_NAV_ROUTES.some((href) =>
     isNavLinkActive(pathname, href),
@@ -146,6 +151,19 @@ export function ProtectedAppShell({
     };
   }, [isMobileNavOpen]);
 
+  useEffect(() => {
+    if (isMobileNavOpen) {
+      const firstInteractive = mobileOverlayRef.current?.querySelector(
+        'a[href], button:not([disabled])',
+      );
+      if (firstInteractive instanceof HTMLElement) firstInteractive.focus();
+    } else if (wasMobileNavOpenRef.current) {
+      mobileToggleRef.current?.focus();
+    }
+
+    wasMobileNavOpenRef.current = isMobileNavOpen;
+  }, [isMobileNavOpen]);
+
   return (
     <div {...stylex.props(styles.root)}>
       <header {...stylex.props(styles.topNav)}>
@@ -154,6 +172,7 @@ export function ProtectedAppShell({
           navLinks={navLinks}
           endContent={endContent}
           isMobileNavOpen={isMobileNavOpen}
+          mobileToggleRef={mobileToggleRef}
           onMobileNavToggle={() =>
             setOpenMobileNavPathname((openPathname) =>
               openPathname === pathname ? null : pathname,
@@ -187,12 +206,14 @@ export function ProtectedAppShell({
 
       {hasSideNav && isMobileNavOpen ? (
         <aside
+          ref={mobileOverlayRef}
           id="mobile-docs-navigation"
           aria-label="Điều hướng tài liệu trên thiết bị di động"
           {...stylex.props(styles.mobileOverlay)}
         >
           <AppSideNav
             routeTrees={sideNavRouteTrees}
+            isMobile
             onNavigate={closeMobileNav}
           />
         </aside>
