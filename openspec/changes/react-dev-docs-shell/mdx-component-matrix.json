@@ -40,7 +40,7 @@
     { "name": "IllustrationBlock", "status": "adapted", "localName": "IllustrationBlock", "note": "Sequential/non-sequential illustration group port." },
     { "name": "Intro", "status": "adapted", "localName": "Intro", "note": "Local lead paragraph component." },
     { "name": "InlineToc", "status": "adapted", "localName": "InlineToc", "note": "Nested inline navigation backed by the MDX 3 TOC provider." },
-    { "name": "LanguageList", "status": "intentionally-omitted", "localName": null, "note": "React translation-network component." },
+    { "name": "LanguageList", "status": "adapted", "localName": "LanguageList", "note": "Ported with a local LanguagesContext and placeholder language/translation-status data (KT-XNK has no real translation program)." },
     { "name": "LearnMore", "status": "adapted", "localName": "LearnMore", "note": "Learning action card ported with a local semantic link control." },
     { "name": "Math", "status": "adapted", "localName": "Math", "note": "Upstream STIX regular math typography mapping." },
     { "name": "MathI", "status": "adapted", "localName": "MathI", "note": "Upstream STIX italic math typography mapping." },
@@ -61,7 +61,7 @@
     { "name": "Sandpack", "status": "planned", "localName": null, "note": "Task 3.2 full-width interactive code block; dependency decision required." },
     { "name": "SandpackRSC", "status": "intentionally-omitted", "localName": null, "note": "React RSC-specific sandbox." },
     { "name": "SandpackWithHTMLOutput", "status": "planned", "localName": null, "note": "Full-width interactive code output; dependency decision required." },
-    { "name": "TeamMember", "status": "intentionally-omitted", "localName": null, "note": "React team directory component." },
+    { "name": "TeamMember", "status": "adapted", "localName": "TeamMember", "note": "Ported profile card with local icons and StyleX; renders whatever name/title/photo/social props the author supplies (KT-XNK has no equivalent product-team roster)." },
     { "name": "TerminalBlock", "status": "adapted", "localName": "TerminalBlock", "note": "Upstream terminal presentation and copy interaction ported to semantic StyleX UI." },
     { "name": "YouWillLearn", "status": "adapted", "localName": "YouWillLearn", "note": "Local learning-outcomes callout." },
     { "name": "YouWillLearnCard", "status": "adapted", "localName": "YouWillLearnCard", "note": "Learning card and action port." },
@@ -70,7 +70,7 @@
     { "name": "Solution", "status": "adapted", "localName": "Solution", "note": "RSC-safe marked challenge solution child with upstream reveal and close/next controls." },
     { "name": "CodeStep", "status": "adapted", "localName": "CodeStep", "note": "Four-step inline annotation styles ported to StyleX." },
     { "name": "YouTubeIframe", "status": "adapted", "localName": "YouTubeIframe", "note": "Upstream authoring name aliases the local privacy-aware responsive embed." },
-    { "name": "ErrorDecoder", "status": "intentionally-omitted", "localName": null, "note": "React error-code product tool." }
+    { "name": "ErrorDecoder", "status": "adapted", "localName": "ErrorDecoder", "note": "Ported with a local ErrorDecoderContext/replaceArgs/urlify port; KT-XNK has no minified-error database, so a host page supplies errorCode/errorMessage via the context." }
   ],
   "localExtensions": [
     { "name": "h6", "reason": "Completes semantic Markdown heading coverage." },

@@ -64,10 +64,14 @@ export const ktxnkTheme = defineTheme({
     '--color-icon-accent': '#247768',
 
     // Neutral ramp — brand hue 178.4, chroma shaped by tone (rule 2 above).
-    // Surfaces: tone 100 / 98 / 96 / 94 keeps the body -> surface -> card ->
-    // popover hierarchy readable at a glance.
+    // Surfaces: tone 100 / 98 / 97 / 96 / 94 keeps the body -> surface ->
+    // muted -> card -> popover hierarchy readable at a glance.
     '--color-background-body': '#ffffff', // tone 100, chroma 0
     '--color-background-surface': '#f7faf9', // tone 98, chroma 1
+    // Hover/press fill for interactive rows (nav links, menu items) — one
+    // tick darker than surface, one tick lighter than card so a hovered row
+    // sitting on a card doesn't disappear into it.
+    '--color-background-muted': '#f4f7f6', // tone 97, chroma 1.2
     '--color-background-card': '#f0f4f3', // tone 96, chroma 1.5
     '--color-background-popover': '#eaefee', // tone 94, chroma 2
 

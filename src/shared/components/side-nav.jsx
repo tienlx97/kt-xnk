@@ -16,6 +16,7 @@ import {
   isNavLinkActive,
   toggleSidebarGroup,
 } from '../api/nav.js';
+import { IconChevron } from './icon/icon-chevron.jsx';
 
 /** @typedef {import('../types/index.js').SidebarRouteItem} SidebarRouteItem */
 
@@ -56,7 +57,7 @@ const styles = stylex.create({
     alignItems: 'center',
     backgroundColor: {
       default: 'transparent',
-      ':hover': colorVars['--color-background-muted'],
+      ':hover': colorVars['--color-background-card'],
     },
     borderRadius: {
       default: 0,
@@ -105,16 +106,13 @@ const styles = stylex.create({
     whiteSpace: 'nowrap',
   },
   chevron: {
-    display: 'block',
+    color: colorVars['--color-text-secondary'],
     flexShrink: 0,
-    height: '16px',
-    transitionDuration: '250ms',
-    transitionProperty: 'transform',
-    transitionTimingFunction: 'ease-in-out',
-    width: '16px',
+    // height: '16px',
+    // width: '16px',
   },
   chevronExpanded: {
-    transform: 'rotate(90deg)',
+    color: colorVars['--color-text-accent'],
   },
   collapse: {
     display: 'grid',
@@ -155,18 +153,11 @@ const styles = stylex.create({
 /** @param {{ isExpanded: boolean }} props */
 function SideNavChevron({ isExpanded }) {
   return (
-    <svg
+    <IconChevron
       aria-hidden="true"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="1.5"
-      {...stylex.props(styles.chevron, isExpanded && styles.chevronExpanded)}
-    >
-      <path d="m9 18 6-6-6-6" />
-    </svg>
+      displayDirection={isExpanded ? 'down' : 'end'}
+      xstyle={[styles.chevron, isExpanded && styles.chevronExpanded]}
+    />
   );
 }
 

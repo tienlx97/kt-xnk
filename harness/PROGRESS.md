@@ -89,6 +89,41 @@ This file is the handoff between sessions/agents — write for a reader with zer
 
 ---
 
+## 2026-08-15 — Claude
+
+- **Active change:** `react-dev-mdx-components-parity`, task 5.1 (task 4.1
+  deferred by user decision).
+- **Task worked:** ported `LanguageList` (local `LanguagesContext` +
+  placeholder translation-status data), `TeamMember` (profile card with
+  ported Twitter/Threads/Bluesky/GitHub/link icons), and `ErrorDecoder`
+  (local `ErrorDecoderContext`, `replaceArgs`/`urlify`/query-arg parsing,
+  `useSyncExternalStore`-based `location.search` + hydration reads instead of
+  a setState-in-effect). Registered all three in `mdx-components.jsx`,
+  flipped their matrix status from `intentionally-omitted` to `adapted`, and
+  added a `mdx-product-context-fixture` dev route + `product-context.mdx`
+  fixture.
+- **Result:** task 4.1 (`Sandpack`/`SandpackRSC`/`SandpackWithHTMLOutput`)
+  stays unchecked — user decided to postpone the `@codesandbox/sandpack-react`
+  dependency/bundle decision until real content needs a sandbox; matrix
+  entries stay `planned`/`intentionally-omitted`. KT-XNK has no real
+  translation program, team roster, or error-code database, so `LanguageList`/
+  `TeamMember`/`ErrorDecoder` render placeholder data per user decision —
+  compatible props are in place for a future real data source.
+- **Verification:** `./harness/verify.sh` passed every gate. Along the way,
+  fixed three unrelated pre-existing stale-assertion failures it caught
+  (uncommitted before this session): `sidebarPost.test.js` expected the old
+  uppercase "NỘI QUY" title and a path-less IT group, `site.test.js` expected
+  a since-removed Tutorial top-nav pill, and `content.test.js` expected 16
+  discovered Docs posts instead of the current 17 (an untracked
+  `content/docs/it/it.mdx` already existed) — all three updated to match
+  current, correct state rather than reverted.
+- **Browser evidence:** `harness/runs/20260815-react-dev-mdx-components-task-5-1/`
+  — 390/1024/1536px screenshots of the fixture route, no horizontal overflow
+  at any width; `%s` substitution verified live via
+  `?args[0]=demo-config` query string.
+- **Next step:** task 4.1 stays open pending a real Sandpack use case; once
+  ready, revisit `openspec/changes/react-dev-mdx-components-parity/tasks.md`.
+
 ## 2026-08-15 — Codex
 
 - **Active change:** `react-dev-mdx-components-parity`, task 3.1.

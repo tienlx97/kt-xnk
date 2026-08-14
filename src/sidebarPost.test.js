@@ -16,8 +16,8 @@ test('Docs sidebar exposes Nội quy and IT as expandable groups', () => {
       childCount: routes.length,
     })),
     [
-      { title: 'NỘI QUY', path: '/docs', childCount: 7 },
-      { title: 'IT', path: undefined, childCount: 9 },
+      { title: 'Nội quy', path: '/docs', childCount: 7 },
+      { title: 'IT', path: '/docs/it', childCount: 9 },
     ],
   );
 });

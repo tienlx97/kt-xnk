@@ -65,7 +65,7 @@ const styles = stylex.create({
     paddingInline: spacingVars['--spacing-2'],
   },
   activeItem: {
-    backgroundColor: colorVars['--color-background-muted'],
+    backgroundColor: colorVars['--color-accent-muted'],
   },
   nestedItem: {
     paddingInlineStart: spacingVars['--spacing-4'],

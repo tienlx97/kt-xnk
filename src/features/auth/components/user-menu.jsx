@@ -34,7 +34,7 @@ export function UserMenu() {
         />
       }
     >
-      <Avatar name={username} size="sm" tooltip={false} onClick={() => {}} />
+      <Avatar name={username} size="md" tooltip={false} onClick={() => {}} />
     </Popover>
   );
 }

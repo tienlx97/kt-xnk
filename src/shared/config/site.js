@@ -1,8 +1,10 @@
 /** @typedef {import('../types/index.js').NavLink} NavLink */
 
 export const site = {
-  name: 'KT-XNK',
-  description: 'OpenSpec x Harness Engineering starter — Next.js + StyleX.',
+  name: 'Đại Nghĩa Group',
+  description:
+    'Cổng thông tin nội bộ Đại Nghĩa Group — nơi tra cứu quy định, hướng dẫn và tài liệu dùng chung cho toàn hệ sinh thái.',
+  slogan: 'Kiến tạo giá trị — Phát triển bền vững',
 };
 
 /** @type {NavLink[]} */
@@ -16,5 +18,5 @@ export const navLinks = [
 
 /** @type {NavLink[]} */
 export const topNavLinks = navLinks.filter(({ href }) =>
-  ['/tutorial', '/docs'].includes(href),
+  ['/docs'].includes(href),
 );

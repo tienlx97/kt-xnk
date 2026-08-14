@@ -27,9 +27,14 @@
 - [ ] 4.1 Port `Sandpack`, `SandpackRSC`, and `SandpackWithHTMLOutput` with
   lazy client loading and upstream-equivalent controls — verify: edit/run/
   reload/console/open/download flows, bundle gate, and `./harness/verify.sh`.
+  **Deferred 2026-08-15** (user decision): no KT-XNK content uses an
+  interactive sandbox yet, so the `@codesandbox/sandpack-react` dependency
+  decision + bundle measurement is postponed until a real document needs it.
+  `Sandpack`/`SandpackWithHTMLOutput` stay `planned`, `SandpackRSC` stays
+  `intentionally-omitted`, in the matrix.
 
 ## 5. Product/context components and acceptance
 
-- [ ] 5.1 Port language/team/error-decoder context components, render the full
+- [x] 5.1 Port language/team/error-decoder context components, render the full
   registry fixture, update every matrix status, capture 390/1024/1536px
   acceptance evidence, close harness gaps, and pass `./harness/verify.sh`.

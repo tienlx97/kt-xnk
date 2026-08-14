@@ -3,7 +3,7 @@
   "path": "/docs",
   "routes": [
     {
-      "title": "NỘI QUY",
+      "title": "Nội quy",
       "path": "/docs",
       "routes": [
         {
@@ -38,6 +38,7 @@
     },
     {
       "title": "IT",
+      "path": "/docs/it",
       "routes": [
         {
           "title": "Máy tính",

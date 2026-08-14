@@ -7,6 +7,7 @@ import * as stylex from '@stylexjs/stylex';
 import Link from 'next/link';
 
 import { CopyPageLinkButton } from './copy-page-link-button.jsx';
+import { IconChevron } from './icon/icon-chevron.jsx';
 
 const styles = stylex.create({
   breadcrumbList: {
@@ -98,18 +99,11 @@ const styles = stylex.create({
 
 function BreadcrumbChevron() {
   return (
-    <svg
+    <IconChevron
       aria-hidden="true"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="1.5"
-      {...stylex.props(styles.breadcrumbChevron)}
-    >
-      <path d="m9 18 6-6-6-6" />
-    </svg>
+      displayDirection="end"
+      xstyle={styles.breadcrumbChevron}
+    />
   );
 }
 

@@ -13,6 +13,8 @@ import { usePathname } from 'next/navigation';
 
 import { isNavLinkActive } from '../api/nav.js';
 import { useScrollShadow } from '../hooks/use-scroll-shadow.js';
+import { IconClose } from './icon/icon-close.jsx';
+import { IconHamburger } from './icon/icon-hamburger.jsx';
 
 /** @typedef {import('../types/index.js').NavLink} NavLink */
 
@@ -182,23 +184,9 @@ const styles = stylex.create({
 
 /** @param {{ isOpen: boolean }} props */
 function MobileMenuIcon({ isOpen }) {
+  const Icon = isOpen ? IconClose : IconHamburger;
   return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="2"
-      {...stylex.props(styles.mobileToggleIcon)}
-    >
-      {isOpen ? (
-        <path d="M6 6l12 12M18 6L6 18" />
-      ) : (
-        <path d="M4 7h16M4 12h16M4 17h16" />
-      )}
-    </svg>
+    <Icon aria-hidden="true" {...stylex.props(styles.mobileToggleIcon)} />
   );
 }
 

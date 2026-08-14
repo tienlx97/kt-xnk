@@ -37,9 +37,7 @@ export function getActiveSidebarGroupKey(routes, pathname) {
       child.path ? isNavLinkActive(pathname, child.path) : false,
     ),
   );
-  const parentMatch = groups.find((route) =>
-    route.path ? isNavLinkActive(pathname, route.path) : false,
-  );
+  const parentMatch = groups.find((route) => route.path === pathname);
   const activeGroup = childMatch ?? parentMatch;
 
   return activeGroup ? getSidebarRouteKey(activeGroup) : null;

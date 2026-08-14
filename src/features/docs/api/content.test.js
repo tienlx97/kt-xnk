@@ -6,7 +6,7 @@ import { getDocsPostSlugs, loadPost } from './content.js';
 test('discovers Docs posts recursively without a manual registry', async () => {
   const slugs = await getDocsPostSlugs();
 
-  assert.equal(slugs.length, 16);
+  assert.equal(slugs.length, 17);
   assert.ok(slugs.includes('noi-quy-chung'));
   assert.ok(slugs.includes('may-tinh'));
 });

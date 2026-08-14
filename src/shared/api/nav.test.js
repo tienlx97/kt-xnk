@@ -15,7 +15,7 @@ const sidebar = JSON.parse(
 test('builds Docs breadcrumbs from the containing sidebar group', () => {
   assert.deepEqual(getSidebarBreadcrumbs(sidebar, '/docs/lam-them-gio'), [
     { label: 'Docs', href: '/docs', isCurrent: false },
-    { label: 'NỘI QUY', isCurrent: true },
+    { label: 'Nội quy', isCurrent: true },
   ]);
 
   assert.deepEqual(getSidebarBreadcrumbs(sidebar, '/docs/may-tinh'), [
@@ -35,7 +35,7 @@ test('selects only the group containing the active sidebar route', () => {
   );
   assert.equal(
     getActiveSidebarGroupKey(sidebar.routes, '/docs/may-tinh'),
-    'IT',
+    '/docs/it',
   );
 });
 
@@ -46,16 +46,16 @@ test('toggles sidebar groups as an exclusive accordion', () => {
     null,
     pathname,
     activeGroupKey,
-    'IT',
+    '/docs/it',
   );
 
-  assert.deepEqual(openedSecondGroup, { pathname, groupKey: 'IT' });
+  assert.deepEqual(openedSecondGroup, { pathname, groupKey: '/docs/it' });
   assert.deepEqual(
-    toggleSidebarGroup(openedSecondGroup, pathname, activeGroupKey, 'IT'),
+    toggleSidebarGroup(openedSecondGroup, pathname, activeGroupKey, '/docs/it'),
     { pathname, groupKey: null },
   );
   assert.equal(
     getActiveSidebarGroupKey(sidebar.routes, '/docs/may-tinh'),
-    'IT',
+    '/docs/it',
   );
 });

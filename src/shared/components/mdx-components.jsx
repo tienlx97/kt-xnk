@@ -16,6 +16,7 @@ import {
   DiagramGroup,
   PackageImport,
 } from './mdx/diagram-components.jsx';
+import { ErrorDecoder } from './mdx/error-decoder.jsx';
 import { Figure } from './mdx/figure.jsx';
 import {
   Challenges,
@@ -26,6 +27,7 @@ import {
 import { HeadingAnchorIcon } from './mdx/heading-anchor-icon.jsx';
 import { imageStyles } from './mdx/image-styles.js';
 import { InlineToc } from './mdx/inline-toc.jsx';
+import { LanguageList } from './mdx/language-list.jsx';
 import {
   Canary,
   CanaryBadge,
@@ -52,6 +54,7 @@ import {
   IllustrationBlock,
 } from './mdx/react-dev-illustrations.jsx';
 import { CodeStep, Math, MathI, Recap } from './mdx/react-dev-primitives.jsx';
+import { TeamMember } from './mdx/team-member.jsx';
 import { TerminalBlock } from './mdx/terminal-block.jsx';
 import {
   borderVars,
@@ -404,6 +407,9 @@ export function useMDXComponents(components) {
     Intro,
     FullWidth,
     MaxWidth,
+    LanguageList,
+    TeamMember,
+    ErrorDecoder,
   };
 
   // react.dev tags every mapping so parent authoring components can inspect
