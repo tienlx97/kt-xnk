@@ -43,8 +43,8 @@ computed styles now match the relevant upstream values:
 | Article body | 17px | 30px | 500 |
 | Intro | 20px | 32.5px | 500 |
 | Callout title | 24px | 30px | 700 |
-| SideNav parent/selected route | 15px | 30px | 700 |
-| SideNav nested unselected route | 13px | 30px | 500 |
+| SideNav parent route | 15px | 30px | 700 |
+| SideNav nested route | 13px | 30px | 500/700 by state |
 | SideNav section label | 13px | 30px | 700 |
 | TOC link | 13px | 19.5px | 400/700 by state |
 | Breadcrumb | 13px | 30px | 700 |
@@ -56,6 +56,11 @@ Computed-style screenshots for 390px and 1536px are under
 `harness/runs/20260814-react-dev-docs-shell-typography/`. A source contract
 pins these values so later Astryx token changes cannot silently change the
 react.dev-parity type scale.
+
+The nested selected SideNav route intentionally remains 13px instead of
+react.dev's 15px selected override. This user-requested adaptation prevents the
+label and surrounding navigation from shifting size when selection changes;
+selection remains visible through color, background, and weight 700.
 
 ## Interaction and accessibility evidence
 

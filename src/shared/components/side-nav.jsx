@@ -91,7 +91,6 @@ const styles = stylex.create({
       ':hover': colorVars['--color-accent-muted'],
     },
     color: colorVars['--color-text-accent'],
-    fontSize: '0.9375rem',
     fontWeight: fontWeightVars['--font-weight-bold'],
   },
   label: {

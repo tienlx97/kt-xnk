@@ -89,9 +89,14 @@ test('ports the react.dev sidebar tree without Astryx UI primitives', () => {
     sideNavSource,
     /childRow:[\s\S]*?fontSize: '0\.8125rem'[\s\S]*?fontWeight: fontWeightVars\['--font-weight-medium'\]/,
   );
+  const selectedStyle = sideNavSource.match(
+    /selected: \{([\s\S]*?)\n\s{2}\},/u,
+  )?.[1];
+  assert.ok(selectedStyle);
+  assert.doesNotMatch(selectedStyle, /fontSize/);
   assert.match(
-    sideNavSource,
-    /selected:[\s\S]*?fontSize: '0\.9375rem'[\s\S]*?fontWeight: fontWeightVars\['--font-weight-bold'\]/,
+    selectedStyle,
+    /fontWeight: fontWeightVars\['--font-weight-bold'\]/,
   );
 });
 
