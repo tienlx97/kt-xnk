@@ -21,7 +21,9 @@ export const ErrorDecoderContext = createContext(
 export function useErrorDecoderParams() {
   const params = useContext(ErrorDecoderContext);
   if (params === notInErrorDecoderContext) {
-    throw new Error('useErrorDecoderParams chỉ dùng được trong trang giải mã lỗi.');
+    throw new Error(
+      'useErrorDecoderParams chỉ dùng được trong trang giải mã lỗi.',
+    );
   }
   return params;
 }

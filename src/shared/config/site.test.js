@@ -16,8 +16,12 @@ test('navLinks each have a label and href', () => {
   }
 });
 
-test('topNavLinks exposes Docs', () => {
-  assert.deepEqual(topNavLinks.map(({ label, href }) => ({ label, href })), [
-    { label: 'Docs', href: '/docs' },
-  ]);
+test('topNavLinks exposes Tin tức and Tài liệu', () => {
+  assert.deepEqual(
+    topNavLinks.map(({ label, href }) => ({ label, href })),
+    [
+      { label: 'Tin tức', href: '/news' },
+      { label: 'Tài liệu', href: '/docs' },
+    ],
+  );
 });

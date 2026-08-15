@@ -5,6 +5,12 @@
 
 import * as stylex from '@stylexjs/stylex';
 
+import { IconCanary } from '../icon/icon-canary';
+import { IconNote } from '../icon/icon-note';
+import { IconPitfall } from '../icon/icon-pitfall';
+import { IconRocket } from '../icon/icon-rocket';
+import { IconWarning } from '../icon/icon-warning';
+
 const styles = stylex.create({
   callout: {
     borderRadius: {
@@ -69,46 +75,55 @@ const styles = stylex.create({
 const variants = {
   deprecated: {
     title: 'Deprecated',
+    Icon: IconWarning,
     containerStyle: styles.deprecated,
     titleStyle: styles.titleDeprecated,
   },
   note: {
     title: 'Note',
+    Icon: IconNote,
     containerStyle: styles.note,
     titleStyle: styles.titleNote,
   },
   rc: {
     title: 'RC',
+    Icon: IconCanary,
     containerStyle: styles.neutral,
     titleStyle: styles.titleNeutral,
   },
   canary: {
     title: 'Canary',
+    Icon: IconCanary,
     containerStyle: styles.neutral,
     titleStyle: styles.titleNeutral,
   },
   experimental: {
     title: 'Experimental Feature',
+    Icon: IconCanary,
     containerStyle: styles.note,
     titleStyle: styles.titleNote,
   },
   pitfall: {
     title: 'Pitfall',
+    Icon: IconPitfall,
     containerStyle: styles.warning,
     titleStyle: styles.titleWarning,
   },
   wip: {
     title: 'Under Construction',
+    Icon: IconNote,
     containerStyle: styles.warning,
     titleStyle: styles.titleWarning,
   },
   major: {
     title: 'React 19',
+    Icon: IconRocket,
     containerStyle: styles.major,
     titleStyle: styles.titleNote,
   },
   rsc: {
     title: 'React Server Components',
+    Icon: null,
     containerStyle: styles.major,
     titleStyle: styles.titleNote,
   },
@@ -134,34 +149,10 @@ function Callout({ type = 'note', title, children }) {
 
 /** @param {{ type: string }} props */
 function CalloutIcon({ type }) {
-  if (type === 'rsc') return null;
+  const { Icon } = variants[type];
+  if (!Icon) return null;
 
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="2"
-      {...stylex.props(styles.icon)}
-    >
-      {type === 'pitfall' || type === 'deprecated' ? (
-        <>
-          <path d="M12 3 2.5 20h19L12 3Z" />
-          <path d="M12 9v4" />
-          <path d="M12 17h.01" />
-        </>
-      ) : (
-        <>
-          <circle cx="12" cy="12" r="9" />
-          <path d="M12 11v5" />
-          <path d="M12 8h.01" />
-        </>
-      )}
-    </svg>
-  );
+  return <Icon aria-hidden="true" {...stylex.props(styles.icon)} />;
 }
 
 /** @param {{ title?: string, children: import('react').ReactNode }} props */

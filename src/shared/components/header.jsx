@@ -185,9 +185,7 @@ const styles = stylex.create({
 /** @param {{ isOpen: boolean }} props */
 function MobileMenuIcon({ isOpen }) {
   const Icon = isOpen ? IconClose : IconHamburger;
-  return (
-    <Icon aria-hidden="true" {...stylex.props(styles.mobileToggleIcon)} />
-  );
+  return <Icon aria-hidden="true" {...stylex.props(styles.mobileToggleIcon)} />;
 }
 
 /**

@@ -151,10 +151,7 @@ test('matches react.dev TOC typography and sticky scroller geometry', () => {
 test('keeps the complete MDX component tree semantic and Astryx-free', () => {
   const combinedSource = mdxUiSources.join('\n');
   const completeTreeSource = mdxComponentTreeSources.join('\n');
-  assert.doesNotMatch(
-    completeTreeSource,
-    /@astryxdesign\/core/,
-  );
+  assert.doesNotMatch(completeTreeSource, /@astryxdesign\/core/);
   assert.match(combinedSource, /\.\/mdx\/tokens\.stylex\.js/);
   assert.match(combinedSource, /<blockquote/);
   assert.match(combinedSource, /<details/);

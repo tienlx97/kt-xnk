@@ -71,6 +71,33 @@ This file is the handoff between sessions/agents — write for a reader with zer
   by an explicit content-column wrapper. The MDX fixture test now compiles and
   server-renders `MaxWidth → FullWidth → MaxWidth`, asserting DOM order and
   keeping non-rendered module exports outside prose groups.
+- **Resolved 2026-08-15 (user action):** browser screenshot evidence was
+  unavailable for many sessions because
+  `/home/capybara/.agent-browser/browsers/chrome-*/chrome` could not launch
+  and no agent session had root to fix it. The user installed the missing
+  packages and Chrome for Testing 152 now runs. For anyone hitting this on
+  a fresh image, `ldd` on the chrome binary names the gaps; on Ubuntu 24.04
+  they were satisfied by **`libnspr4`, `libnss3`, and `libasound2t64`**
+  (note the `t64` suffix — plain `libasound2` has no install candidate on
+  Noble). Do NOT go straight to the curl substitute any more: launch the
+  browser. Two notes for whoever writes the next browser run:
+  - Full-page screenshots need the page **scrolled through first**.
+    `screenshot --full` does not trigger `loading="lazy"`, so an unscrolled
+    capture shows every below-fold image as a blank box and looks exactly
+    like a broken-image bug. Walk the scroll height, wait for
+    `networkidle`, assert `[...document.querySelectorAll('img')].filter(i
+    => !i.complete).length === 0`, then capture.
+  - `agent-browser click @ref` on an Astryx `ClickableCard` does nothing.
+    The accessibility ref resolves to the card's visually-hidden 1×1
+    `<button>`, and clicking that does not produce a usable event. Drive a
+    real mouse click at the card's centre instead (`mouse move x y`,
+    `mouse down`, `mouse up`) — that fires the container handler correctly.
+    Both `Lightbox` and the video `Dialog` were briefly misdiagnosed as
+    broken because of this.
+  - Protected routes still need a faked `kt-xnk-access-token` cookie
+    (`agent-browser cookies set kt-xnk-access-token fake --url <origin>`),
+    since login sets it client-side — see
+    `src/features/auth/config/session-keys.js`.
 - `harness/checks/project-readiness.sh`'s placeholder scan (angle-bracket
   CLI-argument tokens, an unfilled date-format token, etc. — see the script
   for the exact pattern) didn't account for tool-generated content blocks —
@@ -88,6 +115,374 @@ This file is the handoff between sessions/agents — write for a reader with zer
   the write-up will trip it, as happened while drafting that entry.)
 
 ---
+
+## 2026-08-15 — Claude
+
+- **Active change:** none (same home page; follow-up on the redesign entry
+  right below this one).
+- **Task worked:** user reviewed the screenshots and asked specifically
+  about `hero-carousel.jsx`: title/description/date/CTA read as flat white,
+  and the category Badge was hard to see.
+  - **Root cause of the Badge complaint:** Astryx's tinted Badge variants
+    (used for the same `category` field in `NewsHighlights`, where they sit
+    on a white card) are a pastel tint — on the hero's photo scrim that
+    tint is nearly invisible. Badge has no `xstyle` prop, so it cannot be
+    restyled from the outside.
+  - **Fix:** replaced the category `Badge` and the "Đọc tiếp" text with two
+    hand-rolled solid pills (same precedent as the existing `dateChip` in
+    `upcoming-events.jsx` and `durationChip` in `video-clips.jsx`),
+    background `--color-error` (theme.js's contrast-tuned #b4271f red),
+    text/icon `--color-on-error` (white). The date line got `weight="medium"`
+    for a bit more presence; the headline was left alone — `Heading` has no
+    `weight`/`xstyle` prop (same constraint noted in an earlier PROGRESS
+    entry), so it was already the app's boldest available treatment.
+  - **Checked, not assumed, before choosing solid-background over
+    red-text:** computed the contrast ratio of `--color-error` text directly
+    against the darkest part of the scrim (`color-mix` towards
+    `--color-background-inverted`) — roughly 2.9:1, which fails WCAG AA's
+    4.5:1 for text. Red as a text color on that photo would have looked
+    "branded" but become genuinely harder to read, the opposite of the
+    request. White-on-red solid chips keep full contrast while still
+    reading as red at a glance.
+  - Set `color` on the pill *container* (not on each Text/Icon individually)
+    so children use plain `color="inherit"` — avoids depending on
+    `--color-on-error` and `--color-on-dark` happening to both be `#ffffff`.
+- **Result:** category and CTA are now solid red pills, clearly legible on
+  every slide; verified in a real browser (not curl) at 390px and 1536px.
+- **Verification:** `./harness/verify.sh` — same result as every other entry
+  in this thread: everything passes except `typecheck`, which fails on the
+  same three pre-existing, untouched files
+  (`icon-canary.jsx`/`icon-rocket.jsx`/`react-dev-callouts.jsx`). Evidence:
+  `harness/runs/20260815-145157-176895/`.
+- **Browser evidence:** `harness/runs/20260815-home-redesign-acceptance/
+  red-hero-1536.png` and `red-hero-390.png` — red chip/CTA visible and
+  legible at both widths, no overlap with the swiper arrows at 390px.
+- **Next step:** none pending; awaiting further user feedback.
+
+---
+
+## 2026-08-15 — Claude
+
+- **Active change:** none (same home page as the entries below; still ad hoc,
+  following the `58c812e` precedent rather than opening an openspec change).
+- **Task worked:** user asked for a full home-page redesign ("redesign thành
+  phiên bản tốt nhất"), real placeholder photography pulled from the
+  internet, and four new content types: tin tức, sự kiện, hoạt động, video
+  clip. Two decisions were put to the user via AskUserQuestion and both
+  answered: video plays in a modal + YouTube iframe (not an external tab,
+  not local mp4), and photos are industry-themed (not fully random).
+  - **Images:** 26 Unsplash photos downloaded to `public/images/home/`
+    (2.8 MB total) at fixed crops, so `next/image` gets exact intrinsic
+    dimensions and no remote host has to be allowlisted in
+    `next.config.mjs`. This replaces the inline-SVG
+    `placeholder-illustrations.jsx` from the prior pass, now deleted — it
+    existed only because there was no photography.
+  - **New sections:** `NewsHighlights` (Tin tức, 6 illustrated cards),
+    `ActivityGallery` (Hoạt động, 8-tile gallery → Astryx `Lightbox` with
+    zoom), `VideoClips` (4 thumbnails → `Dialog` + YouTube iframe).
+  - **Reworked sections:** `AnnouncementsSwiper` → `HeroCarousel`,
+    a full-bleed 400–500px photo carousel of the `isFeatured` news items,
+    each slide one `ClickableCard` (one tab stop per slide; a nested `Link`
+    would have been a second stop to the same URL, and Astryx `Link` has no
+    `xstyle` hook for an on-dark palette). `UpcomingEvents` gained photos,
+    a date chip, and an `audience` field. `hero.jsx` → `welcome-banner.jsx`,
+    now actually rendered and carrying the page's single `<h1>` (it was
+    exported but unused since the prior pass).
+  - **Content split:** `announcements.js` stopped being carousel copy and
+    became genuine "Thông báo" — short, dated, image-free administrative
+    notices rendered as dividered rows by the new `AnnouncementsBoard`.
+    Editorial stories moved to the new `news.js`, which derives
+    `featuredNews`/`latestNews` from one array. This is what keeps the same
+    item from appearing twice in two shapes.
+  - **New shared pieces:** `api/date.js` (all Vietnamese date formatting in
+    one place; every parse pins `T12:00` because a bare ISO date is UTC
+    midnight and renders as the *previous* day in any timezone behind UTC),
+    `components/section-heading.jsx` (one header for all eight sections —
+    they had drifted between `display-2` and `display-3`), and
+    `components/icon-play.jsx` (Astryx's registry has no `play` name;
+    `Icon` taking an SVG component is the documented escape hatch).
+- **Result:** eight sections in four alternating white/tinted bands:
+  WelcomeBanner → HeroCarousel → QuickLinks → NewsHighlights →
+  [AnnouncementsBoard + UpcomingEvents] → ActivityGallery → [VideoClips] →
+  Ecosystem. All Astryx components and theme tokens; no raw `<div>`, no
+  hex, no inline px outside `xstyle`.
+- **Verification:** `./harness/verify.sh` — project-readiness,
+  memory-secrets, theme-build, lint, structure, harness-tests, unit-tests,
+  build, and quality-thresholds all PASS (bundle 168.6 kB gzip of a 250 kB
+  budget). `typecheck` FAILED with the *same three pre-existing errors* as
+  the four entries below, all in files this task never touched
+  (`icon-canary.jsx`, `icon-rocket.jsx`, `react-dev-callouts.jsx` — user's
+  uncommitted work from before the session). Per the "never expand scope"
+  hard rule they were left alone and flagged to the user again. Evidence:
+  `harness/runs/20260815-141523-130261/`.
+- **New tests (closing a real harness gap):**
+  `src/features/home/config/home-content.test.js` asserts every image path
+  in every home config resolves to a non-empty file under `public/`, has
+  positive dimensions and non-empty alt text, that dates are ISO, that ids
+  are unique per collection, and that every href is internal. A typo'd
+  image path was previously *invisible* to lint, typecheck, and the build —
+  Next.js just 404s the file and the layout stays intact. That class of
+  mistake now fails a test instead of shipping.
+  `src/features/home/api/date.test.js` covers the four formatters plus a
+  timezone-drift regression across UTC / Asia/Ho_Chi_Minh /
+  America/Los_Angeles.
+- **Browser evidence — REAL, not a curl substitute.** Mid-session the user
+  installed the missing Chrome libraries (see the resolved Harness gap at
+  the top), so this is the first home-page pass with actual screenshots.
+  Suite: `harness/runs/20260815-home-redesign-acceptance/` — full-page
+  captures at 390/768/1024/1536px plus section zooms and interaction shots,
+  against a real `next start` production build. Zero horizontal overflow and
+  zero incomplete images at all four widths.
+- **Four defects the screenshots caught that every mechanical gate passed
+  over.** This is the entry's most important part: lint, typecheck,
+  structure, unit tests, build, and bundle budget were all green while the
+  page had two unreadable sections and one clipped one.
+  1. **Hero headline unreadable.** The scrim was built from
+     `--color-overlay`, whose alpha is baked into the token at 40% — not
+     enough to carry white text over a bright photo (the engineering-drawing
+     slide was the worst case). Rebuilt as `color-mix(in srgb,
+     var(--color-background-inverted) N%, transparent)` stops, which allows
+     an explicit alpha, plus a flat 16% wash that also makes the white
+     prev/next arrows visible at mid-height. Stops differ per breakpoint
+     because the copy block fills 58% of the slide at 390px versus ~45% from
+     640px up.
+  2. **Gallery captions unreadable**, same root cause and same fix, plus a
+     30px `paddingBlockStart` so the ramp has room to fade above the text.
+  3. **Carousel appeared to have one dot.** `--swiper-theme-color` only
+     colours the ACTIVE bullet; Swiper's inactive bullets default to black
+     at 0.2 opacity, invisible on a photo. Now set explicitly.
+  4. **Event cards clipped at 390px** — content `scrollWidth` was 99px wider
+     than the card, so `overflow: hidden` cut the titles instead of
+     `maxLines` ellipsizing them. Classic flex `min-width: auto`; fixed with
+     `minWidth: 0` on both the row and the text column (one alone is not
+     enough).
+- **Double padding, also found by measurement:** `page.jsx` was adding
+  20px/48px inline padding on top of the 24px `<main>` padding
+  `ProtectedAppShell` already applies to non-MDX routes. At 390px that left
+  a 302px content column inside a 342px main, which was exactly what dropped
+  the activity gallery to a single column. Removing the duplicate widened
+  the column by 40px, took the gallery to two columns on mobile, and cut the
+  mobile page height from 11398px to 9858px.
+- **Interactions verified live:** clicking gallery tile 6 opens the
+  `Lightbox` at "6 / 8" with the right caption and working prev/next;
+  clicking a video card opens the `Dialog` and mounts
+  `youtube-nocookie.com/embed/...` which autoplays — and the iframe is
+  absent from the DOM until that click, so the facade genuinely defers it.
+- **Still not verified:** real devices/touch input, and any browser other
+  than Chrome 152 headless.
+- **Next step:** none pending. Real content (news, notices, events, activity
+  photos, YouTube ids) still needs to replace the placeholders — every one
+  lives in `src/features/home/config/`.
+
+## 2026-08-15 — Claude
+
+- **Active change:** none (same home page; see the entries below for prior
+  passes and their rationale).
+- **Task worked:** user asked to make `AnnouncementsSwiper` bigger and its
+  own standalone section, and shrink `UpcomingEvents`. Un-did the two-column
+  `Grid` pairing from the earlier "closer to Figma" pass:
+  - `page.jsx`: `AnnouncementsSwiper` is now alone in its own full-width
+    tinted band. `UpcomingEvents` moved into the same band as `QuickLinks`
+    (stacked, not side-by-side) instead of pairing with the swiper.
+  - `announcements-swiper.jsx`: since it's full-width again (not a ~540px
+    half-column), raised the card height (300–420px depending on breakpoint,
+    up from 260–380px), the illustration thumbnail (128px→160px) and its
+    display breakpoint (back down to 640px from 1280px — no longer needs to
+    wait for a very wide viewport), and gave the text column a `38rem` cap
+    back (removed when it went half-width, no longer needed there).
+  - `upcoming-events.jsx`: dropped the 56px illustration thumbnails
+    (keeping just the compact date badge, now 36px, down from 44px),
+    `density="compact"` (was "spacious"), and the section heading dropped
+    from `display-2`→`display-3` — it's now a secondary widget bundled with
+    `QuickLinks`, not competing with the swiper for visual weight.
+  - `events.js`: removed the now-unused `illustrationId` field (dead data
+    once `UpcomingEvents` stopped rendering thumbnails) and its typedef
+    entry. `announcements.js` keeps its `illustrationId` field — still used.
+    4 of the 8 `placeholder-illustrations.jsx` illustrations (celebration,
+    growth, factory, handshake) are now unused by any config data; left in
+    place as an available palette for future content rather than deleted,
+    same as an icon library keeps unused icons.
+- **Result:** all mechanical gates pass except the same pre-existing,
+  out-of-scope typecheck failures noted in the entries below. Evidence:
+  `harness/runs/20260815-111114-82968/`.
+- **Browser evidence:** still unavailable (persistent Harness gap above).
+  Curl-with-faked-cookie substitute: HTTP 200, all section headings present,
+  no error-boundary markers; StyleX-compiled height values don't appear as
+  literal strings in server-rendered HTML (they're atomic CSS classes, not
+  inline styles) so that specific check was inconclusive by design, not a
+  sign of failure. Genuinely can't confirm the *proportions* read right —
+  whether the swiper now feels appropriately "big" next to a "small" events
+  list is a visual judgment call this container cannot make. User should
+  check `localhost:3000` before calling this final.
+- **Next step:** none pending; awaiting user visual confirmation.
+
+## 2026-08-15 — Claude
+
+- **Active change:** none (same home page; see the two entries below for
+  prior passes and their rationale).
+- **Task worked:** user asked (referencing
+  `.../QgO4YJ5CppdHIkpYz4dRbZ?node-id=2372-349`, the template's actual body
+  frame) for fake/example images on the home page and smaller swiper prev/
+  next icons.
+  - New `src/features/home/components/placeholder-illustrations.jsx`: 8
+    original inline-SVG illustrations (construction site, factory, meeting,
+    handshake, training, growth, technology, celebration), each a two-stop
+    gradient + simple line-art glyph, `preserveAspectRatio="xMidYMid slice"`
+    so they crop like `object-fit: cover` without needing `next/image` (which
+    would've needed `images.dangerouslyAllowSVG` in `next.config.mjs` for
+    SVG sources — avoided entirely by inlining, same pattern as the existing
+    `src/shared/components/icon/*.jsx` files). Deliberately did NOT reuse the
+    Figma file's actual stock photography — those are the vendor's own
+    (likely licensed) images for a pet-hospital demo; copying real
+    photographic assets into an unrelated company's production portal is a
+    different, riskier thing than adapting a layout pattern. Went with
+    obviously-a-placeholder, on-brand graphics instead, matching the user's
+    own word "fake."
+  - All gradient stops resolve through existing theme tokens via CSS
+    `var(--color-*)` (text-primary/secondary, accent, accent-muted,
+    icon-teal/purple/orange, error, warning) — no new hardcoded hex, so nolint
+    `no-restricted-syntax` (hardcoded-hex-color) stayed green.
+  - `announcements.js`/`events.js` gained an `illustrationId` field (not a
+    file path — there's no file, it's a lookup key into the map above); 8
+    items now use 6 of the 8 illustrations with no two adjacent items
+    repeating.
+  - `announcements-swiper.jsx`: the accent-colored icon circle became an
+    illustration thumbnail; the category icon moved into `Badge`'s `icon`
+    slot instead of being dropped. Added `--swiper-navigation-size: 18px` to
+    the inline style (Swiper's default renders a fairly large 44px
+    prev/next arrow) per the user's explicit "make them smaller" ask.
+  - `upcoming-events.jsx`: `ListItem`'s `startContent` is now an `HStack` of
+    [56px illustration thumbnail, 44px date badge] instead of just the date
+    badge, echoing the reference's thumbnail+date-badge event rows.
+  - **Self-caught bug:** the first pass reused each illustration's bare SVG
+    `id` (e.g. `id="meeting-bg"`) across every render. Since `meeting` and
+    `training` are each used twice (once in Thông báo, once in Sự kiện sắp
+    tới), that's a duplicate-`id` SVG on the same page — invalid HTML, and
+    only silently harmless here because the duplicate gradients happen to be
+    pixel-identical. Fixed with `useId()` (works in both the client
+    `AnnouncementsSwiper` and the server-rendered `UpcomingEvents`) to
+    namespace every gradient id and its `url(#...)` reference per rendered
+    instance; verified via curl that the live-rendered page now emits
+    distinct suffixed ids per instance instead of literal duplicates.
+- **Result:** all mechanical gates pass except the same pre-existing,
+  out-of-scope typecheck failures noted in the entries below. Evidence:
+  `harness/runs/20260815-110525-78548/`.
+- **Browser evidence:** still unavailable (persistent Harness gap above).
+  Curl-with-faked-cookie substitute: HTTP 200, all 8 illustrations' gradient
+  ids present and correctly de-duplicated by `useId()` suffix, the
+  `--swiper-navigation-size:18px` var present in the rendered `style`
+  attribute, no error-boundary markers. Genuinely can't confirm from markup
+  alone whether the illustrations *look* good at thumbnail size, whether the
+  56px event thumbnail + 44px date badge pair reads as intended rather than
+  cramped, or whether 18px nav arrows are comfortably clickable — user
+  should check `localhost:3000` before calling this final.
+- **Next step:** none pending; awaiting user visual confirmation.
+
+## 2026-08-15 — Claude
+
+- **Active change:** none (same home page, no openspec change — see the entry
+  right below this one for the prior pass and its rationale).
+- **Task worked:** follow-up on the home-page redesign after the user asked
+  to push "closer to the Figma visuals." Three changes:
+  1. Typography: bumped Hero's H1 from `display-2`→`display-1` (52px) and
+     every *section* heading (Thông báo, Sự kiện sắp tới, Truy cập nhanh,
+     Hệ sinh thái) from `display-3`→`display-2` (40px), widening the gap
+     from body text to read closer to the reference's bold 42px headers.
+     Per-slide/per-tile titles (announcement card titles, quick-link tile
+     labels, company names) were deliberately left alone — only the section-
+     level headers changed. Note: Astryx's `display-*` types are weight 400
+     (normal) by design, not bold — `Heading` has no `weight`/`xstyle` prop
+     to override that per-instance, and a theme-wide `components.heading`
+     override would touch the carefully-tuned MDX/react-dev-parity type
+     scale elsewhere in the app, so boldness comes from size, not weight.
+  2. Section grouping: `page.jsx` now wraps (a) AnnouncementsSwiper +
+     UpcomingEvents together in a `--color-background-muted` tinted,
+     rounded panel as a responsive 2-column `Grid` (`minWidth: 420, max: 2`
+     — single column below ~840px content width), and (b) QuickLinks in its
+     own matching tinted panel, echoing the reference's alternating pale/
+     white section bands (Hero keeps its own distinct accent-muted panel;
+     Ecosystem stays plain white).
+  3. `announcements-swiper.jsx` internals adjusted for now living in a
+     ~540px half-column instead of the full 80rem content width: dropped
+     the fixed `34rem` text-column cap (`minWidth: 0` instead, so it uses
+     whatever column width it's given), and raised the icon-circle's
+     display breakpoint from 640px→1280px (was showing right at the edge
+     of the new narrower column) and the card height (340/260px →
+     380/320px) for a bit more room for wrapped two-line titles.
+- **Result:** all mechanical gates pass except the same pre-existing,
+  out-of-scope typecheck failures from the prior entry. Evidence:
+  `harness/runs/20260815-102332-62736/`.
+- **Browser evidence:** still unavailable (see the persistent Harness gap
+  above). Same curl-with-faked-cookie substitute as the prior entry: HTTP
+  200, all expected section headings present, no error-boundary markers.
+  **This is the riskiest area to ship unverified** — the new 2-column
+  Grid + narrower swiper is exactly the kind of change that can look fine
+  in markup and still overflow or crop visually; flagged clearly to the
+  user that they need to eyeball `localhost:3000` themselves, especially
+  the news/events band at tablet-ish widths (~700–900px) where the Grid's
+  column math is least certain.
+- **Next step:** none pending; awaiting user visual confirmation.
+
+## 2026-08-15 — Claude
+
+- **Active change:** none (no openspec change covers the home page; the prior
+  session's "add a basic internal home page" work in `58c812e` was also ad
+  hoc, so this follows that precedent rather than opening a new change).
+- **Task worked:** redesigned `src/app/(protected)/page.jsx`'s home page
+  using a Figma SharePoint-intranet template
+  (`lookbook365.com/veterinary-clinic-intranet-sharepoint`,
+  file `QgO4YJ5CppdHIkpYz4dRbZ`, node `2372:2`, "Bramblewood Pet Hospital")
+  as a layout reference, per user request ("thiết kế lại trang home cho
+  website portal, mục nào không cần thiết thì xoá"). Kept the reference's
+  intranet-portal *pattern* (hero banner + CTA, featured
+  news/announcements, upcoming events, quick-links tiles, "who we are")
+  and its bold-heading/solid-accent-tile visual language; dropped every
+  veterinary-clinic-specific section (KPI snapshot, Clinical Protocols,
+  On-Call Schedule, Featured Training video, Our Veterinary Team, Our
+  Locations-as-clinic-branches) and the vendor's own promo footer — none
+  of it maps to Đại Nghĩa Group's portal or has a real data source. Per an
+  explicit user choice (asked via AskUserQuestion), added a new "Upcoming
+  Events" section but skipped a staff/leadership directory.
+  - `hero.jsx`: wrapped in a rounded `--color-accent-muted` panel and added
+    a "Khám phá tài liệu nội bộ" CTA `Link` to `/docs` (title/slogan/
+    subtitle props unchanged).
+  - `quick-links.jsx`: tiles are now solid `--color-accent` cards with a
+    white icon+label (was a white card with an accent-muted icon circle),
+    matching the reference's green tiles but in KT-XNK's brand teal —
+    deliberately did NOT use `ClickableCard`'s built-in `variant="teal"`,
+    since `theme.js` documents that categorical tag color as intentionally
+    NOT rebranded to `--color-accent`.
+  - `announcements-swiper.jsx`: added a "Thông báo" section heading (all
+    other home sections already owned one; this one didn't).
+  - New `upcoming-events.jsx` + `config/events.js`: an Astryx `List`/
+    `ListItem` row list (per the "dense data = rows, never Card-wrapped"
+    house rule) with a date-number badge, formatted via `Intl.DateTimeFormat
+    ('vi-VN', …)`. `events.js` has 4 placeholder entries (no real events/
+    calendar source exists yet) — same "compatible shape, placeholder data,
+    documented as such" precedent as `LanguageList`/`TeamMember` in the
+    2026-08-15 `react-dev-mdx-components-parity` task 5.1 entry below.
+  - `index.js` barrel and `page.jsx` updated for the new component and
+    section order: Hero → Announcements → UpcomingEvents → QuickLinks →
+    Ecosystem.
+- **Result:** home page renders with the new structure; all Astryx
+  components/tokens (no raw `<div>`, no hex/px), per the repo's non-MDX
+  Astryx-only rule.
+- **Verification:** `./harness/verify.sh` — lint, structure, harness-tests,
+  unit-tests, build, and quality-thresholds all passed. `typecheck` FAILED,
+  but the 3 errors are all in files this task didn't touch
+  (`icon-canary.jsx`, `icon-rocket.jsx`, `react-dev-callouts.jsx` — pre-
+  existing uncommitted work from before this session, visible as unstaged
+  changes at session start). Per the "never expand scope" hard rule, these
+  were not fixed here; flagged to the user instead. Evidence:
+  `harness/runs/20260815-100439-53401/`.
+- **Browser evidence:** unavailable — see the new persistent Harness gap
+  above (`libnspr4.so` missing, no root). Substituted a curl fetch of `/`
+  with a faked `kt-xnk-access-token` cookie: HTTP 200, page contains
+  "Thông báo", "Sự kiện sắp tới", "Truy cập nhanh", "Hệ sinh thái", the new
+  CTA text, and all 3 sampled event titles; no error-boundary markers.
+- **Next step:** none for this task. If the user wants real visual QA, the
+  environment needs `libnspr4`/`libnss3` installed (root), or screenshots
+  taken from outside this container.
 
 ## 2026-08-15 — Claude
 

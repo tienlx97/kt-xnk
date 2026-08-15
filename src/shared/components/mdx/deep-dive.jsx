@@ -92,10 +92,7 @@ export function DeepDive({ title, excerpt, children }) {
     );
 
   return (
-    <details
-      open={open}
-      {...stylex.props(styles.details)}
-    >
+    <details open={open} {...stylex.props(styles.details)}>
       <summary
         onClick={(event) => {
           if (

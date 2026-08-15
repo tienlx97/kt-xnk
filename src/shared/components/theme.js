@@ -31,7 +31,11 @@ export const ktxnkTheme = defineTheme({
   // 15px (text-base). Raising Astryx's geometric scale from the neutral
   // default of 14px keeps the same hierarchy while matching that more
   // readable documentation density: body is 17px and supporting text is
-  // 14px, with headings increasing proportionally.
+  // 14px, with headings increasing proportionally. The scale below only
+  // anchors line-height tiers and fills in the two sub-xs steps Astryx
+  // needs that react.dev doesn't define — the actual sizes come from the
+  // `--font-size-*` overrides further down, ported 1:1 from react.dev's
+  // own scale (see comment there).
   typography: {
     scale: { base: 17, ratio: 1.2 },
     body: {
@@ -51,6 +55,31 @@ export const ktxnkTheme = defineTheme({
     },
   },
   tokens: {
+    // Font sizes ported 1:1 from react.dev's own scale (open source:
+    // github.com/reactjs/react.dev -> tailwind.config.js `theme.extend.fontSize`)
+    // instead of Astryx's geometric base×ratio^step approximation, which
+    // drifts from react.dev's real (non-geometric) numbers at the display
+    // sizes — e.g. the approximation put display-3 at 35px vs react.dev's
+    // real 32px. Mapped by role, not by name, since Astryx's `base` step
+    // is already anchored to react.dev's 17px body copy (see typography
+    // comment above): astryx 2xs/xs/sm/base/lg/xl/2xl/3xl/4xl/5xl ==
+    // react.dev xs/sm/base/lg/xl/2xl/3xl/4xl/5xl/6xl == 11/13/15/17/20/24/
+    // 28/32/40/52px. 4xs/3xs have no react.dev equivalent (below its
+    // smallest step) — extrapolated down for Astryx's own micro-text use
+    // (badges, etc.), not sourced from react.dev.
+    '--font-size-4xs': '0.5rem', // 8px — extrapolated, not from react.dev
+    '--font-size-3xs': '0.5625rem', // 9px — extrapolated, not from react.dev
+    '--font-size-2xs': '0.6875rem', // 11px — react.dev `xs`
+    '--font-size-xs': '0.8125rem', // 13px — react.dev `sm`
+    '--font-size-sm': '0.9375rem', // 15px — react.dev `base`
+    '--font-size-base': '1.0625rem', // 17px — react.dev `lg` (body copy)
+    '--font-size-lg': '1.25rem', // 20px — react.dev `xl`
+    '--font-size-xl': '1.5rem', // 24px — react.dev `2xl`
+    '--font-size-2xl': '1.75rem', // 28px — react.dev `3xl`
+    '--font-size-3xl': '2rem', // 32px — react.dev `4xl`
+    '--font-size-4xl': '2.5rem', // 40px — react.dev `5xl`
+    '--font-size-5xl': '3.25rem', // 52px — react.dev `6xl`
+
     // Brand teal, exactly as it appears in the logo — drives primary buttons,
     // focus rings, links, and accent-colored icons.
     '--color-accent': '#247768',
@@ -63,17 +92,19 @@ export const ktxnkTheme = defineTheme({
     '--color-text-accent': '#247768',
     '--color-icon-accent': '#247768',
 
-    // Neutral ramp — brand hue 178.4, chroma shaped by tone (rule 2 above).
-    // Surfaces: tone 100 / 98 / 97 / 96 / 94 keeps the body -> surface ->
-    // muted -> card -> popover hierarchy readable at a glance.
-    '--color-background-body': '#ffffff', // tone 100, chroma 0
-    '--color-background-surface': '#f7faf9', // tone 98, chroma 1
-    // Hover/press fill for interactive rows (nav links, menu items) — one
-    // tick darker than surface, one tick lighter than card so a hovered row
-    // sitting on a card doesn't disappear into it.
-    '--color-background-muted': '#f4f7f6', // tone 97, chroma 1.2
-    '--color-background-card': '#f0f4f3', // tone 96, chroma 1.5
-    '--color-background-popover': '#eaefee', // tone 94, chroma 2
+    // Flat white across every surface layer — body, surface, card, popover
+    // all resolve to the same #ffffff instead of the brand-tinted ramp this
+    // used to run (tone 100/98/97/96/94, chroma 0-2). Cards and popovers
+    // still separate from the page via their own border + elevation shadow,
+    // not a background tint.
+    '--color-background-body': '#ffffff',
+    '--color-background-surface': '#ffffff',
+    // Hover/press fill for interactive rows (nav links, menu items) is the
+    // one background that has to stay visibly distinct from white — kept as
+    // a neutral gray (no brand hue) rather than reintroducing the tint.
+    '--color-background-muted': '#f5f5f5',
+    '--color-background-card': '#ffffff',
+    '--color-background-popover': '#ffffff',
 
     // Text & icons — same ramp, mid/dark end.
     '--color-text-primary': '#1e2a27', // tone 16, chroma 6
