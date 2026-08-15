@@ -4,12 +4,10 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { activities } from './activities.js';
 import { announcements } from './announcements.js';
 import { companies } from './companies.js';
 import { events } from './events.js';
 import { featuredNews, latestNews, news } from './news.js';
-import { quickLinks } from './quick-links.js';
 import { videos } from './videos.js';
 
 const PUBLIC_DIR = fileURLToPath(
@@ -26,10 +24,6 @@ const PUBLIC_DIR = fileURLToPath(
 const allImages = [
   ...news.map((item) => ({ where: `news/${item.id}`, image: item.image })),
   ...events.map((item) => ({ where: `events/${item.id}`, image: item.image })),
-  ...activities.map((item) => ({
-    where: `activities/${item.id}`,
-    image: item.image,
-  })),
   ...videos.map((item) => ({
     where: `videos/${item.id}`,
     image: item.thumbnail,
@@ -63,13 +57,7 @@ test('every image declares real dimensions and alt text', () => {
 });
 
 test('every dated entry uses an ISO YYYY-MM-DD date', () => {
-  const dated = [
-    ...news,
-    ...announcements,
-    ...events,
-    ...activities,
-    ...videos,
-  ];
+  const dated = [...news, ...announcements, ...events, ...videos];
   for (const entry of dated) {
     assert.match(
       entry.date,
@@ -97,7 +85,6 @@ test('every link target is an in-app path or a page anchor', () => {
   const targets = [
     ...news.map(({ id, href }) => ({ id, href })),
     ...announcements.map(({ id, href }) => ({ id, href })),
-    ...quickLinks.map(({ label, href }) => ({ id: label, href })),
   ];
   for (const { id, href } of targets) {
     assert.ok(
@@ -112,7 +99,6 @@ test('ids are unique within each collection', () => {
     news,
     announcements,
     events,
-    activities,
     videos,
   };
   for (const [name, entries] of Object.entries(collections)) {

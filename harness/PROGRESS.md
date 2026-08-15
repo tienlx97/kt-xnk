@@ -116,6 +116,234 @@ This file is the handoff between sessions/agents — write for a reader with zer
 
 ---
 
+## 2026-08-15 — Claude (follow-up)
+
+- **Active change:** none. User feedback on top of the same-day home
+  redesign below ("section 1 quá xấu" — the hero still read as too plain).
+- **Task worked:** visual polish pass on `welcome-hero.jsx` only, no data
+  or structural changes. The dark band was a flat solid rectangle with an
+  unrounded photo tile floating inside it (mismatched corner radii against
+  the container) and a quick-launch list with no heading and no visual
+  weight on its icons.
+  - Added two low-opacity `radial-gradient` glows (brand red top-left via
+    `--color-error`, accent blue bottom-right via `--color-accent`, both
+    `color-mix`ed from existing tokens — no new hex) over the same
+    `--color-background-inverted` base, so the band has depth instead of
+    reading as one dead-black slab.
+  - Added a small eyebrow pill ("CỔNG THÔNG TIN NỘI BỘ" + a red dot) above
+    the greeting so the band opens with an identity, not straight into a
+    headline.
+  - Gave the quick-launch panel an explicit "TRUY CẬP NHANH" heading (it
+    previously had none) and wrapped each row's icon in a tinted-red
+    circular badge so rows read as tappable shortcuts, not a plain menu.
+  - Gave the big story tile a `--radius-inner` border-radius and a faint
+    on-dark ring — it previously had no radius at all and blended into the
+    (also dark) band behind it with no visible edge.
+- **Verification:** `./harness/verify.sh` — lint, structure, harness-tests,
+  unit-tests, build, and quality-thresholds all PASS. `typecheck` FAILED on
+  the same three pre-existing, untouched files as every prior entry in this
+  thread (`icon-canary.jsx`, `icon-rocket.jsx`, `react-dev-callouts.jsx`) —
+  not touched by this change. Evidence: `harness/runs/20260815-154459-222491/`.
+- **Browser evidence:** real Chrome via agent-browser (session
+  `hero-69195d1e592b`) against the already-running dev server, desktop
+  1280px and mobile 390px, both post-change. Not saved under `harness/runs/`
+  this pass (ad hoc verification, not a numbered task) — screenshots landed
+  in the session scratchpad only.
+
+## 2026-08-15 — Claude (follow-up 2, same session)
+
+- **Task worked:** two more rounds of user feedback on `welcome-hero.jsx`,
+  same day as the polish pass above.
+  1. **"màu dark, lệch hoàn toàn, ở đó nên là 1 swiper"** — the dark
+     `--color-background-inverted` band read as visually disconnected from
+     the rest of the (light) page, and the user wanted the featured-news
+     area back to a carousel/swiper instead of the static "1 big + 3
+     small" layout. Re-added `swiper` (`pnpm add swiper`; it had been
+     removed as part of the same-day redesign below) and split the slider
+     into its own `'use client'` component, `featured-news-carousel.jsx`
+     (adapted from the deleted `hero-carousel.jsx` git history rather than
+     rewritten from scratch — same slide anatomy: photo + dark scrim +
+     solid-chip category/CTA, since that part was already correct, only
+     scoped to the photo now instead of the whole section). `welcome-hero.jsx`
+     itself became a plain light card (`--color-background-surface` +
+     `--color-border`) with the greeting/eyebrow/quick-launch panel kept,
+     laid out beside the carousel in the same 260px/1fr grid as before.
+     - **Grid blowout bug caught by browser screenshot, not code review:**
+       the carousel column had no `minWidth: 0`, so its content's intrinsic
+       min-width (the slide headline) exceeded the assigned `1fr` track and
+       pushed the whole hero past the viewport edge. Classic CSS grid
+       blowout; fixed by setting `minWidth: 0` on the grid item. A second
+       screenshot caught a follow-on issue: `Grid`'s default cross-axis
+       `stretch` matched the carousel column's height to the (taller)
+       quick-panel, leaving blank space under the fixed-height slide;
+       fixed with `alignSelf: 'start'` on that column, same pattern already
+       used for `quickPanel`.
+  2. **"chỉ giữ lại swiper thôi, còn mục khác xoá"** — immediately after,
+     asked to drop everything else from this band and keep only the
+     swiper. `welcome-hero.jsx` is now a one-line wrapper around
+     `FeaturedNewsCarousel`; the greeting, eyebrow, and quick-launch panel
+     JSX/styles are gone. `config/quick-links.js` had no other consumer
+     once the panel was removed, so it was deleted rather than left dead
+     (per `harness/ENTROPY.md`), along with its import and the
+     `quickLinks`-derived assertion in `home-content.test.js`'s "every link
+     target" test.
+- **Verification:** `./harness/verify.sh` — lint, structure, harness-tests,
+  unit-tests, build, and quality-thresholds all PASS. `typecheck` FAILED on
+  the same three pre-existing, untouched files as every prior entry in this
+  thread. Evidence: `harness/runs/20260815-155137-234042/`.
+- **Browser evidence:** real Chrome via agent-browser, desktop 1280px and
+  mobile 390px, confirming no horizontal overflow at either width and a
+  working carousel (nav arrows, pagination dots, click-through). Screenshots
+  in the session scratchpad, not `harness/runs/` (ad hoc, not a numbered
+  task).
+- **Checked, not a gap:** confirmed `featuredNews`/`latestNews` in
+  `config/news.js` are a disjoint filter on `isFeatured` (`news.js:202-205`),
+  so the carousel above and the `NewsHighlights` "Tin tức" grid below it do
+  not show the same stories twice.
+
+## 2026-08-15 — Claude (follow-up 3, same session)
+
+- **Task worked:** two more one-line rounds of feedback on the carousel
+  slide's aspect ratio in `featured-news-carousel.jsx`.
+  1. **"cho height cao lên, chuẩn 16:9"** — slides were a fixed px height
+     per breakpoint (260/300/340), not actually 16:9. Swapped for
+     `aspectRatio: '16 / 9'` on `styles.slide` (the `position: relative`
+     ancestor `next/image fill` needs), dropping the old fixed heights.
+  2. **"chuẩn 16:9 nhưng sao height cao thế"** — immediately after: at
+     desktop width the hero spans the ~80rem content column, so an
+     uncapped 16:9 box resolved to ~690px tall, nearly the full viewport
+     for one slide. Added a `maxHeight` cap from the 640px breakpoint up
+     (420px / 480px at 1024px+); left uncapped below that since a 390px-
+     wide slide's 16:9 height (~220px) was never the problem.
+- **Verification:** `./harness/verify.sh` — lint, structure, harness-tests,
+  unit-tests, build, and quality-thresholds all PASS. `typecheck` FAILED on
+  the same three pre-existing, untouched files as every prior entry in this
+  thread. Evidence: `harness/runs/20260815-155926-246706/`.
+- **Browser evidence:** real Chrome via agent-browser, 1280px/768px/390px,
+  confirming the capped height at desktop and the (already fine) mobile
+  ratio. Screenshots in the session scratchpad, not `harness/runs/`.
+
+## 2026-08-15 — Claude (follow-up 4, same session)
+
+- **Task worked:** "Swiper bỏ chữ đọc tiếp thay bằng description, nhưng để
+  nhỏ thôi" — swap the "Đọc tiếp" CTA pill on each carousel slide for the
+  news item's own `excerpt` (already in `config/news.js`, previously
+  unused by this component), kept deliberately small. The linter had
+  already stripped the unused `Icon` import and `cta`/`chip`-adjacent CTA
+  markup by the time this was picked up (auto-fix ran ahead of the edit;
+  left as-is, not reverted). Added an `excerpt` field to the destructure
+  and a `Text type="supporting" maxLines={2}` block under the headline,
+  styled at `opacity: 0.85` so it reads as secondary to the title, not a
+  second headline.
+- **Verification:** `./harness/verify.sh` — lint, structure, harness-tests,
+  unit-tests, build, and quality-thresholds all PASS. `typecheck` FAILED on
+  the same three pre-existing, untouched files as every prior entry in this
+  thread. Evidence: `harness/runs/20260815-163750-259924/`.
+- **Browser evidence:** real Chrome via agent-browser, 1280px/390px,
+  confirming the excerpt renders under the headline with no overflow.
+  Screenshots in the session scratchpad, not `harness/runs/`.
+
+---
+
+## 2026-08-15 — Claude
+
+- **Active change:** none (same home page; a second, larger follow-up
+  redesign on top of the two entries below).
+- **Task worked:** user shared a screenshot of "THE HUB" — a SharePoint
+  intranet-template home page (dark hero with personalized "Welcome,
+  Sabina!", a quick-launch sidebar list, one big featured-article photo
+  card + a stacked list of smaller stories beside it, a filterable "Recent
+  News" grid, and a real month calendar paired with an events list) — and
+  asked me to learn from it, rebalance the home page accordingly, and
+  merge the separate "Tin tức" (News) and "Hoạt động" (Activities) sections
+  into one. Also lifted the standing Astryx-only rule for this page
+  specifically ("trang home không nhất thiết phải dùng Astryx UI"). Ran one
+  `WebSearch` on 2026 intranet-portal best practices first, which
+  corroborated the reference's structure (personalization, quick links,
+  categorized news, events) rather than contradicting it.
+  - **Consolidated three sections into one hero, `welcome-hero.jsx`:** the
+    old `WelcomeBanner` (a static title/slogan band the user had already
+    commented out of `page.jsx`), the Swiper-based `HeroCarousel`, and the
+    solid-tile `QuickLinks` grid are gone; replaced by one dark
+    (`--color-background-inverted`) band containing a greeting, a
+    translucent "quick launch" list (icon+label rows, ending in a
+    catch-all "Xem tất cả tài liệu" row — the same closing pattern as the
+    reference's "More Apps"), and the newest stories as **1 big photo card
+    + up to 3 small thumbnail rows** instead of a rotating carousel.
+    `featuredNews` happens to be exactly 4 items, so nothing rotates and
+    nothing is cut. Removed the `swiper` dependency entirely
+    (`pnpm remove swiper`) — it had exactly one consumer.
+  - **"Chào mừng trở lại!" is intentionally NOT personalized by name.**
+    `features/auth` has a `useSession()` hook that reads a username cookie,
+    but `home` importing it directly would violate feature isolation (no
+    feature-to-feature imports; see `harness/structure.rules.cjs`), and
+    there is no real user-profile/display-name concept yet anyway (auth is
+    placeholder test-user credentials only). Documented as a real follow-up
+    (promote session reading to `src/shared/`) rather than faking it or
+    breaking the architecture rule for one greeting.
+  - **Merged Activities into News per the user's explicit instruction:**
+    deleted `activity-gallery.jsx`, `config/activities.js`, and the 8
+    `activity-*.jpg` files; removed all "activities" references from
+    `home-content.test.js`. `NewsHighlights` ("Tin tức") is now the page's
+    only editorial-content section — activity-style stories (team
+    building, site visits, training) become ordinary `news` entries with
+    an appropriate category instead of a separate gallery.
+  - **Added category filter pills to `NewsHighlights`**, learned from the
+    reference's "All News / Announcements / Events / …" tabs — the pill
+    list is derived from `latestNews`' own `category` values
+    (`[...new Set(...)]`), not hand-typed, so a new category in `news.js`
+    can't drift out of sync with the filter UI. Made the component `'use
+    client'` for the local filter state; the underlying data is still the
+    same static import, so there's no fetch/loading state.
+  - **Added a real month calendar** (`mini-calendar.jsx` +
+    `api/calendar.js`, both pure/tested, no `Date.now()` anywhere in either
+    — explained in the code comment: a `Date.now()`-based "today" highlight
+    would differ between server build time and the visitor's clock and
+    hydration-mismatch) paired beside the `UpcomingEvents` list, echoing
+    the reference's calendar+list Events widget. Shows whichever month the
+    soonest event falls in and circles the days that have one.
+  - **Skipped the reference's "Social Corner"** (a user-post composer +
+    community feed) — this repo is explicitly front-end only with no
+    backend (`openspec/project.md`), and a "write a post" box with nowhere
+    to persist posts would be pure decoration, not a real feature.
+  - **Astryx exception used narrowly**, not as a full rewrite: kept Astryx
+    layout/typography/Icon primitives everywhere they already worked
+    (Grid, VStack/HStack, Heading/Text, ClickableCard, Icon) and only
+    reached past them for things Astryx has no primitive for at all — the
+    photo+scrim hero treatment (already established) and the calendar grid
+    (new). This mirrors how the MDX exception was applied, just without
+    MDX's stricter "must not import Astryx at all" constraint.
+- **Result:** page order is now WelcomeHero → NewsHighlights (filterable) →
+  [AnnouncementsBoard + UpcomingEvents+MiniCalendar] band → VideoClips band
+  → Ecosystem — 5 movements instead of the previous 6 (WelcomeBanner had
+  been reduced to 0 already; ActivityGallery is gone).
+- **Verification:** `./harness/verify.sh` — lint, structure, harness-tests,
+  **55** unit tests (added `api/calendar.test.js`, extended
+  `home-content.test.js`), build, and quality-thresholds all PASS.
+  `typecheck` FAILED on the same three pre-existing, untouched files as
+  every prior entry in this thread. Evidence:
+  `harness/runs/20260815-153531-210113/`.
+- **Browser evidence — real Chrome, not curl:**
+  `harness/runs/20260815-home-redesign-v2/` — full-page captures at
+  390/768/1024/1536px (zero overflow, zero incomplete images at every
+  width), section zooms of the hero and calendar, and a **live interaction
+  test**: clicking the "IT" filter pill (real mouse click at its computed
+  center — `agent-browser click @ref` still does not work on
+  `ClickableCard`, see the earlier Harness-gap note) correctly narrowed the
+  grid to the single IT-tagged story and highlighted the pill.
+  - **One real defect the first render caught:** the quick-launch panel
+    stretched to match the (taller) featured-news column's height —
+    `Grid`'s default cross-axis alignment is `stretch` — leaving a few
+    hundred px of empty dark panel below the last shortcut. Fixed with
+    `alignSelf: 'start'` on the panel plus the "Xem tất cả tài liệu" row,
+    which also closes the panel more naturally than raw whitespace would.
+- **Next step:** none pending; awaiting user visual confirmation. If a real
+  auth backend / user-profile source is ever added, promoting session
+  reading to `src/shared/` would unlock the personalized "Chào mừng, {tên}!"
+  greeting this entry deliberately left generic.
+
+---
+
 ## 2026-08-15 — Claude
 
 - **Active change:** none (same home page; follow-up on the redesign entry

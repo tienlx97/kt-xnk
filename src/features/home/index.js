@@ -1,9 +1,6 @@
-export { ActivityGallery } from './components/activity-gallery.jsx';
 export { AnnouncementsBoard } from './components/announcements-board.jsx';
 export { Ecosystem } from './components/ecosystem.jsx';
-export { HeroCarousel } from './components/hero-carousel.jsx';
 export { NewsHighlights } from './components/news-highlights.jsx';
-export { QuickLinks } from './components/quick-links.jsx';
 export { UpcomingEvents } from './components/upcoming-events.jsx';
 export { VideoClips } from './components/video-clips.jsx';
-export { WelcomeBanner } from './components/welcome-banner.jsx';
+export { WelcomeHero } from './components/welcome-hero.jsx';

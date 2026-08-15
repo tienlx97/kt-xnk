@@ -8,11 +8,28 @@ import { VStack } from '@astryxdesign/core/VStack';
 import * as stylex from '@stylexjs/stylex';
 import Image from 'next/image';
 
-import { formatDateBadge, formatEventWhen } from '../api/date.js';
+import { formatDateBadge, formatEventWhen, parseIsoDate } from '../api/date.js';
 import { events } from '../config/events.js';
+import { MiniCalendar } from './mini-calendar.jsx';
 import { SectionHeading } from './section-heading.jsx';
 
+// The calendar shows whichever month the SOONEST upcoming event falls in —
+// `events` is maintained newest-first-removed/soonest-first (see the
+// config file), so that's simply the first entry. A real deployment would
+// derive this from "today" instead, but this module has no `Date.now()`
+// anywhere (see `api/calendar.js`) to keep server/client render identical.
+const calendarDate = parseIsoDate(events[0].date);
+
 const styles = stylex.create({
+  // `flexGrow` lets the event grid claim whatever width `MiniCalendar`'s
+  // fixed 300px doesn't use inside the shared `HStack`; `minWidth: 0` is
+  // the same flex-shrink override documented on `body`/`details` below —
+  // without it the grid refuses to shrink under its content and the row
+  // overflows instead of wrapping to a second line under the calendar.
+  list: {
+    flexGrow: 1,
+    minWidth: 0,
+  },
   card: {
     height: '100%',
     overflow: 'hidden',
@@ -70,76 +87,88 @@ export function UpcomingEvents() {
         title="Sự kiện sắp tới"
         description="Lịch họp, đào tạo và các mốc quan trọng của toàn hệ sinh thái."
       />
-      <Grid columns={{ minWidth: 340, max: 2 }} gap={4}>
-        {events.map((event) => {
-          const { day, month } = formatDateBadge(event.date);
-          return (
-            <Card
-              key={event.id}
-              elevation="low"
-              padding={0}
-              xstyle={styles.card}
-            >
-              <HStack height="100%">
-                <VStack xstyle={styles.media}>
-                  <Image
-                    src={event.image.src}
-                    alt={event.image.alt}
-                    fill
-                    sizes="132px"
-                    {...stylex.props(styles.photo)}
-                  />
-                </VStack>
-                <HStack gap={3} padding={4} vAlign="start" xstyle={styles.body}>
-                  <VStack
-                    paddingBlock={1.5}
-                    hAlign="center"
-                    xstyle={styles.dateChip}
+      <HStack gap={6} wrap="wrap" vAlign="start">
+        <MiniCalendar
+          year={calendarDate.getFullYear()}
+          month={calendarDate.getMonth()}
+          entries={events}
+        />
+        <Grid columns={{ minWidth: 340, max: 2 }} gap={4} xstyle={styles.list}>
+          {events.map((event) => {
+            const { day, month } = formatDateBadge(event.date);
+            return (
+              <Card
+                key={event.id}
+                elevation="low"
+                padding={0}
+                xstyle={styles.card}
+              >
+                <HStack height="100%">
+                  <VStack xstyle={styles.media}>
+                    <Image
+                      src={event.image.src}
+                      alt={event.image.alt}
+                      fill
+                      sizes="132px"
+                      {...stylex.props(styles.photo)}
+                    />
+                  </VStack>
+                  <HStack
+                    gap={3}
+                    padding={4}
+                    vAlign="start"
+                    xstyle={styles.body}
                   >
-                    <Text
-                      type="display-3"
-                      color="inherit"
-                      weight="bold"
-                      justify="center"
-                      display="block"
+                    <VStack
+                      paddingBlock={1.5}
+                      hAlign="center"
+                      xstyle={styles.dateChip}
                     >
-                      {day}
-                    </Text>
-                    <Text
-                      type="supporting"
-                      color="inherit"
-                      justify="center"
-                      display="block"
-                    >
-                      {month}
-                    </Text>
-                  </VStack>
-                  <VStack gap={1.5} xstyle={styles.details}>
-                    <Heading level={3} maxLines={2}>
-                      {event.title}
-                    </Heading>
-                    <HStack gap={1.5} vAlign="start">
-                      <Icon icon="clock" size="xsm" color="secondary" />
-                      <Text type="supporting" maxLines={2}>
-                        {formatEventWhen(event)}
+                      <Text
+                        type="display-3"
+                        color="inherit"
+                        weight="bold"
+                        justify="center"
+                        display="block"
+                      >
+                        {day}
                       </Text>
-                    </HStack>
-                    <HStack gap={1.5} vAlign="start">
-                      <Icon icon="info" size="xsm" color="secondary" />
-                      <Text type="supporting" maxLines={2}>
-                        {event.location}
+                      <Text
+                        type="supporting"
+                        color="inherit"
+                        justify="center"
+                        display="block"
+                      >
+                        {month}
                       </Text>
-                    </HStack>
-                    <Text type="supporting" color="accent" maxLines={1}>
-                      {event.audience}
-                    </Text>
-                  </VStack>
+                    </VStack>
+                    <VStack gap={1.5} xstyle={styles.details}>
+                      <Heading level={3} maxLines={2}>
+                        {event.title}
+                      </Heading>
+                      <HStack gap={1.5} vAlign="start">
+                        <Icon icon="clock" size="xsm" color="secondary" />
+                        <Text type="supporting" maxLines={2}>
+                          {formatEventWhen(event)}
+                        </Text>
+                      </HStack>
+                      <HStack gap={1.5} vAlign="start">
+                        <Icon icon="info" size="xsm" color="secondary" />
+                        <Text type="supporting" maxLines={2}>
+                          {event.location}
+                        </Text>
+                      </HStack>
+                      <Text type="supporting" color="accent" maxLines={1}>
+                        {event.audience}
+                      </Text>
+                    </VStack>
+                  </HStack>
                 </HStack>
-              </HStack>
-            </Card>
-          );
-        })}
-      </Grid>
+              </Card>
+            );
+          })}
+        </Grid>
+      </HStack>
     </VStack>
   );
 }

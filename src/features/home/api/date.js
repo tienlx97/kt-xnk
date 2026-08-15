@@ -35,6 +35,17 @@ function parse(isoDate) {
 }
 
 /**
+ * Public form of `parse` for callers that need the `Date` object itself
+ * rather than a formatted string — e.g. `api/calendar.js`, which reads the
+ * year/month/day off an event's ISO string to place it on a month grid.
+ * @param {string} isoDate ISO `YYYY-MM-DD`
+ * @returns {Date}
+ */
+export function parseIsoDate(isoDate) {
+  return parse(isoDate);
+}
+
+/**
  * Compact `d/M` label for dense rows (notices, meta lines).
  * @param {string} isoDate ISO `YYYY-MM-DD`
  */
