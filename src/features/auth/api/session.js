@@ -1,8 +1,8 @@
 import {
   ACCESS_TOKEN_KEY,
-  REFRESH_TOKEN_KEY,
   SESSION_COOKIE_MAX_AGE_SECONDS,
-  SESSION_USERNAME_KEY,
+  SESSION_DISPLAY_NAME_KEY,
+  SESSION_EMAIL_KEY,
 } from '../config/session-keys.js';
 
 // The native `storage` event only fires in *other* tabs, never the tab that
@@ -35,29 +35,30 @@ export function readAccessToken() {
   return readCookie(ACCESS_TOKEN_KEY);
 }
 
-export function readSessionUsername() {
-  return readCookie(SESSION_USERNAME_KEY) ?? '';
+export function readSessionEmail() {
+  return readCookie(SESSION_EMAIL_KEY) ?? '';
+}
+
+export function readSessionDisplayName() {
+  return readCookie(SESSION_DISPLAY_NAME_KEY) ?? '';
 }
 
 /**
  * Persists a session after a successful login, as cookies rather than
  * localStorage so `src/app/(protected)/layout.js` can read it server-side
- * and block rendering entirely for a logged-out visitor. The refresh token
- * is written here only because there is no backend yet — a real backend
- * should set it as an `httpOnly` cookie itself (via `Set-Cookie` on the
- * login response) so client JS never touches it.
+ * and block rendering entirely for a logged-out visitor.
  * @param {import('../types/index.js').Session} session
  */
-export function writeSession({ accessToken, refreshToken, username }) {
-  writeCookie(ACCESS_TOKEN_KEY, accessToken);
-  writeCookie(REFRESH_TOKEN_KEY, refreshToken);
-  writeCookie(SESSION_USERNAME_KEY, username);
+export function writeSession({ token, email, displayName }) {
+  writeCookie(ACCESS_TOKEN_KEY, token);
+  writeCookie(SESSION_EMAIL_KEY, email);
+  writeCookie(SESSION_DISPLAY_NAME_KEY, displayName);
   window.dispatchEvent(new Event(SESSION_CHANGE_EVENT));
 }
 
 export function clearSession() {
   deleteCookie(ACCESS_TOKEN_KEY);
-  deleteCookie(REFRESH_TOKEN_KEY);
-  deleteCookie(SESSION_USERNAME_KEY);
+  deleteCookie(SESSION_EMAIL_KEY);
+  deleteCookie(SESSION_DISPLAY_NAME_KEY);
   window.dispatchEvent(new Event(SESSION_CHANGE_EVENT));
 }

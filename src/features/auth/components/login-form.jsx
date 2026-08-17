@@ -13,13 +13,13 @@ import { useLoginForm } from '../hooks/use-login-form.js';
 
 export function LoginForm() {
   const {
-    username,
-    setUsername,
+    email,
+    setEmail,
     password,
     setPassword,
     rememberMe,
     setRememberMe,
-    usernameStatus,
+    emailStatus,
     passwordStatus,
     submitError,
     isSubmitting,
@@ -41,13 +41,14 @@ export function LoginForm() {
               ) : null}
 
               <TextInput
-                label="Tên đăng nhập"
-                value={username}
-                onChange={setUsername}
-                placeholder="Nhập tên đăng nhập"
+                label="Email"
+                value={email}
+                onChange={setEmail}
+                placeholder="Nhập email"
+                type="email"
                 size="lg"
                 isRequired
-                status={usernameStatus}
+                status={emailStatus}
                 statusVariant="tooltip"
               />
 

@@ -116,6 +116,54 @@ This file is the handoff between sessions/agents — write for a reader with zer
 
 ---
 
+## 2026-08-17 — Claude Code
+
+- **Active change:** `openspec/changes/wire-real-login-backend/` (new,
+  status done)
+- **Task worked:** replaced the mock login in `src/features/auth/`
+  (`login-username-password`'s `api/login.js` against
+  `config/test-users.js`) with a real call to the user's local backend
+  (`POST http://localhost:5209/authentication/login`), per pasted
+  request/response examples.
+- **Result:** done, code-complete. Renamed `username`→`email` across
+  `types/`, `config/`, `hooks/`, `components/` in `src/features/auth/`
+  (backend authenticates by `Email`, not a generic username); replaced the
+  `accessToken`+`refreshToken` pair with the backend's single `token`,
+  storing `email`/`displayName` (from `firstName`+`lastName`) in session
+  cookies instead of a bare username; deleted `config/test-users.js`; added
+  `config/api-config.js` for `NEXT_PUBLIC_API_BASE_URL` (default
+  `localhost:5209`); login call now goes through a React Query
+  `useMutation` (`hooks/use-login-mutation.js`) instead of a raw `await`,
+  per user's explicit request to use React Query (`@tanstack/react-query`
+  was already a dependency with `QueryProvider` wired into the root layout,
+  just unused).
+- **Verification:** `./harness/verify.sh` did NOT run — `node` is
+  unreachable in this WSL sandbox shell (only `node.exe` under
+  `/mnt/c/Program Files/nodejs/` exists; the Windows `pnpm` shim needs
+  `node` on `PATH` and fails with `exec: node: not found`). This is the
+  same class of pre-existing environment gap noted in the 2026-07-25
+  entry (pnpm version mismatch) — not caused by this change. Manual
+  `grep` checks confirm no leftover `username`/`refreshToken`/`test-users`
+  references anywhere in `src/`. **Whoever picks this up next must run
+  `./harness/verify.sh` (lint/typecheck/structure/build) from an
+  environment with a Linux `node` binary before this can be considered
+  verified**, and manually confirm login against the real backend (login
+  succeeds + redirects; wrong credentials show the backend's error;
+  logout/avatar still work with the new `displayName` field).
+- **Decisions made:** frontend shape changed to match the backend exactly
+  (user: "ưu tiên backend, frontend chỉnh theo backend") rather than
+  adapting the backend response into the old mock's shape. No refresh-token
+  handling added — the backend doesn't expose a refresh endpoint yet, so a
+  session just relies on the JWT's own `exp`.
+- **Next step:** run `./harness/verify.sh` in a working environment; if
+  backend CORS isn't configured for the frontend's dev origin, login
+  fetches will fail with the generic "Không thể kết nối đến máy chủ"
+  message — that's a backend-side fix, tracked as out-of-scope in the
+  proposal.
+- **Blockers:** `node` missing from this sandbox's `PATH` (see above).
+
+---
+
 ## 2026-08-15 — Claude (follow-up)
 
 - **Active change:** none. User feedback on top of the same-day home

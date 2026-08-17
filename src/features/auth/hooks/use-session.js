@@ -6,7 +6,8 @@ import { useSyncExternalStore } from 'react';
 import {
   clearSession,
   readAccessToken,
-  readSessionUsername,
+  readSessionDisplayName,
+  readSessionEmail,
   SESSION_CHANGE_EVENT,
 } from '../api/session.js';
 
@@ -24,11 +25,19 @@ function getIsAuthenticatedServerSnapshot() {
   return false;
 }
 
-function getUsername() {
-  return readSessionUsername();
+function getDisplayName() {
+  return readSessionDisplayName();
 }
 
-function getUsernameServerSnapshot() {
+function getDisplayNameServerSnapshot() {
+  return '';
+}
+
+function getEmail() {
+  return readSessionEmail();
+}
+
+function getEmailServerSnapshot() {
   return '';
 }
 
@@ -39,10 +48,15 @@ export function useSession() {
     getIsAuthenticated,
     getIsAuthenticatedServerSnapshot,
   );
-  const username = useSyncExternalStore(
+  const displayName = useSyncExternalStore(
     subscribeToSessionChange,
-    getUsername,
-    getUsernameServerSnapshot,
+    getDisplayName,
+    getDisplayNameServerSnapshot,
+  );
+  const email = useSyncExternalStore(
+    subscribeToSessionChange,
+    getEmail,
+    getEmailServerSnapshot,
   );
 
   function logout() {
@@ -50,5 +64,5 @@ export function useSession() {
     router.push('/login');
   }
 
-  return { isAuthenticated, username, logout };
+  return { isAuthenticated, displayName, email, logout };
 }

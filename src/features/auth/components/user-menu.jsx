@@ -9,7 +9,7 @@ import { useSession } from '../hooks/use-session.js';
 
 export function UserMenu() {
   const [isOpen, setIsOpen] = useState(false);
-  const { isAuthenticated, username, logout } = useSession();
+  const { isAuthenticated, displayName, logout } = useSession();
 
   if (!isAuthenticated) {
     return null;
@@ -34,7 +34,7 @@ export function UserMenu() {
         />
       }
     >
-      <Avatar name={username} size="md" tooltip={false} onClick={() => {}} />
+      <Avatar name={displayName} size="md" tooltip={false} onClick={() => {}} />
     </Popover>
   );
 }

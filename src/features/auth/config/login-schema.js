@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
 export const loginSchema = z.object({
-  username: z.string().trim().min(3, 'Tên đăng nhập phải có ít nhất 3 ký tự'),
-  // Minimum length is a placeholder until the backend defines its own
-  // password policy.
-  password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
+  email: z.string().trim().email('Email không hợp lệ'),
+  // Password format/strength is enforced by the backend; the client only
+  // checks that something was typed.
+  password: z.string().min(1, 'Vui lòng nhập mật khẩu'),
   rememberMe: z.boolean(),
 });

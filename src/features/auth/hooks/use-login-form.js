@@ -3,11 +3,11 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useSyncExternalStore } from 'react';
 
-import { login } from '../api/login.js';
 import { writeSession } from '../api/session.js';
 import { loginSchema } from '../config/login-schema.js';
+import { useLoginMutation } from './use-login-mutation.js';
 
-const REMEMBERED_USERNAME_KEY = 'kt-xnk:remembered-username';
+const REMEMBERED_EMAIL_KEY = 'kt-xnk:remembered-email';
 
 /** @param {string} [message] @returns {{ type: 'error', message: string } | undefined} */
 function fieldStatus(message) {
@@ -18,37 +18,38 @@ function subscribeToNothing() {
   return () => {};
 }
 
-function getRememberedUsername() {
-  return window.localStorage.getItem(REMEMBERED_USERNAME_KEY) ?? '';
+function getRememberedEmail() {
+  return window.localStorage.getItem(REMEMBERED_EMAIL_KEY) ?? '';
 }
 
-function getServerRememberedUsername() {
+function getServerRememberedEmail() {
   return '';
 }
 
 export function useLoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const loginMutation = useLoginMutation();
 
   // useSyncExternalStore reads localStorage as '' during SSR/hydration (so
   // the server and first client render match, no hydration-mismatch
   // warning) and React itself re-renders with the real client value right
   // after mount. Local overrides let the user freely edit the fields
   // without fighting that synced value.
-  const rememberedUsername = useSyncExternalStore(
+  const rememberedEmail = useSyncExternalStore(
     subscribeToNothing,
-    getRememberedUsername,
-    getServerRememberedUsername,
+    getRememberedEmail,
+    getServerRememberedEmail,
   );
-  const [usernameOverride, setUsernameOverride] = useState(
+  const [emailOverride, setEmailOverride] = useState(
     /** @type {string | null} */ (null),
   );
   const [rememberMeOverride, setRememberMeOverride] = useState(
     /** @type {boolean | null} */ (null),
   );
-  const username = usernameOverride ?? rememberedUsername;
-  const rememberMe = rememberMeOverride ?? rememberedUsername !== '';
-  const setUsername = setUsernameOverride;
+  const email = emailOverride ?? rememberedEmail;
+  const rememberMe = rememberMeOverride ?? rememberedEmail !== '';
+  const setEmail = setEmailOverride;
   const setRememberMe = setRememberMeOverride;
 
   const [password, setPassword] = useState('');
@@ -56,14 +57,13 @@ export function useLoginForm() {
     /** @type {Record<string, string>} */ ({}),
   );
   const [submitError, setSubmitError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   /** @param {import('react').FormEvent<HTMLFormElement>} event */
   async function handleSubmit(event) {
     event.preventDefault();
     setSubmitError('');
 
-    const result = loginSchema.safeParse({ username, password, rememberMe });
+    const result = loginSchema.safeParse({ email, password, rememberMe });
     if (!result.success) {
       /** @type {Record<string, string>} */
       const nextFieldErrors = {};
@@ -78,9 +78,7 @@ export function useLoginForm() {
     }
 
     setFieldErrors({});
-    setIsSubmitting(true);
-    const loginResult = await login(result.data);
-    setIsSubmitting(false);
+    const loginResult = await loginMutation.mutateAsync(result.data);
 
     if (!loginResult.success) {
       setSubmitError(loginResult.message ?? 'Đăng nhập thất bại');
@@ -88,30 +86,30 @@ export function useLoginForm() {
     }
 
     if (rememberMe) {
-      window.localStorage.setItem(REMEMBERED_USERNAME_KEY, username);
+      window.localStorage.setItem(REMEMBERED_EMAIL_KEY, email);
     } else {
-      window.localStorage.removeItem(REMEMBERED_USERNAME_KEY);
+      window.localStorage.removeItem(REMEMBERED_EMAIL_KEY);
     }
 
     writeSession({
-      accessToken: loginResult.accessToken,
-      refreshToken: loginResult.refreshToken,
-      username,
+      token: loginResult.token,
+      email: loginResult.email,
+      displayName: `${loginResult.firstName} ${loginResult.lastName}`.trim(),
     });
     router.replace(searchParams.get('next') || '/');
   }
 
   return {
-    username,
-    setUsername,
+    email,
+    setEmail,
     password,
     setPassword,
     rememberMe,
     setRememberMe,
-    usernameStatus: fieldStatus(fieldErrors.username),
+    emailStatus: fieldStatus(fieldErrors.email),
     passwordStatus: fieldStatus(fieldErrors.password),
     submitError,
-    isSubmitting,
+    isSubmitting: loginMutation.isPending,
     handleSubmit,
   };
 }

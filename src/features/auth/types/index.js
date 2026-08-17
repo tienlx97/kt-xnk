@@ -1,6 +1,6 @@
 /**
  * @typedef {Object} LoginFormValues
- * @property {string} username
+ * @property {string} email
  * @property {string} password
  * @property {boolean} rememberMe
  */
@@ -8,8 +8,11 @@
 /**
  * @typedef {Object} LoginSuccess
  * @property {true} success
- * @property {string} accessToken
- * @property {string} refreshToken
+ * @property {string} token
+ * @property {string} id
+ * @property {string} firstName
+ * @property {string} lastName
+ * @property {string} email
  */
 
 /**
@@ -22,9 +25,9 @@
 
 /**
  * @typedef {Object} Session
- * @property {string} accessToken
- * @property {string} refreshToken
- * @property {string} username
+ * @property {string} token
+ * @property {string} email
+ * @property {string} displayName
  */
 
 export {};
