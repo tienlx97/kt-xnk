@@ -7,7 +7,7 @@ import {
   clearSession,
   readAccessToken,
   readSessionDisplayName,
-  readSessionEmail,
+  readSessionNationalId,
   SESSION_CHANGE_EVENT,
 } from '../api/session.js';
 
@@ -33,11 +33,11 @@ function getDisplayNameServerSnapshot() {
   return '';
 }
 
-function getEmail() {
-  return readSessionEmail();
+function getNationalId() {
+  return readSessionNationalId();
 }
 
-function getEmailServerSnapshot() {
+function getNationalIdServerSnapshot() {
   return '';
 }
 
@@ -53,10 +53,10 @@ export function useSession() {
     getDisplayName,
     getDisplayNameServerSnapshot,
   );
-  const email = useSyncExternalStore(
+  const nationalId = useSyncExternalStore(
     subscribeToSessionChange,
-    getEmail,
-    getEmailServerSnapshot,
+    getNationalId,
+    getNationalIdServerSnapshot,
   );
 
   function logout() {
@@ -64,5 +64,5 @@ export function useSession() {
     router.push('/login');
   }
 
-  return { isAuthenticated, displayName, email, logout };
+  return { isAuthenticated, displayName, nationalId, logout };
 }

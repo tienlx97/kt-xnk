@@ -1,6 +1,6 @@
 /**
  * @typedef {Object} LoginFormValues
- * @property {string} email
+ * @property {string} nationalId
  * @property {string} password
  * @property {boolean} rememberMe
  */
@@ -12,7 +12,7 @@
  * @property {string} id
  * @property {string} firstName
  * @property {string} lastName
- * @property {string} email
+ * @property {string} nationalId
  */
 
 /**
@@ -26,7 +26,7 @@
 /**
  * @typedef {Object} Session
  * @property {string} token
- * @property {string} email
+ * @property {string} nationalId
  * @property {string} displayName
  */
 

@@ -2,7 +2,7 @@ import {
   ACCESS_TOKEN_KEY,
   SESSION_COOKIE_MAX_AGE_SECONDS,
   SESSION_DISPLAY_NAME_KEY,
-  SESSION_EMAIL_KEY,
+  SESSION_NATIONAL_ID_KEY,
 } from '../config/session-keys.js';
 
 // The native `storage` event only fires in *other* tabs, never the tab that
@@ -35,8 +35,8 @@ export function readAccessToken() {
   return readCookie(ACCESS_TOKEN_KEY);
 }
 
-export function readSessionEmail() {
-  return readCookie(SESSION_EMAIL_KEY) ?? '';
+export function readSessionNationalId() {
+  return readCookie(SESSION_NATIONAL_ID_KEY) ?? '';
 }
 
 export function readSessionDisplayName() {
@@ -49,16 +49,16 @@ export function readSessionDisplayName() {
  * and block rendering entirely for a logged-out visitor.
  * @param {import('../types/index.js').Session} session
  */
-export function writeSession({ token, email, displayName }) {
+export function writeSession({ token, nationalId, displayName }) {
   writeCookie(ACCESS_TOKEN_KEY, token);
-  writeCookie(SESSION_EMAIL_KEY, email);
+  writeCookie(SESSION_NATIONAL_ID_KEY, nationalId);
   writeCookie(SESSION_DISPLAY_NAME_KEY, displayName);
   window.dispatchEvent(new Event(SESSION_CHANGE_EVENT));
 }
 
 export function clearSession() {
   deleteCookie(ACCESS_TOKEN_KEY);
-  deleteCookie(SESSION_EMAIL_KEY);
+  deleteCookie(SESSION_NATIONAL_ID_KEY);
   deleteCookie(SESSION_DISPLAY_NAME_KEY);
   window.dispatchEvent(new Event(SESSION_CHANGE_EVENT));
 }

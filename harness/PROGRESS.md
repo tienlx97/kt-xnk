@@ -116,6 +116,75 @@ This file is the handoff between sessions/agents — write for a reader with zer
 
 ---
 
+## 2026-08-18 — Claude Code
+
+- **Active change:** `openspec/changes/wire-nationalid-login/` (new,
+  status done).
+- **Task worked:** the backend (`BE-kt-xnk`, sibling repo) removed `Email`
+  as the user identity field and replaced it with `NationalId` (Vietnamese
+  CCCD, 12 digits) — see its `harness/PROGRESS.md`, 2026-08-18 entries.
+  This frontend's login was still wired to the old shape from
+  `wire-real-login-backend`, so every login attempt was failing for two
+  independent reasons: (1) the request body sent `Email`, which the
+  backend no longer accepts, and (2) the request URL
+  (`${API_BASE_URL}/authentication/login`) was missing the `/api/v1`
+  prefix the backend added in an even earlier session — a second,
+  unrelated 404 on top of the first bug. Caught both while reviewing the
+  backend's recent changes with the user, fixed together.
+- **Result:** done, code-complete. Renamed `email`→`nationalId` across
+  `types/`, `config/`, `api/`, `hooks/`, `components/` in
+  `src/features/auth/` (same shape of change as the prior
+  `username`→`email` rename): `config/login-schema.js`'s email-format
+  check became a `^\d{12}$` 12-digit regex; `config/session-keys.js`'s
+  `SESSION_EMAIL_KEY`→`SESSION_NATIONAL_ID_KEY`; `api/login.js`'s request
+  URL fixed to `/api/v1/authentication/login` and body key
+  `Email`→`NationalId`; `api/session.js`'s `readSessionEmail`→
+  `readSessionNationalId`; `hooks/use-login-form.js`'s state var and
+  remembered-value localStorage key; `hooks/use-session.js`'s
+  `getEmail`/`email`→`getNationalId`/`nationalId`;
+  `components/login-form.jsx`'s label/placeholder/input type ("Email" →
+  "Căn cước công dân", `type="email"`→`type="text"`).
+  `components/user-menu.jsx` needed no change — it only reads
+  `displayName`, never touched the email field.
+- **Verification:** `pnpm lint` clean. `pnpm typecheck` still fails, but
+  only on **pre-existing** errors unrelated to this change
+  (`icon-canary.jsx`, `icon-rocket.jsx`, `react-dev-callouts.jsx` — none
+  touched here, confirmed via `git status`) plus one new error this
+  session introduced and then reverted (`TextInput` doesn't support an
+  `inputMode` prop — added it for a numeric-keyboard hint, typecheck
+  caught it immediately, removed it). `pnpm test` (via `node --test` in a
+  bash shell — running it through the `pnpm` wrapper in PowerShell
+  produced 0 discovered tests, a shell quoting/glob-expansion difference
+  between PowerShell and bash on this Windows machine, not a real
+  failure) is 55/55 green. `pnpm structure` clean (238 modules, 498 deps,
+  no violations). `pnpm format:check` reports 146 pre-existing
+  out-of-format files repo-wide (confirmed via `git status` — most of the
+  flagged files, including some under `features/auth/`, were never
+  touched this session); none of the files this session actually edited
+  are in that flagged list. Did **not** run the full `./harness/verify.sh`
+  gate, since it would just report the same pre-existing format drift as
+  a failure and add no new signal — the individual checks above cover
+  everything it would run. **Not manually tested against a live
+  backend** — no `BE-kt-xnk` instance was running this session; whoever
+  picks this up next should log in with a real national ID + password
+  from a seeded backend user before calling this fully verified.
+- **Decisions made:** followed `wire-real-login-backend`'s established
+  pattern exactly (full field rename through every layer, not just a
+  request-body remap) rather than inventing a different approach, since
+  this is the second time this frontend has had to chase an identity-field
+  rename on the backend.
+- **Next step:** the user is planning role-based nav/route gating next
+  (e.g. hiding a `/logistics` route from non-Logistics staff) — that will
+  need decoding the JWT's `roles` claim client-side (the backend embeds it
+  already; see `BE-kt-xnk`'s `docs/api/Authentication.md`) and a
+  route→allowedRoles map, most likely via Next.js `middleware.js` so it's
+  enforced before rendering, the same way `(protected)/layout.jsx`
+  currently gates on "has a token" alone. Not started — this session was
+  scoped to just fixing the broken login.
+- **Blockers:** none.
+
+---
+
 ## 2026-08-17 — Claude Code
 
 - **Active change:** `openspec/changes/wire-real-login-backend/` (new,

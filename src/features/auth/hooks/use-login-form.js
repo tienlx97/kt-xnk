@@ -7,7 +7,7 @@ import { writeSession } from '../api/session.js';
 import { loginSchema } from '../config/login-schema.js';
 import { useLoginMutation } from './use-login-mutation.js';
 
-const REMEMBERED_EMAIL_KEY = 'kt-xnk:remembered-email';
+const REMEMBERED_NATIONAL_ID_KEY = 'kt-xnk:remembered-national-id';
 
 /** @param {string} [message] @returns {{ type: 'error', message: string } | undefined} */
 function fieldStatus(message) {
@@ -18,11 +18,11 @@ function subscribeToNothing() {
   return () => {};
 }
 
-function getRememberedEmail() {
-  return window.localStorage.getItem(REMEMBERED_EMAIL_KEY) ?? '';
+function getRememberedNationalId() {
+  return window.localStorage.getItem(REMEMBERED_NATIONAL_ID_KEY) ?? '';
 }
 
-function getServerRememberedEmail() {
+function getServerRememberedNationalId() {
   return '';
 }
 
@@ -36,20 +36,20 @@ export function useLoginForm() {
   // warning) and React itself re-renders with the real client value right
   // after mount. Local overrides let the user freely edit the fields
   // without fighting that synced value.
-  const rememberedEmail = useSyncExternalStore(
+  const rememberedNationalId = useSyncExternalStore(
     subscribeToNothing,
-    getRememberedEmail,
-    getServerRememberedEmail,
+    getRememberedNationalId,
+    getServerRememberedNationalId,
   );
-  const [emailOverride, setEmailOverride] = useState(
+  const [nationalIdOverride, setNationalIdOverride] = useState(
     /** @type {string | null} */ (null),
   );
   const [rememberMeOverride, setRememberMeOverride] = useState(
     /** @type {boolean | null} */ (null),
   );
-  const email = emailOverride ?? rememberedEmail;
-  const rememberMe = rememberMeOverride ?? rememberedEmail !== '';
-  const setEmail = setEmailOverride;
+  const nationalId = nationalIdOverride ?? rememberedNationalId;
+  const rememberMe = rememberMeOverride ?? rememberedNationalId !== '';
+  const setNationalId = setNationalIdOverride;
   const setRememberMe = setRememberMeOverride;
 
   const [password, setPassword] = useState('');
@@ -63,7 +63,7 @@ export function useLoginForm() {
     event.preventDefault();
     setSubmitError('');
 
-    const result = loginSchema.safeParse({ email, password, rememberMe });
+    const result = loginSchema.safeParse({ nationalId, password, rememberMe });
     if (!result.success) {
       /** @type {Record<string, string>} */
       const nextFieldErrors = {};
@@ -86,27 +86,27 @@ export function useLoginForm() {
     }
 
     if (rememberMe) {
-      window.localStorage.setItem(REMEMBERED_EMAIL_KEY, email);
+      window.localStorage.setItem(REMEMBERED_NATIONAL_ID_KEY, nationalId);
     } else {
-      window.localStorage.removeItem(REMEMBERED_EMAIL_KEY);
+      window.localStorage.removeItem(REMEMBERED_NATIONAL_ID_KEY);
     }
 
     writeSession({
       token: loginResult.token,
-      email: loginResult.email,
+      nationalId: loginResult.nationalId,
       displayName: `${loginResult.firstName} ${loginResult.lastName}`.trim(),
     });
     router.replace(searchParams.get('next') || '/');
   }
 
   return {
-    email,
-    setEmail,
+    nationalId,
+    setNationalId,
     password,
     setPassword,
     rememberMe,
     setRememberMe,
-    emailStatus: fieldStatus(fieldErrors.email),
+    nationalIdStatus: fieldStatus(fieldErrors.nationalId),
     passwordStatus: fieldStatus(fieldErrors.password),
     submitError,
     isSubmitting: loginMutation.isPending,
