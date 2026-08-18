@@ -14,18 +14,20 @@ export function isNavLinkActive(pathname, href) {
 }
 
 /**
- * Keeps only the nav links a visitor with the given roles is allowed to
- * see. A link with no `allowedRoles` is visible to anyone (today's default
- * for every link); a link with `allowedRoles` is only kept if at least one
- * of the visitor's roles is in that list.
+ * Keeps only the nav links a visitor with the given permissions is allowed
+ * to see. A link with no `allowedPermissions` is visible to anyone (today's
+ * default for every link); a link with `allowedPermissions` is only kept if
+ * at least one of the visitor's permissions is in that list.
  * @param {import('../types/index.js').NavLink[]} navLinks
- * @param {string[]} roles
+ * @param {string[]} permissions
  */
-export function filterNavLinksByRoles(navLinks, roles) {
+export function filterNavLinksByPermissions(navLinks, permissions) {
   return navLinks.filter(
     (link) =>
-      !link.allowedRoles ||
-      link.allowedRoles.some((allowedRole) => roles.includes(allowedRole)),
+      !link.allowedPermissions ||
+      link.allowedPermissions.some((allowedPermission) =>
+        permissions.includes(allowedPermission),
+      ),
   );
 }
 

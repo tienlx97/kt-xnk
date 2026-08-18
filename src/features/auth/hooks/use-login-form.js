@@ -3,7 +3,11 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useSyncExternalStore } from 'react';
 
-import { decodeJwtPayload, normalizeRoles } from '../../../shared/api/jwt.js';
+import {
+  decodeJwtPayload,
+  normalizePermissions,
+  normalizeRoles,
+} from '../../../shared/api/jwt.js';
 import { writeSession } from '../api/session.js';
 import { loginSchema } from '../config/login-schema.js';
 import { useLoginMutation } from './use-login-mutation.js';
@@ -98,6 +102,7 @@ export function useLoginForm() {
       nationalId: loginResult.nationalId,
       displayName: `${loginResult.firstName} ${loginResult.lastName}`.trim(),
       roles: normalizeRoles(payload),
+      permissions: normalizePermissions(payload),
     });
     router.replace(searchParams.get('next') || '/');
   }

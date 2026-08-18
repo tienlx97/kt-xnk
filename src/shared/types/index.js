@@ -3,10 +3,13 @@
  * @property {string} label
  * @property {string} href
  * @property {NavLink[]} [children]
- * @property {string[]} [allowedRoles] - Omitted: visible to any logged-in
- *   visitor (today's default for every link). Present: only visible to a
- *   visitor whose session roles intersect this list — see
- *   `src/shared/api/nav.js`'s `filterNavLinksByRoles`.
+ * @property {string[]} [allowedPermissions] - Omitted: visible to any
+ *   logged-in visitor (today's default for every link). Present: only
+ *   visible to a visitor whose session permissions intersect this list —
+ *   see `src/shared/api/nav.js`'s `filterNavLinksByPermissions`. Checks an
+ *   abstract permission string (e.g. `'logistics:view'`), not a role name —
+ *   the backend alone maps role → permission (`RolePermissions.Map`), so
+ *   renaming a department there never requires an FE change.
  */
 
 /**

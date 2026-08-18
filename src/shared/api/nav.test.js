@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 import {
-  filterNavLinksByRoles,
+  filterNavLinksByPermissions,
   getActiveSidebarGroupKey,
   getSidebarBreadcrumbs,
   toggleSidebarGroup,
@@ -40,25 +40,33 @@ test('selects only the group containing the active sidebar route', () => {
   );
 });
 
-test('keeps a nav link with no allowedRoles for anyone', () => {
+test('keeps a nav link with no allowedPermissions for anyone', () => {
   const navLinks = [{ label: 'Docs', href: '/docs' }];
-  assert.deepEqual(filterNavLinksByRoles(navLinks, []), navLinks);
-  assert.deepEqual(filterNavLinksByRoles(navLinks, ['Admin']), navLinks);
+  assert.deepEqual(filterNavLinksByPermissions(navLinks, []), navLinks);
+  assert.deepEqual(
+    filterNavLinksByPermissions(navLinks, ['logistics:view']),
+    navLinks,
+  );
 });
 
-test('keeps a role-restricted nav link only for a matching role', () => {
+test('keeps a permission-restricted nav link only for a matching permission', () => {
   const navLinks = [
     {
       label: 'Logistics',
       href: '/logistics',
-      allowedRoles: ['Admin', 'Logistics'],
+      allowedPermissions: ['logistics:view'],
     },
   ];
 
-  assert.deepEqual(filterNavLinksByRoles(navLinks, ['Logistics']), navLinks);
-  assert.deepEqual(filterNavLinksByRoles(navLinks, ['Admin']), navLinks);
-  assert.deepEqual(filterNavLinksByRoles(navLinks, ['Participant']), []);
-  assert.deepEqual(filterNavLinksByRoles(navLinks, []), []);
+  assert.deepEqual(
+    filterNavLinksByPermissions(navLinks, ['logistics:view']),
+    navLinks,
+  );
+  assert.deepEqual(
+    filterNavLinksByPermissions(navLinks, ['departments:manage']),
+    [],
+  );
+  assert.deepEqual(filterNavLinksByPermissions(navLinks, []), []);
 });
 
 test('toggles sidebar groups as an exclusive accordion', () => {

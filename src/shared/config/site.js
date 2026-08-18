@@ -8,10 +8,13 @@ export const site = {
 };
 
 // Every entry below is visible to any logged-in visitor today. To restrict
-// one to specific roles, add `allowedRoles: ['Admin', 'Logistics']` (see
-// `NavLink`'s typedef and `src/shared/api/nav.js`'s
-// `filterNavLinksByRoles`) — e.g. once a real `/logistics` page exists:
-// `{ label: 'Logistics', href: '/logistics', allowedRoles: ['Admin', 'Logistics'] }`.
+// one to a specific permission, add `allowedPermissions: ['logistics:view']`
+// (see `NavLink`'s typedef and `src/shared/api/nav.js`'s
+// `filterNavLinksByPermissions`) — e.g. once a real `/logistics` page
+// exists: `{ label: 'Logistics', href: '/logistics', allowedPermissions:
+// ['logistics:view'] }`. Permission strings must match `BE-kt-xnk`'s
+// `RolePermissions.Map` — that map, not this file, decides which roles
+// grant which permission.
 /** @type {NavLink[]} */
 export const navLinks = [
   { label: 'Tin tức', href: '/news' },

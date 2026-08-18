@@ -1,15 +1,19 @@
 import { NextResponse } from 'next/server';
 
-import { ACCESS_TOKEN_KEY, SESSION_ROLES_KEY } from './features/auth/index.js';
-import { parseRolesCookie } from './shared/api/jwt.js';
+import {
+  ACCESS_TOKEN_KEY,
+  SESSION_PERMISSIONS_KEY,
+} from './features/auth/index.js';
+import { parsePermissionsCookie } from './shared/api/jwt.js';
 import { routeAccessRules } from './shared/config/route-access.js';
 
 /**
- * Route-level role gate. Layered on top of `(protected)/layout.jsx`'s
+ * Route-level permission gate. Layered on top of `(protected)/layout.jsx`'s
  * existing "has a token at all" check, which owns the logged-out case —
  * this middleware only acts once a token is present, for the (today:
- * empty) set of paths in `routeAccessRules` that need a *specific* role
- * beyond just being logged in.
+ * empty) set of paths in `routeAccessRules` that need a *specific*
+ * permission beyond just being logged in. Checks an abstract permission
+ * string, not a role name — see `shared/config/route-access.js`.
  *
  * Must live at `src/middleware.js` (this project uses a `src/` directory) —
  * a root-level `middleware.js` silently isn't picked up by Next 16.
@@ -41,12 +45,14 @@ export function middleware(request) {
     return NextResponse.next();
   }
 
-  const roles = parseRolesCookie(request.cookies.get(SESSION_ROLES_KEY)?.value);
-  const hasAllowedRole = matchedRule.allowedRoles.some((role) =>
-    roles.includes(role),
+  const permissions = parsePermissionsCookie(
+    request.cookies.get(SESSION_PERMISSIONS_KEY)?.value,
+  );
+  const hasAllowedPermission = matchedRule.allowedPermissions.some(
+    (permission) => permissions.includes(permission),
   );
 
-  if (!hasAllowedRole) {
+  if (!hasAllowedPermission) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 

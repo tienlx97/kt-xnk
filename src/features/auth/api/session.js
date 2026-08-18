@@ -1,8 +1,10 @@
+import { parsePermissionsCookie, parseRolesCookie } from '../../../shared/api/jwt.js';
 import {
   ACCESS_TOKEN_KEY,
   SESSION_COOKIE_MAX_AGE_SECONDS,
   SESSION_DISPLAY_NAME_KEY,
   SESSION_NATIONAL_ID_KEY,
+  SESSION_PERMISSIONS_KEY,
   SESSION_ROLES_KEY,
 } from '../config/session-keys.js';
 
@@ -46,16 +48,12 @@ export function readSessionDisplayName() {
 
 /** @returns {string[]} */
 export function readSessionRoles() {
-  const raw = readCookie(SESSION_ROLES_KEY);
-  if (!raw) return [];
-  try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed)
-      ? parsed.filter((role) => typeof role === 'string')
-      : [];
-  } catch {
-    return [];
-  }
+  return parseRolesCookie(readCookie(SESSION_ROLES_KEY));
+}
+
+/** @returns {string[]} */
+export function readSessionPermissions() {
+  return parsePermissionsCookie(readCookie(SESSION_PERMISSIONS_KEY));
 }
 
 /**
@@ -64,11 +62,12 @@ export function readSessionRoles() {
  * and block rendering entirely for a logged-out visitor.
  * @param {import('../types/index.js').Session} session
  */
-export function writeSession({ token, nationalId, displayName, roles }) {
+export function writeSession({ token, nationalId, displayName, roles, permissions }) {
   writeCookie(ACCESS_TOKEN_KEY, token);
   writeCookie(SESSION_NATIONAL_ID_KEY, nationalId);
   writeCookie(SESSION_DISPLAY_NAME_KEY, displayName);
   writeCookie(SESSION_ROLES_KEY, JSON.stringify(roles ?? []));
+  writeCookie(SESSION_PERMISSIONS_KEY, JSON.stringify(permissions ?? []));
   window.dispatchEvent(new Event(SESSION_CHANGE_EVENT));
 }
 
@@ -77,5 +76,6 @@ export function clearSession() {
   deleteCookie(SESSION_NATIONAL_ID_KEY);
   deleteCookie(SESSION_DISPLAY_NAME_KEY);
   deleteCookie(SESSION_ROLES_KEY);
+  deleteCookie(SESSION_PERMISSIONS_KEY);
   window.dispatchEvent(new Event(SESSION_CHANGE_EVENT));
 }

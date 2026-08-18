@@ -5,6 +5,66 @@ Append-only session log. Newest entry FIRST.
 This file is the handoff between sessions/agents — write for a reader with zero conversation context.
 -->
 
+## 2026-08-18 — Claude Code (switched nav/route gating to permission strings)
+
+- **Active change:** `openspec/changes/permission-based-nav-route-gating/`
+  (new, status done) — a delta over `role-based-nav-route-gating`
+  (same day, earlier).
+- **Task worked:** discussed with the user how other sites solve nav/route
+  gating; they chose permission-based over role-name-based (see that
+  conversation's summary in this session — the tradeoff: role-based
+  couples the FE to the backend's literal department-name strings, so a
+  renamed department silently breaks a stale `allowedRoles` entry;
+  permission-based has the backend map role→permission once
+  (`RolePermissions.Map`) and the FE only ever checks an abstract
+  capability string like `'logistics:view'`). The matching `BE-kt-xnk`
+  session this same day populated `RolePermissions.Map` for real — this
+  session is the FE half.
+- **Result:** done, code-complete. `shared/api/jwt.js` gained
+  `normalizePermissions`/`parsePermissionsCookie` (internal
+  `normalizeStringClaim`/`parseStringArrayCookie` helpers deduplicated so
+  roles and permissions don't each reimplement the same bare-string-vs-
+  array/JSON-parse logic). New `SESSION_PERMISSIONS_KEY` cookie, written
+  at login alongside the existing `roles` cookie (roles **kept**, not
+  removed — still useful metadata, just no longer what gating reads).
+  `NavLink.allowedRoles` → `allowedPermissions`, `filterNavLinksByRoles` →
+  `filterNavLinksByPermissions` in `shared/api/nav.js`.
+  `route-access.js`'s `routeAccessRules` and `src/middleware.js` switched
+  to `allowedPermissions`. `(protected)/layout.jsx` filters nav by
+  permissions instead of roles.
+- **Verification:** `pnpm lint`/`pnpm structure`/`pnpm typecheck` clean (no
+  new errors beyond the same three pre-existing files flagged in every
+  recent session:
+  `icon-canary.jsx`/`icon-rocket.jsx`/`react-dev-callouts.jsx`).
+  `node --test 'src/**/*.test.js'` (bash, not the `pnpm test` PowerShell
+  wrapper — same glob-quoting quirk as last session) — 69/69 green,
+  including new permission-normalization/cookie-parsing cases in
+  `jwt.test.js` and updated permission-based cases in `nav.test.js`.
+  `pnpm build` clean. **Live smoke test**: `next dev`, temporarily set
+  `routeAccessRules = [{ pathPrefix: '/design-system', allowedPermissions:
+  ['logistics:view'] }]`, `curl`'d with synthetic
+  `kt-xnk-access-token`/`kt-xnk-session-permissions` cookies — a
+  `departments:manage`-only cookie → `307` to `/`; a `logistics:view`
+  cookie → `200`; no token at all → still falls through to the existing
+  `307` to `/login`. Reverted the temporary rule — `routeAccessRules`
+  ships empty, same as the role-based version did. **Not tested against a
+  live `BE-kt-xnk` backend** — no instance was running this session
+  (`BE-kt-xnk`'s own same-day session did verify the `permissions` claim's
+  JWT serialization shape live against Docker, both array and
+  bare-string cases — see its `PROGRESS.md`).
+- **Decisions made:** see `proposal.md`'s decision log — permission
+  strings not role names for gating; `roles` plumbing kept alongside, not
+  replaced.
+- **Next step:** same as `role-based-nav-route-gating` left open — first
+  real restricted page needs one `routeAccessRules` entry + one
+  `allowedPermissions` field on the matching `site.js` nav item, no gating
+  code to write. Also still open: rename `src/middleware.js` →
+  `src/proxy.js` per Next's deprecation notice (not done either session);
+  a real end-to-end login test once a `BE-kt-xnk` instance with a
+  `RolePermissions`-mapped user is available.
+- **Blockers:** none.
+
+
 ## Harness gaps (mistakes that need a mechanical rule, not a manual fix)
 
 - **Resolved 2026-08-15:** upstream challenge parsing assumes component static

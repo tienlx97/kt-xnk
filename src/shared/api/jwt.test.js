@@ -1,7 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { decodeJwtPayload, normalizeRoles, parseRolesCookie } from './jwt.js';
+import {
+  decodeJwtPayload,
+  normalizePermissions,
+  normalizeRoles,
+  parsePermissionsCookie,
+  parseRolesCookie,
+} from './jwt.js';
 
 /** @param {Record<string, unknown>} payload */
 function makeToken(payload) {
@@ -57,4 +63,39 @@ test('treats a missing or malformed roles cookie as no roles', () => {
   assert.deepEqual(parseRolesCookie(''), []);
   assert.deepEqual(parseRolesCookie('not-json'), []);
   assert.deepEqual(parseRolesCookie('{"not":"an array"}'), []);
+});
+
+test('normalizes a single-permission payload (bare string) to an array', () => {
+  assert.deepEqual(normalizePermissions({ permissions: 'logistics:view' }), [
+    'logistics:view',
+  ]);
+});
+
+test('normalizes a multi-permission payload (array) unchanged', () => {
+  assert.deepEqual(
+    normalizePermissions({
+      permissions: ['logistics:view', 'departments:manage'],
+    }),
+    ['logistics:view', 'departments:manage'],
+  );
+});
+
+test('normalizes a missing permissions claim to an empty array', () => {
+  assert.deepEqual(normalizePermissions({}), []);
+  assert.deepEqual(normalizePermissions(null), []);
+});
+
+test('parses a JSON-stringified permissions cookie', () => {
+  assert.deepEqual(
+    parsePermissionsCookie(
+      JSON.stringify(['logistics:view', 'departments:manage']),
+    ),
+    ['logistics:view', 'departments:manage'],
+  );
+});
+
+test('treats a missing or malformed permissions cookie as no permissions', () => {
+  assert.deepEqual(parsePermissionsCookie(undefined), []);
+  assert.deepEqual(parsePermissionsCookie(''), []);
+  assert.deepEqual(parsePermissionsCookie('not-json'), []);
 });

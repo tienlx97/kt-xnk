@@ -29,6 +29,7 @@
  * @property {string} nationalId
  * @property {string} displayName
  * @property {string[]} roles
+ * @property {string[]} permissions
  */
 
 export {};

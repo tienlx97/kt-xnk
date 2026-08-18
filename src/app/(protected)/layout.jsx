@@ -3,11 +3,11 @@ import { redirect } from 'next/navigation';
 
 import {
   ACCESS_TOKEN_KEY,
-  SESSION_ROLES_KEY,
+  SESSION_PERMISSIONS_KEY,
   UserMenu,
 } from '../../features/auth/index.js';
-import { parseRolesCookie } from '../../shared/api/jwt.js';
-import { filterNavLinksByRoles } from '../../shared/api/nav.js';
+import { parsePermissionsCookie } from '../../shared/api/jwt.js';
+import { filterNavLinksByPermissions } from '../../shared/api/nav.js';
 import { ProtectedAppShell } from '../../shared/components/protected-app-shell.jsx';
 import { site, topNavLinks } from '../../shared/config/site.js';
 import sidebarPost from '../../sidebarPost.json';
@@ -32,12 +32,14 @@ export default async function ProtectedLayout({ children }) {
     redirect('/login');
   }
 
-  const roles = parseRolesCookie(cookieStore.get(SESSION_ROLES_KEY)?.value);
+  const permissions = parsePermissionsCookie(
+    cookieStore.get(SESSION_PERMISSIONS_KEY)?.value,
+  );
 
   return (
     <ProtectedAppShell
       endContent={<UserMenu />}
-      navLinks={filterNavLinksByRoles(topNavLinks, roles)}
+      navLinks={filterNavLinksByPermissions(topNavLinks, permissions)}
       sideNavRouteTrees={[sidebarTutorial, sidebarPost]}
       site={site}
       year={new Date().getFullYear()}
