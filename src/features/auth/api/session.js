@@ -3,6 +3,7 @@ import {
   SESSION_COOKIE_MAX_AGE_SECONDS,
   SESSION_DISPLAY_NAME_KEY,
   SESSION_NATIONAL_ID_KEY,
+  SESSION_ROLES_KEY,
 } from '../config/session-keys.js';
 
 // The native `storage` event only fires in *other* tabs, never the tab that
@@ -43,16 +44,31 @@ export function readSessionDisplayName() {
   return readCookie(SESSION_DISPLAY_NAME_KEY) ?? '';
 }
 
+/** @returns {string[]} */
+export function readSessionRoles() {
+  const raw = readCookie(SESSION_ROLES_KEY);
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed)
+      ? parsed.filter((role) => typeof role === 'string')
+      : [];
+  } catch {
+    return [];
+  }
+}
+
 /**
  * Persists a session after a successful login, as cookies rather than
  * localStorage so `src/app/(protected)/layout.js` can read it server-side
  * and block rendering entirely for a logged-out visitor.
  * @param {import('../types/index.js').Session} session
  */
-export function writeSession({ token, nationalId, displayName }) {
+export function writeSession({ token, nationalId, displayName, roles }) {
   writeCookie(ACCESS_TOKEN_KEY, token);
   writeCookie(SESSION_NATIONAL_ID_KEY, nationalId);
   writeCookie(SESSION_DISPLAY_NAME_KEY, displayName);
+  writeCookie(SESSION_ROLES_KEY, JSON.stringify(roles ?? []));
   window.dispatchEvent(new Event(SESSION_CHANGE_EVENT));
 }
 
@@ -60,5 +76,6 @@ export function clearSession() {
   deleteCookie(ACCESS_TOKEN_KEY);
   deleteCookie(SESSION_NATIONAL_ID_KEY);
   deleteCookie(SESSION_DISPLAY_NAME_KEY);
+  deleteCookie(SESSION_ROLES_KEY);
   window.dispatchEvent(new Event(SESSION_CHANGE_EVENT));
 }

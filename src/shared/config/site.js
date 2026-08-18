@@ -7,6 +7,11 @@ export const site = {
   slogan: 'Kiến tạo giá trị — Phát triển bền vững',
 };
 
+// Every entry below is visible to any logged-in visitor today. To restrict
+// one to specific roles, add `allowedRoles: ['Admin', 'Logistics']` (see
+// `NavLink`'s typedef and `src/shared/api/nav.js`'s
+// `filterNavLinksByRoles`) — e.g. once a real `/logistics` page exists:
+// `{ label: 'Logistics', href: '/logistics', allowedRoles: ['Admin', 'Logistics'] }`.
 /** @type {NavLink[]} */
 export const navLinks = [
   { label: 'Tin tức', href: '/news' },

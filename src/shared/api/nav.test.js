@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 import {
+  filterNavLinksByRoles,
   getActiveSidebarGroupKey,
   getSidebarBreadcrumbs,
   toggleSidebarGroup,
@@ -37,6 +38,27 @@ test('selects only the group containing the active sidebar route', () => {
     getActiveSidebarGroupKey(sidebar.routes, '/docs/may-tinh'),
     '/docs/it',
   );
+});
+
+test('keeps a nav link with no allowedRoles for anyone', () => {
+  const navLinks = [{ label: 'Docs', href: '/docs' }];
+  assert.deepEqual(filterNavLinksByRoles(navLinks, []), navLinks);
+  assert.deepEqual(filterNavLinksByRoles(navLinks, ['Admin']), navLinks);
+});
+
+test('keeps a role-restricted nav link only for a matching role', () => {
+  const navLinks = [
+    {
+      label: 'Logistics',
+      href: '/logistics',
+      allowedRoles: ['Admin', 'Logistics'],
+    },
+  ];
+
+  assert.deepEqual(filterNavLinksByRoles(navLinks, ['Logistics']), navLinks);
+  assert.deepEqual(filterNavLinksByRoles(navLinks, ['Admin']), navLinks);
+  assert.deepEqual(filterNavLinksByRoles(navLinks, ['Participant']), []);
+  assert.deepEqual(filterNavLinksByRoles(navLinks, []), []);
 });
 
 test('toggles sidebar groups as an exclusive accordion', () => {

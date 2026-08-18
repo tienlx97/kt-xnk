@@ -28,6 +28,7 @@
  * @property {string} token
  * @property {string} nationalId
  * @property {string} displayName
+ * @property {string[]} roles
  */
 
 export {};

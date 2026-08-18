@@ -116,6 +116,94 @@ This file is the handoff between sessions/agents — write for a reader with zer
 
 ---
 
+## 2026-08-18 — Claude Code (role-based nav/route gating)
+
+- **Active change:** `openspec/changes/role-based-nav-route-gating/` (new,
+  status done).
+- **Task worked:** the user asked (framed with a hypothetical `/logistics`
+  example — no such page exists) for a mechanism to (1) hide a nav item
+  from visitors without a specific role and (2) redirect a visitor away
+  from a specific route before it renders if they lack a role, using the
+  backend's JWT `roles` claim. Built the mechanism only — no real
+  restricted route/nav item, since none exists yet.
+- **Result:** done, code-complete. New `shared/api/jwt.js`
+  (`decodeJwtPayload`/`normalizeRoles`/`parseRolesCookie`) — roles decoded
+  once client-side right after login (`hooks/use-login-form.js`) and
+  cached as a new `SESSION_ROLES_KEY` cookie (`session-keys.js`,
+  `session.js`), rather than re-decoded in every place that needs a role
+  check; avoids `middleware.js`'s Edge runtime not guaranteeing `Buffer`.
+  `NavLink` gained `allowedRoles`; new `filterNavLinksByRoles` in
+  `shared/api/nav.js`; `(protected)/layout.jsx` filters `topNavLinks`
+  through it before rendering. New `shared/config/route-access.js`
+  (`routeAccessRules`, ships empty) + new `src/middleware.js` redirects to
+  `/` when a matching route's caller lacks every allowed role — layered on
+  top of, not replacing, `layout.jsx`'s existing "has a token" check.
+- **Two real gotchas hit and fixed while building this** (both worth
+  remembering for next time this frontend touches middleware):
+  1. **A root-level `middleware.js` was silently never invoked.** This
+     project has a `src/` directory (`src/app`), and while Next's own
+     file-matching regex technically allows either `middleware.js` or
+     `src/middleware.js`, empirically only the `src/` location worked —
+     the root file compiled (Turbopack logged "Compiling middleware...")
+     but the function body's `console.log` never fired for any request,
+     and no redirect ever happened, no error either. Moved it to
+     `src/middleware.js`; confirmed via the dev server log (now shows
+     Next's proxy-migration deprecation warning, proving it's actually
+     being loaded) and a live `curl` redirect test. **Caught this by
+     temporarily adding a `console.log` inside the middleware function
+     and noticing it never appeared in the dev server log** — worth
+     reaching for that trick immediately next time a middleware/route
+     handler "does nothing" with no error.
+  2. Next.js 16.2.11 deprecates the `middleware.js` file convention in
+     favor of `proxy.js` (same export shape, just a rename per
+     https://nextjs.org/docs/messages/middleware-to-proxy). Not renamed
+     this session — `middleware.js` still fully works, just emits a
+     warning — flagged as a trivial follow-up.
+  3. (Structural, not a bug) `src/middleware.js` importing
+     `ACCESS_TOKEN_KEY`/`SESSION_ROLES_KEY` from
+     `features/auth/config/session-keys.js` directly tripped this repo's
+     `no-deep-feature-imports` `pnpm structure` rule — had to import from
+     `features/auth/index.js` instead (which now also exports
+     `SESSION_ROLES_KEY`). That pulls `LoginForm`/`UserMenu` (`'use
+     client'` components) into scope for the Edge middleware bundle;
+     `pnpm build` stayed clean with no bundle-size warnings, so left as
+     is, but worth watching if those components ever grow a genuinely
+     Node-only dependency.
+- **Verification:** `pnpm lint`/`pnpm structure` clean. `pnpm typecheck`
+  unchanged pre-existing-only failures (same three files as last session:
+  `icon-canary.jsx`/`icon-rocket.jsx`/`react-dev-callouts.jsx`, none
+  touched here). `node --test 'src/**/*.test.js'` (via bash — the
+  PowerShell-vs-bash glob quirk from last session still applies to
+  `pnpm test`'s script) — 64/64 green, including new
+  `shared/api/jwt.test.js` and two new cases in `shared/api/nav.test.js`.
+  `pnpm build` clean, `src/middleware.js` shows as
+  `ƒ Proxy (Middleware)` in the route summary. **Live smoke test**: ran
+  `next dev`, temporarily set `routeAccessRules = [{ pathPrefix:
+  '/design-system', allowedRoles: ['Admin'] }]`, `curl`'d with synthetic
+  `kt-xnk-access-token`/`kt-xnk-session-roles` cookies — non-matching role
+  → `307` to `/`; matching role → `200`; no token at all → falls through
+  to the existing `307` to `/login` (this mechanism correctly did
+  nothing); an unrelated route with a non-matching role → `200`
+  (unaffected, rule didn't match). Reverted the temporary rule —
+  `routeAccessRules` ships empty. **Not tested against a live `BE-kt-xnk`
+  backend** — no instance was running this session; the synthetic-cookie
+  test exercises the identical code paths a real login would populate.
+- **Decisions made:** roles cached as a cookie rather than decoded
+  per-request in `layout.jsx`/`middleware.js`, specifically to dodge the
+  Edge-runtime `Buffer` gap (see `design.md`'s decision log for the full
+  reasoning — same file also has the `middleware.js`-location and
+  `proxy.js`-rename decisions).
+- **Next step:** whoever adds the first real restricted page (the
+  `/logistics` example that prompted this) just needs one line in
+  `shared/config/route-access.js` and one field on the matching entry in
+  `shared/config/site.js` — no gating code to write. Also worth: (a)
+  eventually renaming `src/middleware.js` → `src/proxy.js` per Next's
+  deprecation notice, (b) a real end-to-end login test once a `BE-kt-xnk`
+  instance with a department-role user is available.
+- **Blockers:** none.
+
+---
+
 ## 2026-08-18 — Claude Code
 
 - **Active change:** `openspec/changes/wire-nationalid-login/` (new,

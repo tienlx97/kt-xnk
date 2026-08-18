@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useSyncExternalStore } from 'react';
 
+import { decodeJwtPayload, normalizeRoles } from '../../../shared/api/jwt.js';
 import { writeSession } from '../api/session.js';
 import { loginSchema } from '../config/login-schema.js';
 import { useLoginMutation } from './use-login-mutation.js';
@@ -91,10 +92,12 @@ export function useLoginForm() {
       window.localStorage.removeItem(REMEMBERED_NATIONAL_ID_KEY);
     }
 
+    const payload = decodeJwtPayload(loginResult.token);
     writeSession({
       token: loginResult.token,
       nationalId: loginResult.nationalId,
       displayName: `${loginResult.firstName} ${loginResult.lastName}`.trim(),
+      roles: normalizeRoles(payload),
     });
     router.replace(searchParams.get('next') || '/');
   }
