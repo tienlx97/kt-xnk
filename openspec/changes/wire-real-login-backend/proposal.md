@@ -32,7 +32,7 @@ by `Email` (not a generic username) and returns a single opaque `token`
   of a bare username; `hooks/use-session.js` and `components/user-menu.jsx`
   read `displayName` for the avatar instead of `username`.
 - `config/api-config.js` (new) holds the backend base URL, overridable via
-  `NEXT_PUBLIC_API_BASE_URL`; defaults to `http://localhost:5209` for local
+  `NEXT_PUBLIC_API_BASE_URL`; defaults to `http://localhost:8080 ` for local
   dev against the backend the user is running.
 
 ## Out of scope

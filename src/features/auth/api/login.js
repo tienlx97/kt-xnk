@@ -3,7 +3,7 @@ import { API_BASE_URL } from '../config/api-config.js';
 const GENERIC_ERROR_MESSAGE = 'Sai email hoặc mật khẩu';
 
 /**
- * Calls the real auth backend's `POST /authentication/login`. On success it
+ * Calls the real auth backend's `POST /v1/authentication/login`. On success it
  * responds with `{ id, firstName, lastName, email, token }`; on failure a
  * `problem+json` body with a human-readable `detail`.
  * @param {import('../types/index.js').LoginFormValues} values
@@ -12,7 +12,7 @@ const GENERIC_ERROR_MESSAGE = 'Sai email hoặc mật khẩu';
 export async function login({ email, password }) {
   let response;
   try {
-    response = await fetch(`${API_BASE_URL}/authentication/login`, {
+    response = await fetch(`${API_BASE_URL}/v1/authentication/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ Email: email, Password: password }),

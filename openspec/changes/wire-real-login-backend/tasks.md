@@ -15,5 +15,5 @@
       `email` + `displayName` instead — verify:
       `grep -ri refreshtoken src/features/auth` returns nothing
 - [x] 1.5 Add `config/api-config.js` reading `NEXT_PUBLIC_API_BASE_URL`
-      with a `localhost:5209` fallback — verify: file exists and is the
+      with a `localhost:8080 ` fallback — verify: file exists and is the
       only place `API_BASE_URL` is defined

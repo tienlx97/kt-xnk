@@ -123,7 +123,7 @@ This file is the handoff between sessions/agents — write for a reader with zer
 - **Task worked:** replaced the mock login in `src/features/auth/`
   (`login-username-password`'s `api/login.js` against
   `config/test-users.js`) with a real call to the user's local backend
-  (`POST http://localhost:5209/authentication/login`), per pasted
+  (`POST http://localhost:8080 /authentication/login`), per pasted
   request/response examples.
 - **Result:** done, code-complete. Renamed `username`→`email` across
   `types/`, `config/`, `hooks/`, `components/` in `src/features/auth/`
@@ -132,7 +132,7 @@ This file is the handoff between sessions/agents — write for a reader with zer
   storing `email`/`displayName` (from `firstName`+`lastName`) in session
   cookies instead of a bare username; deleted `config/test-users.js`; added
   `config/api-config.js` for `NEXT_PUBLIC_API_BASE_URL` (default
-  `localhost:5209`); login call now goes through a React Query
+  `localhost:8080 `); login call now goes through a React Query
   `useMutation` (`hooks/use-login-mutation.js`) instead of a raw `await`,
   per user's explicit request to use React Query (`@tanstack/react-query`
   was already a dependency with `QueryProvider` wired into the root layout,
