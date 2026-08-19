@@ -4,6 +4,7 @@ import { Banner } from '@astryxdesign/core/Banner';
 import { Button } from '@astryxdesign/core/Button';
 import { DateInput } from '@astryxdesign/core/DateInput';
 import { Dialog, DialogHeader } from '@astryxdesign/core/Dialog';
+import { Divider } from '@astryxdesign/core/Divider';
 import { HStack } from '@astryxdesign/core/HStack';
 import { Layout, LayoutContent, LayoutFooter } from '@astryxdesign/core/Layout';
 import { NumberInput } from '@astryxdesign/core/NumberInput';
@@ -55,7 +56,12 @@ export function EditUserForm({ isOpen, onOpenChange, token, user, onSuccess }) {
   } = useEditUserForm(token, user, { onSuccess });
 
   return (
-    <Dialog isOpen={isOpen} onOpenChange={onOpenChange} purpose="form" width={EDIT_USER_DIALOG_WIDTH}>
+    <Dialog
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+      purpose="form"
+      width={EDIT_USER_DIALOG_WIDTH}
+    >
       <form onSubmit={handleSubmit}>
         <Layout
           header={
@@ -71,133 +77,135 @@ export function EditUserForm({ isOpen, onOpenChange, token, user, onSuccess }) {
                   <Banner status="error" title={submitError} container="card" />
                 ) : null}
                 {submitSuccess ? (
-                  <Banner status="success" title={submitSuccess} container="card" />
+                  <Banner
+                    status="success"
+                    title={submitSuccess}
+                    container="card"
+                  />
                 ) : null}
 
-                {/* No `wrap`: the dialog is a fixed 880px, and StackItem's
-                    `flex-basis: auto` sizes each column by its *unclipped*
-                    content width for the wrap-fit check (ellipsis only
-                    clips after layout), so a long company/department name
-                    in the right column was enough to overflow and wrap the
-                    whole column below the left one. */}
-                <HStack gap={5}>
-                  <StackItem size="fill">
-                    <VStack gap={3} hAlign="stretch">
-                      <VStack gap={1}>
-                        <Text type="label" color="secondary">
-                          Căn cước công dân
-                        </Text>
-                        <Text>{user.nationalId}</Text>
-                      </VStack>
+                <VStack gap={3} hAlign="stretch">
+                  <VStack gap={1}>
+                    <Text type="label" color="secondary">
+                      Căn cước công dân
+                    </Text>
+                    <Text>{user.nationalId}</Text>
+                  </VStack>
 
-                      <HStack gap={3}>
-                        <StackItem size="fill">
-                          <TextInput
-                            label="Họ"
-                            value={values.lastName}
-                            onChange={(value) => setField('lastName', value)}
-                            isRequired
-                            status={fieldStatuses.lastName}
-                            statusVariant="tooltip"
-                          />
-                        </StackItem>
-                        <StackItem size="fill">
-                          <TextInput
-                            label="Tên"
-                            value={values.firstName}
-                            onChange={(value) => setField('firstName', value)}
-                            isRequired
-                            status={fieldStatuses.firstName}
-                            statusVariant="tooltip"
-                          />
-                        </StackItem>
-                      </HStack>
-
-                      <HStack gap={3}>
-                        <StackItem size="fill">
-                          <NumberInput
-                            label="Năm sinh"
-                            value={values.yearOfBirth}
-                            onChange={(value) => setField('yearOfBirth', value)}
-                            min={1900}
-                            isIntegerOnly
-                            isRequired
-                            status={fieldStatuses.yearOfBirth}
-                            statusVariant="tooltip"
-                          />
-                        </StackItem>
-                        <StackItem size="fill">
-                          <RadioList
-                            label="Giới tính"
-                            orientation="horizontal"
-                            value={values.gender}
-                            onChange={(value) => setField('gender', value)}
-                            status={fieldStatuses.gender}
-                          >
-                            <RadioListItem label="Nam" value="Male" />
-                            <RadioListItem label="Nữ" value="Female" />
-                            <RadioListItem label="Khác" value="Other" />
-                          </RadioList>
-                        </StackItem>
-                      </HStack>
-
-                      <HStack gap={3}>
-                        <StackItem size="fill">
-                          <DateInput
-                            label="Ngày cấp CCCD"
-                            value={
-                              /** @type {import('@astryxdesign/core/Calendar').ISODateString | undefined} */ (
-                                values.nationalIdIssueDate || undefined
-                              )
-                            }
-                            onChange={(value) => setField('nationalIdIssueDate', value ?? '')}
-                            format="system_date"
-                            isRequired
-                            status={fieldStatuses.nationalIdIssueDate}
-                            statusVariant="tooltip"
-                          />
-                        </StackItem>
-                        <StackItem size="fill">
-                          <TextInput
-                            label="Nơi cấp CCCD"
-                            value={values.nationalIdIssuePlace}
-                            onChange={(value) => setField('nationalIdIssuePlace', value)}
-                            isRequired
-                            status={fieldStatuses.nationalIdIssuePlace}
-                            statusVariant="tooltip"
-                          />
-                        </StackItem>
-                      </HStack>
-
+                  <HStack gap={3}>
+                    <StackItem size="fill">
                       <TextInput
-                        label="Số hộ chiếu"
-                        description="Không bắt buộc"
-                        value={values.passportNumber}
-                        onChange={(value) => setField('passportNumber', value)}
-                        status={fieldStatuses.passportNumber}
+                        label="Họ"
+                        value={values.lastName}
+                        onChange={(value) => setField('lastName', value)}
+                        isRequired
+                        status={fieldStatuses.lastName}
                         statusVariant="tooltip"
                       />
-                    </VStack>
-                  </StackItem>
+                    </StackItem>
+                    <StackItem size="fill">
+                      <TextInput
+                        label="Tên"
+                        value={values.firstName}
+                        onChange={(value) => setField('firstName', value)}
+                        isRequired
+                        status={fieldStatuses.firstName}
+                        statusVariant="tooltip"
+                      />
+                    </StackItem>
+                  </HStack>
 
-                  <StackItem size="fill">
-                    <UserOrgFields
-                      values={values}
-                      setField={setField}
-                      fieldStatuses={fieldStatuses}
-                      companies={companies}
-                      branches={branches}
-                      departments={departments}
-                      positions={positions}
-                    />
-                  </StackItem>
-                </HStack>
+                  <HStack gap={3}>
+                    <StackItem size="fill">
+                      <NumberInput
+                        label="Năm sinh"
+                        value={values.yearOfBirth}
+                        onChange={(value) => setField('yearOfBirth', value)}
+                        min={1900}
+                        isIntegerOnly
+                        isRequired
+                        status={fieldStatuses.yearOfBirth}
+                        statusVariant="tooltip"
+                      />
+                    </StackItem>
+                    <StackItem size="fill">
+                      <RadioList
+                        label="Giới tính"
+                        orientation="horizontal"
+                        value={values.gender}
+                        onChange={(value) => setField('gender', value)}
+                        status={fieldStatuses.gender}
+                      >
+                        <RadioListItem label="Nam" value="Male" />
+                        <RadioListItem label="Nữ" value="Female" />
+                        <RadioListItem label="Khác" value="Other" />
+                      </RadioList>
+                    </StackItem>
+                  </HStack>
+
+                  <HStack gap={3}>
+                    <StackItem size="fill">
+                      <DateInput
+                        label="Ngày cấp CCCD"
+                        value={
+                          /** @type {import('@astryxdesign/core/Calendar').ISODateString | undefined} */ (
+                            values.nationalIdIssueDate || undefined
+                          )
+                        }
+                        onChange={(value) =>
+                          setField('nationalIdIssueDate', value ?? '')
+                        }
+                        format="system_date"
+                        isRequired
+                        status={fieldStatuses.nationalIdIssueDate}
+                        statusVariant="tooltip"
+                      />
+                    </StackItem>
+                    <StackItem size="fill">
+                      <TextInput
+                        label="Nơi cấp CCCD"
+                        value={values.nationalIdIssuePlace}
+                        onChange={(value) =>
+                          setField('nationalIdIssuePlace', value)
+                        }
+                        isRequired
+                        status={fieldStatuses.nationalIdIssuePlace}
+                        statusVariant="tooltip"
+                      />
+                    </StackItem>
+                  </HStack>
+
+                  <TextInput
+                    label="Số hộ chiếu"
+                    description="Không bắt buộc"
+                    value={values.passportNumber}
+                    onChange={(value) => setField('passportNumber', value)}
+                    status={fieldStatuses.passportNumber}
+                    statusVariant="tooltip"
+                  />
+                </VStack>
+
+                <Divider />
+
+                <UserOrgFields
+                  values={values}
+                  setField={setField}
+                  fieldStatuses={fieldStatuses}
+                  companies={companies}
+                  branches={branches}
+                  departments={departments}
+                  positions={positions}
+                />
+
+                <Divider />
 
                 <UserFormTabs
                   activeTab={activeTab}
                   onActiveTabChange={(tab) =>
                     setActiveTab(
-                      /** @type {'contact' | 'salary' | 'bank' | 'dependents'} */ (tab),
+                      /** @type {'contact' | 'salary' | 'bank' | 'dependents'} */ (
+                        tab
+                      ),
                     )
                   }
                   contactFieldsProps={{ values, setField, fieldStatuses }}

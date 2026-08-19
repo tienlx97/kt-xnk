@@ -4,6 +4,7 @@ import { Banner } from '@astryxdesign/core/Banner';
 import { Button } from '@astryxdesign/core/Button';
 import { DateInput } from '@astryxdesign/core/DateInput';
 import { Dialog, DialogHeader } from '@astryxdesign/core/Dialog';
+import { Divider } from '@astryxdesign/core/Divider';
 import { HStack } from '@astryxdesign/core/HStack';
 import { Icon } from '@astryxdesign/core/Icon';
 import { IconButton } from '@astryxdesign/core/IconButton';
@@ -75,157 +76,149 @@ export function CreateUserForm({ isOpen, onOpenChange, token, onSuccess }) {
                   />
                 ) : null}
 
-                {/* No `wrap`: the dialog is a fixed 880px, and StackItem's
-                    `flex-basis: auto` sizes each column by its *unclipped*
-                    content width for the wrap-fit check (ellipsis only
-                    clips after layout), so a long company/department name
-                    in the right column was enough to overflow and wrap the
-                    whole column below the left one. */}
-                <HStack gap={5}>
-                  <StackItem size="fill">
-                    <VStack gap={3} hAlign="stretch">
+                <VStack gap={3} hAlign="stretch">
+                  <TextInput
+                    label="Căn cước công dân"
+                    value={values.nationalId}
+                    onChange={(value) => setField('nationalId', value)}
+                    placeholder="Nhập số CCCD (12 số)"
+                    isRequired
+                    status={fieldStatuses.nationalId}
+                    statusVariant="tooltip"
+                  />
+
+                  <HStack gap={3}>
+                    <StackItem size="fill">
                       <TextInput
-                        label="Căn cước công dân"
-                        value={values.nationalId}
-                        onChange={(value) => setField('nationalId', value)}
-                        placeholder="Nhập số CCCD (12 số)"
+                        label="Họ"
+                        value={values.lastName}
+                        onChange={(value) => setField('lastName', value)}
                         isRequired
-                        status={fieldStatuses.nationalId}
+                        status={fieldStatuses.lastName}
                         statusVariant="tooltip"
                       />
-
-                      <HStack gap={3}>
-                        <StackItem size="fill">
-                          <TextInput
-                            label="Họ"
-                            value={values.lastName}
-                            onChange={(value) => setField('lastName', value)}
-                            isRequired
-                            status={fieldStatuses.lastName}
-                            statusVariant="tooltip"
-                          />
-                        </StackItem>
-                        <StackItem size="fill">
-                          <TextInput
-                            label="Tên"
-                            value={values.firstName}
-                            onChange={(value) => setField('firstName', value)}
-                            isRequired
-                            status={fieldStatuses.firstName}
-                            statusVariant="tooltip"
-                          />
-                        </StackItem>
-                      </HStack>
-
-                      <HStack gap={3}>
-                        <StackItem size="fill">
-                          <NumberInput
-                            label="Năm sinh"
-                            value={values.yearOfBirth}
-                            onChange={(value) => setField('yearOfBirth', value)}
-                            min={1900}
-                            isIntegerOnly
-                            isRequired
-                            status={fieldStatuses.yearOfBirth}
-                            statusVariant="tooltip"
-                          />
-                        </StackItem>
-                        <StackItem size="fill">
-                          <RadioList
-                            label="Giới tính"
-                            orientation="horizontal"
-                            value={values.gender}
-                            onChange={(value) => setField('gender', value)}
-                            status={fieldStatuses.gender}
-                          >
-                            <RadioListItem label="Nam" value="Male" />
-                            <RadioListItem label="Nữ" value="Female" />
-                            <RadioListItem label="Khác" value="Other" />
-                          </RadioList>
-                        </StackItem>
-                      </HStack>
-
-                      <HStack gap={3}>
-                        <StackItem size="fill">
-                          <DateInput
-                            label="Ngày cấp CCCD"
-                            value={
-                              /** @type {import('@astryxdesign/core/Calendar').ISODateString | undefined} */ (
-                                values.nationalIdIssueDate || undefined
-                              )
-                            }
-                            onChange={(value) =>
-                              setField('nationalIdIssueDate', value ?? '')
-                            }
-                            format="system_date"
-                            isRequired
-                            status={fieldStatuses.nationalIdIssueDate}
-                            statusVariant="tooltip"
-                          />
-                        </StackItem>
-                        <StackItem size="fill">
-                          <TextInput
-                            label="Nơi cấp CCCD"
-                            value={values.nationalIdIssuePlace}
-                            onChange={(value) =>
-                              setField('nationalIdIssuePlace', value)
-                            }
-                            isRequired
-                            status={fieldStatuses.nationalIdIssuePlace}
-                            statusVariant="tooltip"
-                          />
-                        </StackItem>
-                      </HStack>
-
+                    </StackItem>
+                    <StackItem size="fill">
                       <TextInput
-                        label="Số hộ chiếu"
-                        value={values.passportNumber}
-                        onChange={(value) => setField('passportNumber', value)}
-                        status={fieldStatuses.passportNumber}
+                        label="Tên"
+                        value={values.firstName}
+                        onChange={(value) => setField('firstName', value)}
+                        isRequired
+                        status={fieldStatuses.firstName}
                         statusVariant="tooltip"
                       />
+                    </StackItem>
+                  </HStack>
 
-                      <HStack gap={2}>
-                        <StackItem size="fill">
-                          <TextInput
-                            label="Mật khẩu tạm"
-                            value={values.password}
-                            onChange={(value) => setField('password', value)}
-                            type="text"
-                            placeholder="Tối thiểu 8 ký tự, có hoa/thường/số/ký tự đặc biệt"
-                            isRequired
-                            status={fieldStatuses.password}
-                            statusVariant="tooltip"
-                          />
-                        </StackItem>
-                        <StackItem crossAlignSelf="end">
-                          <IconButton
-                            label="Tạo mật khẩu ngẫu nhiên"
-                            tooltip="Ngẫu nhiên"
-                            icon={<Icon icon={IconShuffle} size="sm" />}
-                            type="button"
-                            variant="secondary"
-                            onClick={() =>
-                              setField('password', generateRandomPassword())
-                            }
-                          />
-                        </StackItem>
-                      </HStack>
-                    </VStack>
-                  </StackItem>
+                  <HStack gap={3}>
+                    <StackItem size="fill">
+                      <NumberInput
+                        label="Năm sinh"
+                        value={values.yearOfBirth}
+                        onChange={(value) => setField('yearOfBirth', value)}
+                        min={1900}
+                        isIntegerOnly
+                        isRequired
+                        status={fieldStatuses.yearOfBirth}
+                        statusVariant="tooltip"
+                      />
+                    </StackItem>
+                    <StackItem size="fill">
+                      <RadioList
+                        label="Giới tính"
+                        orientation="horizontal"
+                        value={values.gender}
+                        onChange={(value) => setField('gender', value)}
+                        status={fieldStatuses.gender}
+                      >
+                        <RadioListItem label="Nam" value="Male" />
+                        <RadioListItem label="Nữ" value="Female" />
+                        <RadioListItem label="Khác" value="Other" />
+                      </RadioList>
+                    </StackItem>
+                  </HStack>
 
-                  <StackItem size="fill">
-                    <UserOrgFields
-                      values={values}
-                      setField={setField}
-                      fieldStatuses={fieldStatuses}
-                      companies={companies}
-                      branches={branches}
-                      departments={departments}
-                      positions={positions}
-                    />
-                  </StackItem>
-                </HStack>
+                  <HStack gap={3}>
+                    <StackItem size="fill">
+                      <DateInput
+                        label="Ngày cấp CCCD"
+                        value={
+                          /** @type {import('@astryxdesign/core/Calendar').ISODateString | undefined} */ (
+                            values.nationalIdIssueDate || undefined
+                          )
+                        }
+                        onChange={(value) =>
+                          setField('nationalIdIssueDate', value ?? '')
+                        }
+                        format="system_date"
+                        isRequired
+                        status={fieldStatuses.nationalIdIssueDate}
+                        statusVariant="tooltip"
+                      />
+                    </StackItem>
+                    <StackItem size="fill">
+                      <TextInput
+                        label="Nơi cấp CCCD"
+                        value={values.nationalIdIssuePlace}
+                        onChange={(value) =>
+                          setField('nationalIdIssuePlace', value)
+                        }
+                        isRequired
+                        status={fieldStatuses.nationalIdIssuePlace}
+                        statusVariant="tooltip"
+                      />
+                    </StackItem>
+                  </HStack>
+
+                  <TextInput
+                    label="Số hộ chiếu"
+                    value={values.passportNumber}
+                    onChange={(value) => setField('passportNumber', value)}
+                    status={fieldStatuses.passportNumber}
+                    statusVariant="tooltip"
+                  />
+
+                  <HStack gap={2}>
+                    <StackItem size="fill">
+                      <TextInput
+                        label="Mật khẩu tạm"
+                        value={values.password}
+                        onChange={(value) => setField('password', value)}
+                        type="text"
+                        placeholder="Tối thiểu 8 ký tự, có hoa/thường/số/ký tự đặc biệt"
+                        isRequired
+                        status={fieldStatuses.password}
+                        statusVariant="tooltip"
+                      />
+                    </StackItem>
+                    <StackItem crossAlignSelf="end">
+                      <IconButton
+                        label="Tạo mật khẩu ngẫu nhiên"
+                        tooltip="Ngẫu nhiên"
+                        icon={<Icon icon={IconShuffle} size="sm" />}
+                        type="button"
+                        variant="secondary"
+                        onClick={() =>
+                          setField('password', generateRandomPassword())
+                        }
+                      />
+                    </StackItem>
+                  </HStack>
+                </VStack>
+
+                <Divider />
+
+                <UserOrgFields
+                  values={values}
+                  setField={setField}
+                  fieldStatuses={fieldStatuses}
+                  companies={companies}
+                  branches={branches}
+                  departments={departments}
+                  positions={positions}
+                />
+
+                <Divider />
 
                 <UserFormTabs
                   activeTab={activeTab}
