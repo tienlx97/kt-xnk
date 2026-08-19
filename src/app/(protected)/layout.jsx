@@ -10,6 +10,7 @@ import { parsePermissionsCookie } from '../../shared/api/jwt.js';
 import { filterNavLinksByPermissions } from '../../shared/api/nav.js';
 import { ProtectedAppShell } from '../../shared/components/protected-app-shell.jsx';
 import { site, topNavLinks } from '../../shared/config/site.js';
+import sidebarAdmin from '../../sidebarAdmin.json';
 import sidebarPost from '../../sidebarPost.json';
 import sidebarTutorial from '../../sidebarTutorial.json';
 
@@ -40,7 +41,7 @@ export default async function ProtectedLayout({ children }) {
     <ProtectedAppShell
       endContent={<UserMenu />}
       navLinks={filterNavLinksByPermissions(topNavLinks, permissions)}
-      sideNavRouteTrees={[sidebarTutorial, sidebarPost]}
+      sideNavRouteTrees={[sidebarTutorial, sidebarPost, sidebarAdmin]}
       site={site}
       year={new Date().getFullYear()}
     >

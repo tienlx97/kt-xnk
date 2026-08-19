@@ -1,0 +1,15 @@
+{
+  "title": "Quản trị",
+  "path": "/admin",
+  "routes": [
+    {
+      "title": "Người dùng",
+      "routes": [
+        {
+          "title": "Danh sách",
+          "path": "/admin/users"
+        }
+      ]
+    }
+  ]
+}

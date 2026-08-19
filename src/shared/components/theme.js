@@ -27,17 +27,15 @@ import { defineTheme } from '@astryxdesign/core/theme';
 // value rather than Astryx's [light, dark] tuple form.
 export const ktxnkTheme = defineTheme({
   name: 'kt-xnk',
-  // react.dev sets its document body to 17px (text-lg) and sidebar links to
-  // 15px (text-base). Raising Astryx's geometric scale from the neutral
-  // default of 14px keeps the same hierarchy while matching that more
-  // readable documentation density: body is 17px and supporting text is
-  // 14px, with headings increasing proportionally. The scale below only
-  // anchors line-height tiers and fills in the two sub-xs steps Astryx
-  // needs that react.dev doesn't define — the actual sizes come from the
-  // `--font-size-*` overrides further down, ported 1:1 from react.dev's
-  // own scale (see comment there).
+  // Astryx's neutral default (14px base / 1.2 ratio) is the site-wide
+  // scale — normal UI density for nav chrome, forms, buttons, etc. The
+  // larger react.dev-matched scale (body 17px) that used to live here is
+  // now scoped to just `/` and `/docs*` via
+  // `protected-app-shell.jsx`'s `largeTypography` style (that reading
+  // density makes sense for long-form doc content, not for a page like
+  // `/admin`'s create-user form) — see the comment there for the ported
+  // react.dev values.
   typography: {
-    scale: { base: 17, ratio: 1.2 },
     body: {
       family: 'Optimistic Text Vietnamese',
       fallbacks:
@@ -55,31 +53,6 @@ export const ktxnkTheme = defineTheme({
     },
   },
   tokens: {
-    // Font sizes ported 1:1 from react.dev's own scale (open source:
-    // github.com/reactjs/react.dev -> tailwind.config.js `theme.extend.fontSize`)
-    // instead of Astryx's geometric base×ratio^step approximation, which
-    // drifts from react.dev's real (non-geometric) numbers at the display
-    // sizes — e.g. the approximation put display-3 at 35px vs react.dev's
-    // real 32px. Mapped by role, not by name, since Astryx's `base` step
-    // is already anchored to react.dev's 17px body copy (see typography
-    // comment above): astryx 2xs/xs/sm/base/lg/xl/2xl/3xl/4xl/5xl ==
-    // react.dev xs/sm/base/lg/xl/2xl/3xl/4xl/5xl/6xl == 11/13/15/17/20/24/
-    // 28/32/40/52px. 4xs/3xs have no react.dev equivalent (below its
-    // smallest step) — extrapolated down for Astryx's own micro-text use
-    // (badges, etc.), not sourced from react.dev.
-    '--font-size-4xs': '0.5rem', // 8px — extrapolated, not from react.dev
-    '--font-size-3xs': '0.5625rem', // 9px — extrapolated, not from react.dev
-    '--font-size-2xs': '0.6875rem', // 11px — react.dev `xs`
-    '--font-size-xs': '0.8125rem', // 13px — react.dev `sm`
-    '--font-size-sm': '0.9375rem', // 15px — react.dev `base`
-    '--font-size-base': '1.0625rem', // 17px — react.dev `lg` (body copy)
-    '--font-size-lg': '1.25rem', // 20px — react.dev `xl`
-    '--font-size-xl': '1.5rem', // 24px — react.dev `2xl`
-    '--font-size-2xl': '1.75rem', // 28px — react.dev `3xl`
-    '--font-size-3xl': '2rem', // 32px — react.dev `4xl`
-    '--font-size-4xl': '2.5rem', // 40px — react.dev `5xl`
-    '--font-size-5xl': '3.25rem', // 52px — react.dev `6xl`
-
     // Brand teal, exactly as it appears in the logo — drives primary buttons,
     // focus rings, links, and accent-colored icons.
     '--color-accent': '#247768',

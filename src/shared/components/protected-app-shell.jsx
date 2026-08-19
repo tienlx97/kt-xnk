@@ -16,16 +16,50 @@ import { AppSideNav } from './side-nav.jsx';
 
 /** @typedef {import('../types/index.js').NavLink} NavLink */
 
-const SIDE_NAV_ROUTES = ['/tutorial', '/docs'];
+const SIDE_NAV_ROUTES = ['/tutorial', '/docs', '/admin'];
+
+// react.dev sets its document body to 17px (text-lg) and sidebar links to
+// 15px (text-base) — noticeably larger than Astryx's neutral default
+// (14px), which reads better for long-form doc content but is oversized
+// for ordinary UI (forms, buttons, nav chrome). Scoped to `/` and `/docs*`
+// only (see `hasLargeTypography` below) instead of being the site-wide
+// default in `theme.js`, so e.g. `/admin`'s create-user form gets normal
+// form-field sizing. Plain CSS custom properties, applied via the `style`
+// prop rather than StyleX — `@stylexjs/valid-styles` rejects raw `--*`
+// keys in `stylex.create` (Astryx's own tokens are the only sanctioned way
+// to reference a CSS variable there), and these need to *redefine* the
+// tokens for their subtree, not just reference them. Values ported 1:1
+// from react.dev's own scale (open source: github.com/reactjs/react.dev ->
+// tailwind.config.js `theme.extend.fontSize`) — mapped by role: astryx
+// 2xs/xs/sm/base/lg/xl/2xl/3xl/4xl/5xl == react.dev xs/sm/base/lg/xl/2xl/
+// 3xl/4xl/5xl/6xl == 11/13/15/17/20/24/28/32/40/52px. 4xs/3xs have no
+// react.dev equivalent (below its smallest step) — extrapolated down for
+// Astryx's own micro-text use (badges, etc.).
+const LARGE_TYPOGRAPHY_STYLE = {
+  fontSize: '17px', // react.dev's document body size (`text-lg`)
+  lineHeight: '30px', // react.dev's body line-height at that size
+  '--font-size-4xs': '0.5rem', // 8px — extrapolated, not from react.dev
+  '--font-size-3xs': '0.5625rem', // 9px — extrapolated, not from react.dev
+  '--font-size-2xs': '0.6875rem', // 11px — react.dev `xs`
+  '--font-size-xs': '0.8125rem', // 13px — react.dev `sm`
+  '--font-size-sm': '0.9375rem', // 15px — react.dev `base`
+  '--font-size-base': '1.0625rem', // 17px — react.dev `lg` (body copy)
+  '--font-size-lg': '1.25rem', // 20px — react.dev `xl`
+  '--font-size-xl': '1.5rem', // 24px — react.dev `2xl`
+  '--font-size-2xl': '1.75rem', // 28px — react.dev `3xl`
+  '--font-size-3xl': '2rem', // 32px — react.dev `4xl`
+  '--font-size-4xl': '2.5rem', // 40px — react.dev `5xl`
+  '--font-size-5xl': '3.25rem', // 52px — react.dev `6xl`
+};
 
 const styles = stylex.create({
   root: {
     backgroundColor: colorVars['--color-background-surface'],
     color: colorVars['--color-text-primary'],
     fontFamily: 'var(--font-family-body)',
-    fontSize: '17px',
+    fontSize: '14px',
     fontWeight: fontWeightVars['--font-weight-medium'],
-    lineHeight: '30px',
+    lineHeight: '20px',
     minHeight: '100vh',
   },
   topNav: {
@@ -121,6 +155,22 @@ export function ProtectedAppShell({
     pathname === '/docs' ||
     pathname.startsWith('/docs/') ||
     pathname.startsWith('/tutorial/');
+  // Only the home page and the /docs section keep the larger react.dev-
+  // matched reading scale (see `styles.largeTypography` above) — every
+  // other route (including /tutorial) now renders at Astryx's normal UI
+  // density.
+  const hasLargeTypography = pathname === '/' || pathname === '/docs' || pathname.startsWith('/docs/');
+  // /admin/* uses /docs' layout as its standard (see
+  // `shared/components/page-content-shell.jsx`): same self-managed
+  // padding/max-width contract, so it also opts out of `paddedMain` below
+  // — the page itself wraps its content in `PageContentShell` instead.
+  const hasSelfManagedPadding =
+    hasMdxLayout || pathname === '/admin' || pathname.startsWith('/admin/');
+  // Grid columns follow side-nav presence in general (any side-nav'd
+  // section gets the 2-column layout); self-managed-padding content
+  // additionally opts out of `main`'s own padding below since it applies
+  // its own.
+  const hasSideNavLayout = hasSideNav || hasMdxLayout;
   const closeMobileNav = () => setOpenMobileNavPathname(null);
 
   useEffect(() => {
@@ -173,7 +223,17 @@ export function ProtectedAppShell({
   }, [isMobileNavOpen]);
 
   return (
-    <div {...stylex.props(styles.root)}>
+    <div
+      {...stylex.props(styles.root)}
+      style={
+        /** @type {import('react').CSSProperties} */ (
+          {
+            ...stylex.props(styles.root).style,
+            ...(hasLargeTypography ? LARGE_TYPOGRAPHY_STYLE : null),
+          }
+        )
+      }
+    >
       <header {...stylex.props(styles.topNav)}>
         <Header
           siteName={site.name}
@@ -189,7 +249,7 @@ export function ProtectedAppShell({
         />
       </header>
 
-      <div {...stylex.props(styles.layout, hasMdxLayout && styles.docsLayout)}>
+      <div {...stylex.props(styles.layout, hasSideNavLayout && styles.docsLayout)}>
         {hasSideNav ? (
           <aside
             aria-label="Điều hướng tài liệu trên máy tính"
@@ -205,7 +265,7 @@ export function ProtectedAppShell({
         ) : null}
 
         <main
-          {...stylex.props(styles.main, !hasMdxLayout && styles.paddedMain)}
+          {...stylex.props(styles.main, !hasSelfManagedPadding && styles.paddedMain)}
         >
           {children}
           <Footer siteName={site.name} year={year} />

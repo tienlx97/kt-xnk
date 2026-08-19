@@ -16,12 +16,18 @@ test('navLinks each have a label and href', () => {
   }
 });
 
-test('topNavLinks exposes Tin tức and Tài liệu', () => {
+test('topNavLinks exposes Tin tức, Tài liệu, and Quản trị', () => {
   assert.deepEqual(
     topNavLinks.map(({ label, href }) => ({ label, href })),
     [
       { label: 'Tin tức', href: '/news' },
       { label: 'Tài liệu', href: '/docs' },
+      { label: 'Quản trị', href: '/admin' },
     ],
   );
+});
+
+test('the Quản trị link is gated behind the users:manage permission', () => {
+  const adminLink = topNavLinks.find(({ href }) => href === '/admin');
+  assert.deepEqual(adminLink?.allowedPermissions, ['users:manage']);
 });

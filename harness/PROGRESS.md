@@ -5,6 +5,377 @@ Append-only session log. Newest entry FIRST.
 This file is the handoff between sessions/agents — write for a reader with zero conversation context.
 -->
 
+## 2026-08-19 — Claude Code (/admin/users list page: create + edit via Dialog)
+
+**Context:** User asked for a `/admin/users` list page with a "Tạo mới"
+action opening create-user via drawer or modal (Astryx has no Drawer
+component — confirmed via `astryx search` — so modal/`Dialog` it is), plus
+a per-row edit action opening the same kind of dialog pre-filled. Backend
+(`BE-kt-xnk`) added `GET /users`/`PUT /users/{id}` for this
+(`add-users-list-and-update`).
+
+**Done:**
+- `api/users.js`: `listUsers(token)`, `updateUser(userId, values, token)`
+  (Admin-only, same error-shape convention as `register.js`).
+  `hooks/use-users-query.js`: `useUsersQuery(token)`.
+  `hooks/use-update-user-mutation.js`: mirrors `use-create-user-mutation.js`
+  but also invalidates the `['admin-users','users']` query on success so
+  the list refreshes after either create or update (added the same
+  invalidation to `use-create-user-mutation.js`).
+- **Extracted shared form fields**: `components/user-org-address-fields.jsx`
+  — the "Nơi làm việc" (Company/Branch/Department/Position) and "Địa chỉ"
+  sections were byte-identical between create and edit, so pulled them into
+  one component both `CreateUserForm` and the new `EditUserForm` render.
+  Only "Thông tin cá nhân" differs (create has national ID + password
+  fields; edit shows national ID as read-only text and has no password —
+  password changes go through the existing reset-password feature, not
+  profile edit).
+- `config/update-user-schema.js` + `hooks/use-edit-user-form.js`
+  (`toFormValues` maps a `UserListItem` — nullable fields — into form
+  state; same `applyFieldChange` cascade rules as create) +
+  `components/edit-user-form.jsx`.
+- **`CreateUserForm`/`EditUserForm` un-wrapped from their own `Card`/page
+  `Heading`**: both now render just the form (fields + submit button), no
+  outer chrome — they're meant to live inside a `Dialog` now, which
+  supplies its own header/chrome via `DialogHeader`.
+- New `components/user-list.jsx` (`UserList`): `Table` (from
+  `@astryxdesign/core/Table`, data-driven mode with `renderCell`) listing
+  Họ tên/CCCD/SĐT/Công ty/Phòng ban/Chức vụ + a "Sửa" `Button` per row;
+  Company/Department/Position names resolved via id→name `Map`s built from
+  the existing org-directory queries (no new backend calls). **Branch name
+  deliberately not shown as a column** — there's no "list all branches"
+  endpoint (only "list branches of one company"), so showing it would mean
+  an extra fetch per distinct company in the list; Department name already
+  narrows the workplace down enough for a list view, and the full chain is
+  still visible/editable in the edit dialog. "Tạo mới" `Button` opens a
+  `Dialog` (`purpose="form"`, width 560 — not `variant="fullscreen"`,
+  reserved for genuinely long content per Astryx's own guidance, and ~12
+  fields fits fine scrolled in a standard-width dialog) wrapping
+  `Layout`/`DialogHeader`/`LayoutContent` (the exact structure from
+  Astryx's own `DialogFormDialog` template) around `CreateUserForm`; each
+  row's "Sửa" opens the same dialog shape around `EditUserForm`, keyed by
+  user id so the form's internal state resets per user.
+- New `app/(protected)/admin/users/page.jsx` (Server Component, same
+  token-as-prop pattern as the old create page).
+- **Consolidated the create flow**: `admin/users/new/page.jsx` is now a
+  redirect to `/admin/users` (creation happens inline via the dialog);
+  `admin/page.jsx` also redirects straight to `/admin/users` (single admin
+  feature, matching the precedent already set for both those pages).
+  `sidebarAdmin.json`'s separate "Tạo mới" sidenav entry removed — only
+  "Danh sách" remains, since creating is no longer its own page.
+- **Verification:** curl confirmed `/admin/users` (200, table headers +
+  "Tạo mới" present, "Danh sách" in sidenav exactly once, "Tạo mới" text
+  exactly once — i.e. not duplicated between sidenav and action button),
+  `/admin` and `/admin/users/new` both 307-redirect to `/admin/users`, and
+  the *exact* JSON bodies `listUsers`/`updateUser` send/expect round-trip
+  correctly against the real backend (`GET /users` → 8 users;
+  `PUT /users/{id}` → 200 with every field persisted).
+- `./harness/verify.sh`: everything passes except the same 3 pre-existing
+  `typecheck` failures as every prior session in this log. One new lint/
+  typecheck round-trip needed during this change: `setField(field, value)`
+  passed to the shared `UserOrgAndAddressFields` component needs a `string`
+  parameter type, not the narrower `keyof CreateUserFormValues`/
+  `keyof EditUserFormValues` each hook used internally — TS function
+  parameters are contravariant, so the narrower type isn't assignable to
+  the shared component's `(field: string, ...) => void` prop. Fixed by
+  keeping `setField`'s public signature as `string` and casting internally
+  before calling `applyFieldChange`.
+
+## 2026-08-19 — Claude Code (CreateUserForm: Position selector + random password button)
+
+**Context:** Backend (`BE-kt-xnk`) added a required `PositionId` to
+`POST /authentication/register` (`add-position-to-registration` change) —
+user asked for the create-user form to expose it, plus a "random password"
+button.
+
+**Done:**
+- `features/admin-users/api/org-directory.js`: new `listPositions()`
+  (public `GET /positions`, same shape as the other org-directory calls).
+  `hooks/use-org-directory.js`: new `usePositionsQuery()`.
+  `types/index.js`: `Position` typedef, `positionId` on
+  `CreateUserFormValues`.
+- `config/create-user-schema.js`: `positionId` required, mirroring the
+  backend's `NotEmpty` check.
+- `hooks/use-create-user-form.js`: wires `usePositionsQuery()` through,
+  exposes `positions` + `fieldStatuses.positionId`.
+- `api/register.js`: sends `PositionId` in the request body.
+- `components/create-user-form.jsx`: new "Chức vụ" `Selector` in the "Nơi
+  làm việc" section (next to Company/Branch/Department — organizational
+  assignment, not personal info).
+- New `config/generate-password.js` — pure function (no `fetch`, fits the
+  `config` layer), guarantees the backend's strength regex (min 8 chars, ≥1
+  each of upper/lower/digit/`#?!@$%^&*-`) by seeding one char per required
+  class then shuffling. Wired to a "Ngẫu nhiên" `Button` next to the
+  password `TextInput` (`StackItem crossAlignSelf="end"` so it aligns with
+  the input box, not the label above it — same `StackItem` pattern as the
+  Họ/Tên row). Also switched the password field from `type="password"` to
+  `type="text"`: the whole point of generating it here is for the Admin to
+  read/copy it to hand to the new employee, so masking it defeats the
+  feature — added a `description` note explaining why.
+- **Harness gap caught**: verifying the new field against the real backend
+  first returned 200 but silently *omitted* `positionId` from the
+  response — not a frontend bug, the Docker API container (`docker compose
+  up -d --build api`) was still running the image built *before* this
+  session's backend changes; `docker compose up -d` alone doesn't rebuild
+  on source changes. Rebuilt with `--build`, re-verified: `positionId` now
+  present, and both the empty-GUID (400, FluentValidation `NotEmpty`) and
+  nonexistent-GUID (404 `Position not found`) cases behave correctly.
+- `./harness/verify.sh`: everything passes except the same 3 pre-existing
+  `typecheck` failures as every prior session in this log.
+
+## 2026-08-19 — Claude Code (/admin/* adopts /docs' padding/width contract as its layout standard)
+
+**Context:** User explicitly asked for `/admin/*` to use `/docs`' layout as
+the standard, not just "similar." `/admin` was on `ProtectedAppShell`'s
+generic `paddedMain` (flat 24px padding, no max-width cap), while `/docs`
+self-manages a different, more specific contract (react.dev's own: 20px
+mobile / 48px desktop padding, content capped at 80rem and centered) via
+`mdx-article.jsx`'s `bodyOuter`/`bodyInner` styles.
+
+**Done:**
+- New `shared/components/page-content-shell.jsx` — exports the same
+  padding/max-width StyleX contract as `mdx-article.jsx`, plus a
+  `PageContentShell` wrapper component for non-MDX pages to use it.
+  **Deliberately duplicated, not imported from `mdx-article.jsx`**:
+  `docs-shell-contract.test.js` asserts the literal strings `'20px'`,
+  `'48px'`, `'80rem'` live *inside* the docs-shell file set itself
+  (`mdx-article.jsx` is one of the files whose source it greps) — moving
+  them to a shared import would still work visually but would fail that
+  pinning test, so `mdx-article.jsx` is untouched and the values are kept
+  in sync by hand (same duplication pattern used earlier for
+  `LARGE_TYPOGRAPHY_STYLE`).
+- `protected-app-shell.jsx`: renamed the `paddedMain`-opt-out condition
+  from `hasMdxLayout`-only to `hasSelfManagedPadding` (`hasMdxLayout ||
+  pathname === '/admin' || pathname.startsWith('/admin/')`) — `/admin/*`
+  now supplies its own padding via `PageContentShell` instead of getting
+  the generic flat one.
+- `app/(protected)/admin/page.jsx` and `.../admin/users/new/page.jsx`:
+  swapped the Astryx `Section`-based wrapper for `PageContentShell`.
+- **Verification:** confirmed via the compiled CSS that `/admin`'s and
+  `/docs`' rendered pages share the *exact same* StyleX class hashes for
+  `padding-inline: 20px` / `padding-inline: 48px` (StyleX hashes by content,
+  so identical declarations from different files collapse to one class —
+  direct proof the two routes now share the literal same padding, not just
+  visually similar numbers). `./harness/verify.sh`: everything passes,
+  including `docs-shell-contract.test.js` (confirming `mdx-article.jsx`
+  truly wasn't touched), except the same 3 pre-existing `typecheck`
+  failures as every prior session in this log.
+
+## 2026-08-19 — Claude Code (CreateUserForm: fill the layout width instead of a fixed 640px column)
+
+**Context:** User reported the `/admin/users/new` form items looked
+misaligned relative to the page layout. Cause: `CreateUserForm`'s root
+`VStack` had a hardcoded `width={640}`, so the form sat as a narrow fixed
+column while the breadcrumb/page above it spans the full content width —
+right edges didn't line up. Separately, the "Họ"/"Tên" `HStack` pair didn't
+fill evenly either: per Astryx's own `HStack` guidance ("Do: Use StackItem
+with size='fill' to make one item stretch and fill the leftover space"),
+plain `HStack` children keep their natural width — they don't auto-stretch
+without an explicit `StackItem`.
+
+**Done:**
+- Removed the `width={640}` from the form's root `VStack` — it now fills
+  its container (the page's `Section`), matching the breadcrumb's width
+  above it.
+- Wrapped the "Họ"/"Tên" `TextInput`s each in `<StackItem size="fill">`
+  so they split the row evenly instead of sizing to content.
+- **Verification:** curl-fetched the rendered HTML and confirmed `flex-*`
+  classes now apply to the name-row children (StackItem's flex-grow) and
+  no fixed-640px width class remains on the root. `./harness/verify.sh`:
+  everything passes except the same 3 pre-existing `typecheck` failures as
+  every prior session in this log.
+
+**Noted, not touched:** `sidebarAdmin.json` on disk now also has a
+"Danh sách" (`/admin/users`) entry alongside "Tạo mới" (renamed from
+"Tạo người dùng") — edited outside this session (by the user or another
+agent) since the previous entry. There is no `/admin/users` list page yet;
+out of scope for this task.
+
+## 2026-08-19 — Claude Code (sidebarAdmin.json: grouped item, matching docs' visual shape)
+
+**Context:** User asked to reuse `/docs`' sidenav *design* for `/admin/*`.
+`/admin` already renders through the exact same `AppSideNav` component
+`/docs` uses (shared, `shared/components/side-nav.jsx`) — no component
+work needed there. Asked which specific visual difference to fix; user
+picked: `sidebarAdmin.json`'s one entry ("Tạo người dùng") was a bare
+top-level link, rendering as a plain `SideNavLink` — no bold group row, no
+chevron, no expand/collapse — unlike `sidebarPost.json`'s "Nội quy"/"IT"
+entries, which render as `SideNavGroup` (bold clickable row + chevron,
+expanding to reveal children).
+
+**Done:**
+- `sidebarAdmin.json`: nested "Tạo người dùng" one level deeper under a
+  new "Người dùng" group (`title` + `routes`, deliberately **no** `path` —
+  there's no `/admin/users` index page, so per `SideNavGroup`'s own
+  contract ("pure category groups omit path and use the full row as a
+  disclosure button") it should render as a disclosure-only button, not a
+  dead link).
+- **Verification:** curl-fetched `/admin/users/new`'s HTML and confirmed
+  the group now renders as a `<button aria-expanded="true">` with the
+  chevron SVG present, auto-expanded because `getActiveSidebarGroupKey`'s
+  child-match logic (in `shared/api/nav.js`, unchanged, already handled
+  this) finds the current page under it — matching `/docs`' group behavior
+  exactly, no new logic needed. `./harness/verify.sh`: everything passes
+  except the same 3 pre-existing `typecheck` failures as every prior
+  session in this log.
+
+## 2026-08-19 — Claude Code (/admin dashboard page + create-user page breadcrumb)
+
+**Context:** User asked to "set up the layout for the admin page." Asked
+for specifics; user wanted both: (1) a real `/admin` landing page instead
+of the redirect-to-create-user placeholder from the earlier
+`admin-create-user` change, (2) better layout on `/admin/users/new`
+(breadcrumb, consistent page-region wrapper).
+
+**Done:**
+- `app/(protected)/admin/page.jsx`: replaced the `redirect('/admin/users/
+  new')` placeholder with a real page — `Heading`/`Text` intro + a `Link`
+  to "Tạo người dùng" (not a `Button`, per Astryx's own guidance: "Don't
+  use a button for navigation"). `Section variant="transparent" padding={0}
+  paddingBlock={8}` — the `padding={0}` matters: `ProtectedAppShell`
+  already gives non-MDX routes 24px padding on `<main>` (its `paddedMain`
+  style, see the home page's same contract), so a nonzero `Section`
+  padding here would double it.
+- `app/(protected)/admin/users/new/page.jsx`: wrapped in the same
+  `Section` contract, added a hand-written `Breadcrumbs`/`BreadcrumbItem`
+  trail ("Quản trị" → "Tạo người dùng") above `CreateUserForm`. Deliberately
+  **not** `getSidebarBreadcrumbs` (the helper the docs shell uses on
+  `sidebarPost.json`) — that helper renders the current page's *ancestors*
+  and leaves the leaf page's own heading to represent "you are here", which
+  reads oddly on `sidebarAdmin.json`'s shallow 2-level tree (it would mark
+  "Quản trị" itself, not "Tạo người dùng", as the current/bold crumb).
+- `CreateUserForm` unchanged — it already owns the page's single `<h1>`
+  ("Tạo người dùng"), so no duplicate heading between it and the page.
+- **Verification:** curl against the dev server confirmed both routes
+  return 200 with the expected text (dashboard heading + link;
+  breadcrumb's two labels + a working `href="/admin"`), no error strings.
+  `./harness/verify.sh`: everything passes except the same 3 pre-existing
+  `typecheck` failures as every prior entry in this log.
+
+## 2026-08-19 — Claude Code (scoped the react.dev-matched font scale to /docs + home only)
+
+**Context:** User noticed Astryx components rendered with unusually large
+font sizes and asked why it wasn't "normal" size — including on the new
+`/admin` create-user form from the previous entry. Root cause:
+`theme.js` set the *site-wide* typography scale to react.dev's 17px body
+copy (vs. Astryx's 14px neutral default), a deliberate choice for docs
+reading density that unintentionally applied everywhere, including plain
+UI like form fields. User's call: keep the larger scale only on `/` (home)
+and `/docs` (+ sub-routes); lower everything else, including `/tutorial`
+(explicitly not carved out, even though it's also long-form MDX content —
+literal scope of what was asked).
+
+**Done:**
+- `theme.js`: removed `typography.scale: { base: 17, ratio: 1.2 }` and the
+  react.dev-ported `--font-size-*` token overrides — the site-wide default
+  is now plain Astryx (14px base / 1.2 ratio).
+- `protected-app-shell.jsx`: the ported react.dev scale moved to a new
+  `LARGE_TYPOGRAPHY_STYLE` object (plain JS, not `stylex.create` —
+  `@stylexjs/valid-styles` rejects raw `--*` keys there), applied via the
+  `style` prop (not `xstyle`) on the shell's root div only when
+  `hasLargeTypography` (`pathname === '/' || pathname === '/docs' ||
+  pathname.startsWith('/docs/')`) — everywhere else falls through to
+  `styles.root`'s new static `fontSize: '14px'` / `lineHeight: '20px'`.
+  Since Astryx's semantic tokens (`--text-body-size`, etc.) are declared as
+  `var(--font-size-base)` references rather than resolved pixel values
+  (confirmed in the generated `theme.built.css`), overriding the raw
+  `--font-size-*` custom properties on this wrapper correctly cascades into
+  every descendant's `Text`/`Heading`/`TextInput`/etc. sizing — no need for
+  a second nested `<Theme>` provider.
+- `style={{...}}` value is JSDoc-cast to `import('react').CSSProperties`
+  (this project's `csstype` version doesn't type raw `--*` keys), otherwise
+  typecheck fails.
+- Kept the exact `fontSize: '17px'` / `lineHeight: '30px'` literals inside
+  `LARGE_TYPOGRAPHY_STYLE` (rather than computing them from a token) so the
+  existing `docs-shell-contract.test.js` fidelity test ("pins the exact
+  react.dev documentation typography scale") keeps passing unmodified —
+  those exact strings just moved to a different object in the same file.
+- **Verification:** curl against the running dev server + real backend
+  confirmed the inline `--font-size-base:1.0625rem` (17px) override is
+  present on `/` and `/docs`'s root div and absent on `/admin/users/new`'s
+  (which instead uses the `fontSize-xif65rj` class = the new static 14px).
+  `./harness/verify.sh`: lint/structure/unit-tests/build/quality-thresholds
+  pass; `typecheck` fails on the same 3 pre-existing files as every prior
+  session (confirmed identical error list before/after this change).
+
+## 2026-08-18 — Claude Code (admin /admin nav + create-user feature)
+
+**Context:** User asked for an admin-only user-creation feature: a
+`/admin` topnav + sidenav visible only to Admins, with a "Tạo người dùng"
+page wired to the real backend (`BE-kt-xnk`'s admin-only
+`POST /api/v1/authentication/register`, which by this point also requires
+`Phone` and an `AddressType`/`Province`/`District`/`Ward`/`AddressDetail`
+address block — see `BE-kt-xnk`'s `add-phone-and-password-management` and
+`add-address-to-registration` changes). Active change:
+`openspec/changes/admin-create-user/`.
+
+**Done:**
+- **Backend** (`BE-kt-xnk`): new `Permission.UsersManage = "users:manage"`,
+  granted to `Admin` in `RolePermissions.Map` — this repo's existing
+  permission-based nav/route gating needed *some* permission string to key
+  on for Admin-only UI, and none existed yet for user management
+  specifically (only `departments:manage`).
+- `shared/config/site.js` (+`site.test.js`): "Quản trị" topnav link,
+  `allowedPermissions: ['users:manage']`.
+- `shared/config/route-access.js`: `/admin` entry — `middleware.js` now
+  redirects a non-Admin away from any `/admin/*` path before it renders
+  (this array was empty before; first real consumer of the mechanism the
+  `permission-based-nav-route-gating` change built).
+- `shared/components/protected-app-shell.jsx`: `/admin` added to
+  `SIDE_NAV_ROUTES`. **Found and fixed a latent coupling**: the 2-column
+  grid layout (`docsLayout` StyleX variant) was applied via `hasMdxLayout`
+  alone, which happened to be correct only because every side-nav'd section
+  so far (`/docs`, `/tutorial`) was also an MDX one — `/admin` is side-nav'd
+  but not MDX, so it would have rendered the side nav squashed into a
+  single-column grid. Introduced `hasSideNavLayout = hasSideNav ||
+  hasMdxLayout` (grid columns) while keeping `paddedMain` keyed on
+  `hasMdxLayout` alone (MDX manages its own spacing; a plain form doesn't).
+- New `src/sidebarAdmin.json` (one entry: "Tạo người dùng" →
+  `/admin/users/new`), wired into `(protected)/layout.jsx`'s
+  `sideNavRouteTrees`.
+- New feature `src/features/admin-users/` (types/config/api/hooks/
+  components, same shape as `features/auth/`): `CreateUserForm` — every
+  `RegisterRequest` field including the address block (`SegmentedControl`
+  for `AddressType`, district field conditionally shown/required), and
+  cascading `Selector`s for Company → Branch → Department fetched from the
+  public `GET /companies` / `GET /companies/{id}/branches` /
+  `GET /departments` endpoints. `useCreateUserForm`'s zod schema mirrors
+  the backend's `RegisterCommandValidator` 1:1, including the District-
+  required-for-`OldUnits`/must-be-empty-for-`NewUnits` cross-field rule, so
+  the common invalid case never round-trips to the server.
+- New routes: `app/(protected)/admin/page.jsx` (redirects to
+  `/admin/users/new` — no dashboard to build with only one admin feature)
+  and `app/(protected)/admin/users/new/page.jsx` (Server Component; reads
+  the Admin's bearer token from the session cookie server-side, passes it
+  as a prop — `features/admin-users` cannot read the cookie itself, since
+  that would mean importing `features/auth`, which
+  `harness/structure.rules.cjs`'s `no-feature-to-feature` rule forbids).
+- `API_BASE_URL` duplicated into `features/admin-users/config/
+  api-config.js` (same reasoning as above — too small a constant to justify
+  promoting to `src/shared/` and touching `features/auth`'s existing files
+  for it).
+- **Verification:** no browser/screenshot tool was available this session,
+  so used curl against the running dev server (port 3000) and the real
+  Docker backend (port 8080) instead: (1) logged in as the seeded Admin,
+  confirmed the JWT's `permissions` claim now includes `users:manage`; (2)
+  fetched `/admin/users/new` with that permission cookie → 200, page
+  contains every expected field/label, no error strings; (3) fetched `/`
+  with only `logistics:view` → topnav HTML has zero `href="/admin"`
+  matches; with `users:manage` → exactly one; (4) fetched `/admin/users/new`
+  as a non-Admin → 307 redirect to `/`, confirming `middleware.js`; (5)
+  POSTed the *exact* JSON body `registerUser` constructs straight to the
+  real backend → 200, user created; also confirmed the `OldUnits`-without-
+  `District` case the client schema rejects also gets rejected server-side
+  (400, matching error). `./harness/verify.sh`: everything passes except
+  `typecheck`, which fails on the same 3 pre-existing, untouched files
+  every prior session in this log has hit (`icon-canary.jsx`,
+  `icon-rocket.jsx`, `react-dev-callouts.jsx`) — diffed the error list
+  before/after this change, identical.
+
+**Not done / out of scope:** no admin dashboard beyond the redirect, no
+user list/edit/delete, no Position assignment, no real Vietnamese province/
+ward reference data (free-text inputs, matching the backend).
+
 ## 2026-08-18 — Claude Code (switched nav/route gating to permission strings)
 
 - **Active change:** `openspec/changes/permission-based-nav-route-gating/`

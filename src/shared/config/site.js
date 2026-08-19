@@ -19,10 +19,15 @@ export const site = {
 export const navLinks = [
   { label: 'Tin tức', href: '/news' },
   { label: 'Tài liệu', href: '/docs' },
+  {
+    label: 'Quản trị',
+    href: '/admin',
+    allowedPermissions: ['users:manage'],
+  },
   { label: 'Đăng nhập', href: '/login' },
 ];
 
 /** @type {NavLink[]} */
 export const topNavLinks = navLinks.filter(({ href }) =>
-  ['/news', '/docs'].includes(href),
+  ['/news', '/docs', '/admin'].includes(href),
 );
