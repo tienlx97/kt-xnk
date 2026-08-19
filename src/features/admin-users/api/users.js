@@ -46,6 +46,11 @@ export async function updateUser(userId, values, token) {
       body: JSON.stringify({
         FirstName: values.firstName,
         LastName: values.lastName,
+        YearOfBirth: values.yearOfBirth,
+        Gender: values.gender,
+        NationalIdIssueDate: values.nationalIdIssueDate,
+        NationalIdIssuePlace: values.nationalIdIssuePlace,
+        PassportNumber: values.passportNumber || null,
         Phone: values.phone,
         AddressType: values.addressType,
         Province: values.province,

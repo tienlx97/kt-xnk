@@ -1,13 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
+import {
+  adminAddBankAccount,
+  adminRemoveBankAccount,
+  adminSetPrimaryBankAccount,
+  adminUpdateBankAccount,
+} from '../api/bank-accounts.js';
 import { updateUserSchema } from '../config/update-user-schema.js';
+import { useAdminBankAccountsQuery } from './use-admin-bank-accounts-query.js';
+import { useBankAccountRows } from './use-bank-account-rows.js';
 import {
   useBranchesQuery,
   useCompaniesQuery,
   useDepartmentsQuery,
   usePositionsQuery,
+  useVietnamBanksQuery,
 } from './use-org-directory.js';
 import { useUpdateUserMutation } from './use-update-user-mutation.js';
 
@@ -21,7 +30,7 @@ function fieldStatus(message) {
  * see there for why.
  * @param {import('../types/index.js').EditUserFormValues} values
  * @param {keyof import('../types/index.js').EditUserFormValues} field
- * @param {string} value
+ * @param {string | number | undefined} value
  */
 function applyFieldChange(values, field, value) {
   const next = { ...values, [field]: value };
@@ -37,7 +46,7 @@ function applyFieldChange(values, field, value) {
     next.district = '';
   }
 
-  return next;
+  return /** @type {import('../types/index.js').EditUserFormValues} */ (next);
 }
 
 /**
@@ -48,6 +57,11 @@ function toFormValues(user) {
   return {
     firstName: user.firstName,
     lastName: user.lastName,
+    yearOfBirth: user.yearOfBirth ?? undefined,
+    gender: user.gender ?? '',
+    nationalIdIssueDate: user.nationalIdIssueDate ?? '',
+    nationalIdIssuePlace: user.nationalIdIssuePlace ?? '',
+    passportNumber: user.passportNumber ?? '',
     phone: user.phone ?? '',
     addressType: user.addressType ?? 'NewUnits',
     province: user.province ?? '',
@@ -62,6 +76,87 @@ function toFormValues(user) {
 }
 
 /**
+ * @param {import('../types/index.js').BankAccountApiItem} account
+ * @returns {import('../types/index.js').BankAccountRow}
+ */
+function toBankAccountRow(account) {
+  return {
+    rowKey: account.id,
+    bankAccountId: account.id,
+    vietnamBankId: account.vietnamBankId,
+    accountNumber: account.accountNumber,
+    branch: account.branch ?? '',
+    isPrimary: account.isPrimary,
+  };
+}
+
+/**
+ * Persists the bank accounts grid's edits against the snapshot it was
+ * loaded with: new rows (no `bankAccountId`) are added, changed existing
+ * rows are updated, a newly-checked primary is set, and rows present in
+ * the original snapshot but missing from `rows` are removed. Every step
+ * that can fail is collected into the returned messages instead of
+ * aborting partway — `UpdateUser` itself already succeeded by the time
+ * this runs, so a bank account failure shouldn't look like the whole save
+ * failed.
+ * @param {string} userId
+ * @param {import('../types/index.js').BankAccountRow[]} rows
+ * @param {import('../types/index.js').BankAccountApiItem[]} originalAccounts
+ * @param {string} token
+ * @returns {Promise<string[]>}
+ */
+async function persistBankAccountRowChanges(userId, rows, originalAccounts, token) {
+  /** @type {string[]} */
+  const failures = [];
+  const originalById = new Map(originalAccounts.map((account) => [account.id, account]));
+  const remainingIds = new Set(originalAccounts.map((account) => account.id));
+
+  for (const row of rows) {
+    if (!row.bankAccountId) {
+      if (!row.vietnamBankId || !row.accountNumber.trim()) continue;
+
+      const result = await adminAddBankAccount(userId, row, token);
+      if (!result.success) {
+        failures.push(`${row.accountNumber}: ${result.message}`);
+      }
+      continue;
+    }
+
+    remainingIds.delete(row.bankAccountId);
+    const original = originalById.get(row.bankAccountId);
+
+    if (
+      original &&
+      (original.vietnamBankId !== row.vietnamBankId ||
+        original.accountNumber !== row.accountNumber ||
+        (original.branch ?? '') !== row.branch)
+    ) {
+      const result = await adminUpdateBankAccount(userId, row.bankAccountId, row, token);
+      if (!result.success) {
+        failures.push(`${row.accountNumber}: ${result.message}`);
+      }
+    }
+
+    if (row.isPrimary && !original?.isPrimary) {
+      const result = await adminSetPrimaryBankAccount(userId, row.bankAccountId, token);
+      if (!result.success) {
+        failures.push(`${row.accountNumber}: ${result.message}`);
+      }
+    }
+  }
+
+  for (const removedId of remainingIds) {
+    const result = await adminRemoveBankAccount(userId, removedId, token);
+    if (!result.success) {
+      const removedAccount = originalById.get(removedId);
+      failures.push(`${removedAccount?.accountNumber ?? removedId}: ${result.message}`);
+    }
+  }
+
+  return failures;
+}
+
+/**
  * @param {string} token
  * @param {import('../types/index.js').UserListItem} user
  * @param {{ onSuccess?: () => void }} [options]
@@ -72,20 +167,42 @@ export function useEditUserForm(token, user, { onSuccess } = {}) {
     /** @type {Record<string, string>} */ ({}),
   );
   const [submitError, setSubmitError] = useState('');
+  const [submitSuccess, setSubmitSuccess] = useState('');
 
   const companiesQuery = useCompaniesQuery();
   const branchesQuery = useBranchesQuery(values.companyId);
   const departmentsQuery = useDepartmentsQuery();
   const positionsQuery = usePositionsQuery();
+  const vietnamBanksQuery = useVietnamBanksQuery();
+  const bankAccountsQuery = useAdminBankAccountsQuery(user.id, token);
   const updateUserMutation = useUpdateUserMutation(token);
 
   const departmentsInBranch = (departmentsQuery.data ?? []).filter(
     (department) => department.branchId === values.branchId,
   );
 
+  const { rows: bankAccountRowsState, setRows: setBankAccountRows, addRow: addBankAccountRow, removeRow: removeBankAccountRow, clearRows: clearBankAccountRows, updateRowField: updateBankAccountRowField, setPrimaryRow: setPrimaryBankAccountRow } =
+    useBankAccountRows();
+
+  // The grid is seeded from the server exactly once, the first time the
+  // list query resolves — re-seeding on every background refetch would
+  // wipe out whatever the Admin is mid-editing in the grid.
+  const hasSeededBankAccountRowsRef = useRef(false);
+  const originalBankAccountsRef = useRef(
+    /** @type {import('../types/index.js').BankAccountApiItem[]} */ ([]),
+  );
+
+  useEffect(() => {
+    if (hasSeededBankAccountRowsRef.current || !bankAccountsQuery.data?.success) return;
+
+    originalBankAccountsRef.current = bankAccountsQuery.data.bankAccounts;
+    setBankAccountRows(bankAccountsQuery.data.bankAccounts.map(toBankAccountRow));
+    hasSeededBankAccountRowsRef.current = true;
+  }, [bankAccountsQuery.data, setBankAccountRows]);
+
   /**
    * @param {string} field
-   * @param {string} value
+   * @param {string | number | undefined} value
    */
   function setField(field, value) {
     setValues((current) =>
@@ -103,6 +220,7 @@ export function useEditUserForm(token, user, { onSuccess } = {}) {
   async function handleSubmit(event) {
     event.preventDefault();
     setSubmitError('');
+    setSubmitSuccess('');
 
     const result = updateUserSchema.safeParse(values);
     if (!result.success) {
@@ -129,6 +247,19 @@ export function useEditUserForm(token, user, { onSuccess } = {}) {
       return;
     }
 
+    const bankAccountFailures = await persistBankAccountRowChanges(
+      user.id,
+      bankAccountRowsState,
+      originalBankAccountsRef.current,
+      token,
+    );
+
+    if (bankAccountFailures.length > 0) {
+      setSubmitSuccess(
+        `Đã cập nhật người dùng, nhưng ${bankAccountFailures.length} tài khoản ngân hàng lưu thất bại: ${bankAccountFailures.join('; ')}`,
+      );
+    }
+
     onSuccess?.();
   }
 
@@ -138,6 +269,11 @@ export function useEditUserForm(token, user, { onSuccess } = {}) {
     fieldStatuses: {
       firstName: fieldStatus(fieldErrors.firstName),
       lastName: fieldStatus(fieldErrors.lastName),
+      yearOfBirth: fieldStatus(fieldErrors.yearOfBirth),
+      gender: fieldStatus(fieldErrors.gender),
+      nationalIdIssueDate: fieldStatus(fieldErrors.nationalIdIssueDate),
+      nationalIdIssuePlace: fieldStatus(fieldErrors.nationalIdIssuePlace),
+      passportNumber: fieldStatus(fieldErrors.passportNumber),
       phone: fieldStatus(fieldErrors.phone),
       province: fieldStatus(fieldErrors.province),
       district: fieldStatus(fieldErrors.district),
@@ -149,11 +285,19 @@ export function useEditUserForm(token, user, { onSuccess } = {}) {
       departmentId: fieldStatus(fieldErrors.departmentId),
     },
     submitError,
+    submitSuccess,
     isSubmitting: updateUserMutation.isPending,
     companies: companiesQuery.data ?? [],
     branches: branchesQuery.data ?? [],
     departments: departmentsInBranch,
     positions: positionsQuery.data ?? [],
+    vietnamBanks: vietnamBanksQuery.data ?? [],
+    bankAccountRows: bankAccountRowsState,
+    addBankAccountRow,
+    removeBankAccountRow,
+    clearBankAccountRows,
+    updateBankAccountRowField,
+    setPrimaryBankAccountRow,
     handleSubmit,
   };
 }

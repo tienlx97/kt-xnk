@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 
+import { listVietnamBanks } from '../api/bank-accounts.js';
 import {
   listBranches,
   listCompanies,
@@ -36,5 +37,12 @@ export function usePositionsQuery() {
   return useQuery({
     queryKey: ['admin-users', 'positions'],
     queryFn: listPositions,
+  });
+}
+
+export function useVietnamBanksQuery() {
+  return useQuery({
+    queryKey: ['admin-users', 'vietnam-banks'],
+    queryFn: listVietnamBanks,
   });
 }

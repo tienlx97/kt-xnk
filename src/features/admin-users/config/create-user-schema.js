@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+const CURRENT_YEAR = new Date().getFullYear();
+const TODAY_ISO = new Date().toISOString().slice(0, 10);
+
 // Mirrors the backend's `RegisterCommandValidator` (BE-kt-xnk,
 // `CompanyManagement.Application/Authentication/Commands/Register/`) —
 // client-side validation is a UX nicety, the backend still re-validates
@@ -15,6 +18,22 @@ export const createUserSchema = z
     // Strength is enforced by the backend; the client only checks that
     // something was typed (same approach as the login form).
     password: z.string().min(1, 'Vui lòng nhập mật khẩu'),
+    yearOfBirth: z
+      .number({ error: 'Vui lòng nhập năm sinh' })
+      .int()
+      .min(1900, 'Năm sinh không hợp lệ')
+      .max(CURRENT_YEAR, 'Năm sinh không được ở tương lai'),
+    gender: z.enum(['Male', 'Female', 'Other'], {
+      error: 'Vui lòng chọn giới tính',
+    }),
+    nationalIdIssueDate: z
+      .string()
+      .min(1, 'Vui lòng chọn ngày cấp CCCD')
+      .refine((value) => value <= TODAY_ISO, {
+        message: 'Ngày cấp CCCD không được ở tương lai',
+      }),
+    nationalIdIssuePlace: z.string().trim().min(1, 'Vui lòng nhập nơi cấp CCCD'),
+    passportNumber: z.string().trim().max(20, 'Số hộ chiếu tối đa 20 ký tự'),
     phone: z
       .string()
       .trim()

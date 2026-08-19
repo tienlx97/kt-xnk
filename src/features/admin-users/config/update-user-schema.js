@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+const CURRENT_YEAR = new Date().getFullYear();
+const TODAY_ISO = new Date().toISOString().slice(0, 10);
+
 // Same shape as `create-user-schema.js` minus `nationalId`/`password` — the
 // backend's `PUT /users/{userId}` (BE-kt-xnk, `UpdateUserCommandValidator`)
 // doesn't accept either (national ID is immutable, password has its own
@@ -8,6 +11,22 @@ export const updateUserSchema = z
   .object({
     firstName: z.string().trim().min(1, 'Vui lòng nhập tên'),
     lastName: z.string().trim().min(1, 'Vui lòng nhập họ'),
+    yearOfBirth: z
+      .number({ error: 'Vui lòng nhập năm sinh' })
+      .int()
+      .min(1900, 'Năm sinh không hợp lệ')
+      .max(CURRENT_YEAR, 'Năm sinh không được ở tương lai'),
+    gender: z.enum(['Male', 'Female', 'Other'], {
+      error: 'Vui lòng chọn giới tính',
+    }),
+    nationalIdIssueDate: z
+      .string()
+      .min(1, 'Vui lòng chọn ngày cấp CCCD')
+      .refine((value) => value <= TODAY_ISO, {
+        message: 'Ngày cấp CCCD không được ở tương lai',
+      }),
+    nationalIdIssuePlace: z.string().trim().min(1, 'Vui lòng nhập nơi cấp CCCD'),
+    passportNumber: z.string().trim().max(20, 'Số hộ chiếu tối đa 20 ký tự'),
     phone: z
       .string()
       .trim()

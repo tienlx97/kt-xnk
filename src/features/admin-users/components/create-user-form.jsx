@@ -2,18 +2,32 @@
 
 import { Banner } from '@astryxdesign/core/Banner';
 import { Button } from '@astryxdesign/core/Button';
+import { DateInput } from '@astryxdesign/core/DateInput';
+import { Dialog, DialogHeader } from '@astryxdesign/core/Dialog';
 import { HStack } from '@astryxdesign/core/HStack';
+import { Icon } from '@astryxdesign/core/Icon';
+import { IconButton } from '@astryxdesign/core/IconButton';
+import { Layout, LayoutContent, LayoutFooter } from '@astryxdesign/core/Layout';
+import { NumberInput } from '@astryxdesign/core/NumberInput';
+import { RadioList, RadioListItem } from '@astryxdesign/core/RadioList';
 import { StackItem } from '@astryxdesign/core/Stack';
-import { Heading } from '@astryxdesign/core/Text';
 import { TextInput } from '@astryxdesign/core/TextInput';
 import { VStack } from '@astryxdesign/core/VStack';
+import { useState } from 'react';
 
+import { IconShuffle } from '../../../shared/components/icon/icon-shuffle.jsx';
 import { generateRandomPassword } from '../config/generate-password.js';
 import { useCreateUserForm } from '../hooks/use-create-user-form.js';
-import { UserOrgAndAddressFields } from './user-org-address-fields.jsx';
+import { UserFormTabs } from './user-form-tabs.jsx';
+import { UserOrgFields } from './user-org-fields.jsx';
 
-/** @param {{ token: string, onSuccess?: () => void }} props */
-export function CreateUserForm({ token, onSuccess }) {
+export const CREATE_USER_DIALOG_WIDTH = 880;
+
+/** @param {{ isOpen: boolean, onOpenChange: (isOpen: boolean) => void, token: string, onSuccess?: () => void }} props */
+export function CreateUserForm({ isOpen, onOpenChange, token, onSuccess }) {
+  const [activeTab, setActiveTab] = useState(
+    /** @type {'contact' | 'salary' | 'bank' | 'dependents'} */ ('contact'),
+  );
   const {
     values,
     setField,
@@ -25,108 +39,237 @@ export function CreateUserForm({ token, onSuccess }) {
     branches,
     departments,
     positions,
+    vietnamBanks,
+    bankAccountRows,
+    addBankAccountRow,
+    removeBankAccountRow,
+    clearBankAccountRows,
+    updateBankAccountRowField,
+    setPrimaryBankAccountRow,
     handleSubmit,
   } = useCreateUserForm(token, { onSuccess });
 
   return (
-    <form onSubmit={handleSubmit}>
-      <VStack gap={5} hAlign="stretch">
-        {submitError ? (
-          <Banner status="error" title={submitError} container="card" />
-        ) : null}
-        {submitSuccess ? (
-          <Banner status="success" title={submitSuccess} container="card" />
-        ) : null}
+    <Dialog
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+      purpose="form"
+      width={CREATE_USER_DIALOG_WIDTH}
+    >
+      <form onSubmit={handleSubmit}>
+        <Layout
+          header={
+            <DialogHeader title="TẠO NGƯỜI DÙNG" onOpenChange={onOpenChange} />
+          }
+          content={
+            <LayoutContent padding={6}>
+              <VStack gap={5} hAlign="stretch">
+                {submitError ? (
+                  <Banner status="error" title={submitError} container="card" />
+                ) : null}
+                {submitSuccess ? (
+                  <Banner
+                    status="success"
+                    title={submitSuccess}
+                    container="card"
+                  />
+                ) : null}
 
-        <VStack gap={3} hAlign="stretch">
-          <Heading level={3}>Thông tin cá nhân</Heading>
+                {/* No `wrap`: the dialog is a fixed 880px, and StackItem's
+                    `flex-basis: auto` sizes each column by its *unclipped*
+                    content width for the wrap-fit check (ellipsis only
+                    clips after layout), so a long company/department name
+                    in the right column was enough to overflow and wrap the
+                    whole column below the left one. */}
+                <HStack gap={5}>
+                  <StackItem size="fill">
+                    <VStack gap={3} hAlign="stretch">
+                      <TextInput
+                        label="Căn cước công dân"
+                        value={values.nationalId}
+                        onChange={(value) => setField('nationalId', value)}
+                        placeholder="Nhập số CCCD (12 số)"
+                        isRequired
+                        status={fieldStatuses.nationalId}
+                        statusVariant="tooltip"
+                      />
 
-          <TextInput
-            label="Căn cước công dân"
-            value={values.nationalId}
-            onChange={(value) => setField('nationalId', value)}
-            placeholder="Nhập số CCCD (12 số)"
-            isRequired
-            status={fieldStatuses.nationalId}
-            statusVariant="tooltip"
-          />
+                      <HStack gap={3}>
+                        <StackItem size="fill">
+                          <TextInput
+                            label="Họ"
+                            value={values.lastName}
+                            onChange={(value) => setField('lastName', value)}
+                            isRequired
+                            status={fieldStatuses.lastName}
+                            statusVariant="tooltip"
+                          />
+                        </StackItem>
+                        <StackItem size="fill">
+                          <TextInput
+                            label="Tên"
+                            value={values.firstName}
+                            onChange={(value) => setField('firstName', value)}
+                            isRequired
+                            status={fieldStatuses.firstName}
+                            statusVariant="tooltip"
+                          />
+                        </StackItem>
+                      </HStack>
 
-          <HStack gap={3}>
-            <StackItem size="fill">
-              <TextInput
-                label="Họ"
-                value={values.lastName}
-                onChange={(value) => setField('lastName', value)}
-                isRequired
-                status={fieldStatuses.lastName}
-                statusVariant="tooltip"
-              />
-            </StackItem>
-            <StackItem size="fill">
-              <TextInput
-                label="Tên"
-                value={values.firstName}
-                onChange={(value) => setField('firstName', value)}
-                isRequired
-                status={fieldStatuses.firstName}
-                statusVariant="tooltip"
-              />
-            </StackItem>
-          </HStack>
+                      <HStack gap={3}>
+                        <StackItem size="fill">
+                          <NumberInput
+                            label="Năm sinh"
+                            value={values.yearOfBirth}
+                            onChange={(value) => setField('yearOfBirth', value)}
+                            min={1900}
+                            isIntegerOnly
+                            isRequired
+                            status={fieldStatuses.yearOfBirth}
+                            statusVariant="tooltip"
+                          />
+                        </StackItem>
+                        <StackItem size="fill">
+                          <RadioList
+                            label="Giới tính"
+                            orientation="horizontal"
+                            value={values.gender}
+                            onChange={(value) => setField('gender', value)}
+                            status={fieldStatuses.gender}
+                          >
+                            <RadioListItem label="Nam" value="Male" />
+                            <RadioListItem label="Nữ" value="Female" />
+                            <RadioListItem label="Khác" value="Other" />
+                          </RadioList>
+                        </StackItem>
+                      </HStack>
 
-          <TextInput
-            label="Số điện thoại"
-            value={values.phone}
-            onChange={(value) => setField('phone', value)}
-            placeholder="Số 10 chữ số, bắt đầu bằng 0"
-            isRequired
-            status={fieldStatuses.phone}
-            statusVariant="tooltip"
-          />
+                      <HStack gap={3}>
+                        <StackItem size="fill">
+                          <DateInput
+                            label="Ngày cấp CCCD"
+                            value={
+                              /** @type {import('@astryxdesign/core/Calendar').ISODateString | undefined} */ (
+                                values.nationalIdIssueDate || undefined
+                              )
+                            }
+                            onChange={(value) =>
+                              setField('nationalIdIssueDate', value ?? '')
+                            }
+                            format="system_date"
+                            isRequired
+                            status={fieldStatuses.nationalIdIssueDate}
+                            statusVariant="tooltip"
+                          />
+                        </StackItem>
+                        <StackItem size="fill">
+                          <TextInput
+                            label="Nơi cấp CCCD"
+                            value={values.nationalIdIssuePlace}
+                            onChange={(value) =>
+                              setField('nationalIdIssuePlace', value)
+                            }
+                            isRequired
+                            status={fieldStatuses.nationalIdIssuePlace}
+                            statusVariant="tooltip"
+                          />
+                        </StackItem>
+                      </HStack>
 
-          <HStack gap={2}>
-            <StackItem size="fill">
-              <TextInput
-                label="Mật khẩu tạm"
-                description="Hiển thị dạng chữ thường để Admin đọc/copy gửi cho nhân viên"
-                value={values.password}
-                onChange={(value) => setField('password', value)}
-                type="text"
-                placeholder="Tối thiểu 8 ký tự, có hoa/thường/số/ký tự đặc biệt"
-                isRequired
-                status={fieldStatuses.password}
-                statusVariant="tooltip"
-              />
-            </StackItem>
-            <StackItem crossAlignSelf="end">
-              <Button
-                label="Ngẫu nhiên"
-                type="button"
-                variant="secondary"
-                onClick={() => setField('password', generateRandomPassword())}
-              />
-            </StackItem>
-          </HStack>
-        </VStack>
+                      <TextInput
+                        label="Số hộ chiếu"
+                        value={values.passportNumber}
+                        onChange={(value) => setField('passportNumber', value)}
+                        status={fieldStatuses.passportNumber}
+                        statusVariant="tooltip"
+                      />
 
-        <UserOrgAndAddressFields
-          values={values}
-          setField={setField}
-          fieldStatuses={fieldStatuses}
-          companies={companies}
-          branches={branches}
-          departments={departments}
-          positions={positions}
+                      <HStack gap={2}>
+                        <StackItem size="fill">
+                          <TextInput
+                            label="Mật khẩu tạm"
+                            value={values.password}
+                            onChange={(value) => setField('password', value)}
+                            type="text"
+                            placeholder="Tối thiểu 8 ký tự, có hoa/thường/số/ký tự đặc biệt"
+                            isRequired
+                            status={fieldStatuses.password}
+                            statusVariant="tooltip"
+                          />
+                        </StackItem>
+                        <StackItem crossAlignSelf="end">
+                          <IconButton
+                            label="Tạo mật khẩu ngẫu nhiên"
+                            tooltip="Ngẫu nhiên"
+                            icon={<Icon icon={IconShuffle} size="sm" />}
+                            type="button"
+                            variant="secondary"
+                            onClick={() =>
+                              setField('password', generateRandomPassword())
+                            }
+                          />
+                        </StackItem>
+                      </HStack>
+                    </VStack>
+                  </StackItem>
+
+                  <StackItem size="fill">
+                    <UserOrgFields
+                      values={values}
+                      setField={setField}
+                      fieldStatuses={fieldStatuses}
+                      companies={companies}
+                      branches={branches}
+                      departments={departments}
+                      positions={positions}
+                    />
+                  </StackItem>
+                </HStack>
+
+                <UserFormTabs
+                  activeTab={activeTab}
+                  onActiveTabChange={(tab) =>
+                    setActiveTab(
+                      /** @type {'contact' | 'salary' | 'bank' | 'dependents'} */ (
+                        tab
+                      ),
+                    )
+                  }
+                  contactFieldsProps={{ values, setField, fieldStatuses }}
+                  bankAccountsFieldsProps={{
+                    rows: bankAccountRows,
+                    vietnamBanks,
+                    onAddRow: addBankAccountRow,
+                    onRemoveRow: removeBankAccountRow,
+                    onClearRows: clearBankAccountRows,
+                    onUpdateRowField: updateBankAccountRowField,
+                    onSetPrimaryRow: setPrimaryBankAccountRow,
+                  }}
+                />
+              </VStack>
+            </LayoutContent>
+          }
+          footer={
+            <LayoutFooter>
+              <HStack hAlign="end" gap={2}>
+                <Button
+                  label="Hủy"
+                  type="button"
+                  variant="secondary"
+                  onClick={() => onOpenChange(false)}
+                />
+                <Button
+                  label="Tạo người dùng"
+                  type="submit"
+                  variant="primary"
+                  isLoading={isSubmitting}
+                />
+              </HStack>
+            </LayoutFooter>
+          }
         />
-
-        <Button
-          label="Tạo người dùng"
-          type="submit"
-          variant="primary"
-          size="lg"
-          isLoading={isSubmitting}
-        />
-      </VStack>
-    </form>
+      </form>
+    </Dialog>
   );
 }

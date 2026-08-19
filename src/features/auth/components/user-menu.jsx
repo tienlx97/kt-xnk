@@ -3,13 +3,44 @@
 import { Avatar } from '@astryxdesign/core/Avatar';
 import { DropdownMenuItem } from '@astryxdesign/core/DropdownMenu';
 import { Popover } from '@astryxdesign/core/Popover';
-import { useState } from 'react';
+import { Skeleton } from '@astryxdesign/core/Skeleton';
+import { useState, useSyncExternalStore } from 'react';
 
 import { useSession } from '../hooks/use-session.js';
+
+// Avatar's "md" size in px — kept in sync manually so the skeleton matches
+// the real avatar it's standing in for.
+const AVATAR_MD_SIZE = 36;
+
+function noopSubscribe() {
+  return () => {};
+}
+
+function getIsHydrated() {
+  return true;
+}
+
+function getIsHydratedServerSnapshot() {
+  return false;
+}
 
 export function UserMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const { isAuthenticated, displayName, logout } = useSession();
+  // useSession's server snapshot always reports logged-out, so on first
+  // paint the real avatar isn't known yet. Rather than pop from nothing to
+  // an avatar the instant client JS takes over, show a same-sized skeleton
+  // for that one frame — matches the topnav-shimmer pattern used elsewhere
+  // (e.g. the users table) instead of a layout jump.
+  const isHydrated = useSyncExternalStore(
+    noopSubscribe,
+    getIsHydrated,
+    getIsHydratedServerSnapshot,
+  );
+
+  if (!isHydrated) {
+    return <Skeleton width={AVATAR_MD_SIZE} height={AVATAR_MD_SIZE} radius="rounded" />;
+  }
 
   if (!isAuthenticated) {
     return null;

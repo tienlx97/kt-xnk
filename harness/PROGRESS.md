@@ -5,6 +5,225 @@ Append-only session log. Newest entry FIRST.
 This file is the handoff between sessions/agents — write for a reader with zero conversation context.
 -->
 
+## 2026-08-19 — Create/Edit User dialog redesign: wider, tabbed, scrollable (`admin-users`)
+
+**Context:** Follow-up to the bank-accounts-grid session, same day. User
+supplied a second reference screenshot of the full dialog chrome (wider,
+pinned header/footer, real tab strip: Thông tin liên hệ / Thông tin tiền
+lương / Tài khoản ngân hàng / Thông tin người phụ thuộc) and asked for the
+Create/Edit User dialogs to match it structurally, not just the bank grid.
+Asked the user how to handle the two tabs with no backing data (salary,
+dependents) — chose to show all 4 tabs for layout parity, with the two
+unimplemented ones rendering an `EmptyState` placeholder instead of fake
+fields.
+
+**Done:**
+- `CreateUserForm`/`EditUserForm` now own their `Dialog` (previously
+  `user-list.jsx` wrapped them in `Dialog`+`Layout`+`DialogHeader`+
+  `LayoutContent` externally) — each takes `isOpen`/`onOpenChange` props
+  and renders `Dialog > form > Layout(header/content/footer)` itself. This
+  was required, not just a refactor: the footer's submit button has to be
+  a DOM descendant of the `<form>` for `type="submit"` to work, and
+  `Layout`'s `footer` slot only stays pinned (independent of `content`
+  scrolling) when the whole `Layout` — header, scrollable content, footer
+  — is one tree, which meant moving the Dialog composition inside the
+  form components rather than keeping it in `user-list.jsx`.
+- Dialog width 720 → 880 (`CREATE_USER_DIALOG_WIDTH`/`EDIT_USER_DIALOG_WIDTH`
+  exported constants); `Layout`'s default `height="fill"` handles the
+  scrollable-content-with-pinned-header/footer behavior for free — no
+  manual `maxHeight`/overflow styling needed, `Dialog`'s own `maxHeight`
+  default (`75vh`) already bounds it.
+- Split the old combined `user-org-address-fields.jsx` into
+  `user-org-fields.jsx` (Công ty/Chi nhánh/Phòng ban/Chức vụ — stays
+  outside the tab strip, always visible, matching the reference's
+  persistent "Đơn vị"/"Chức danh") and `user-contact-fields.jsx` (phone +
+  address, moved *into* the new "Thông tin liên hệ" tab — the reference
+  groups phone with address, not with the identity fields above).
+- New `user-form-tabs.jsx`: the `TabList`/`Tab` strip (Astryx — confirmed
+  `Tab` hardcodes `type="button"` internally, safe inside a `<form>`
+  without extra care) driving which of `UserContactFields`/
+  `BankAccountsFields`/two `EmptyState` placeholders renders below it.
+  "Thông tin người phụ thuộc" carries a `Badge` ("Mới"), matching the
+  reference.
+- `bank-accounts-fields.jsx` rewritten from stacked `HStack` rows to a
+  real `Table` (`dividers="grid"`) with `renderCell` returning
+  `TextInput`/`Selector` per cell — matches the reference's bordered grid
+  look; still purely a controlled view over `useBankAccountRows`, no
+  behavior change from the prior session.
+- Top section (identity/password on the left, org fields on the right)
+  laid out as two `HStack`+`StackItem[size=fill]` columns that wrap to
+  stacked on narrow viewports, using the extra dialog width instead of one
+  long single column.
+- Hit a `tsc --noEmit` contravariance error passing `setActiveTab`
+  (typed to the 4-tab string-literal union) where `UserFormTabs`'
+  `onActiveTabChange: (tab: string) => void` was expected — fixed with a
+  wrapping arrow function + JSDoc cast at the call site rather than
+  loosening the union type, so `activeTab` stays exhaustively checked
+  everywhere else.
+- `user-list.jsx`: removed its `Dialog`/`Layout`/`DialogHeader`/
+  `LayoutContent` composition and the now-dead `DIALOG_WIDTH` constant;
+  now just renders `<CreateUserForm isOpen={} onOpenChange={} .../>` and
+  `<EditUserForm isOpen={} onOpenChange={} .../>` directly (this file has
+  unrelated in-progress changes from another session — touched only the
+  Dialog-composition lines, left the rest as found).
+- **Verification:** `pnpm eslint`/`pnpm exec tsc --noEmit`/`pnpm run
+  structure` all clean (same pre-existing `user-list.jsx`/
+  `icon-canary.jsx`/`icon-rocket.jsx`/`react-dev-callouts.jsx` typecheck
+  failures logged in prior entries, nothing new). Manually drove both
+  dialogs end-to-end against the live BE-kt-xnk docker backend: created a
+  user filling every field across the top section + "Thông tin liên hệ"
+  tab (confirming values persist correctly even while a *different* tab
+  is active — the top section isn't part of the tab-switched content),
+  confirmed "Thông tin tiền lương" shows the placeholder, added a bank row
+  via the new `Table` grid, submitted, and the user appeared in the list;
+  reopened it in Edit and confirmed the same layout + prefilled data.
+
+**Harness gap (environment, not fixed):** the dev server this session
+needed (`pnpm run dev`, port 3000) had gone down between sessions — no
+reliable way in this Windows/git-bash setup to send it to true background
+survival, so each session restarting browser verification needs to
+re-launch it. Captured the launching shell's PID this time (rather than
+`pkill -f "next dev"`, which caused actual damage in the prior session) to
+make cleanup targeted, but couldn't confirm the exact child PID
+(Turbopack's process tree) via `ps` in this environment, so left the dev
+server running rather than risk another broad kill.
+
+
+## 2026-08-19 — Bank accounts grid on Create/Edit User (`admin-users`)
+
+**Context:** Follow-up to the personal/identity-fields session, same day.
+User asked whether registration already had bank account info (it didn't —
+BE-kt-xnk's bank account API was self-service only, no way for Admin to
+act on another user's behalf) and chose to have Admin add it directly
+when creating/editing a user, per their reference screenshot's "Tài khoản
+ngân hàng" grid. BE-kt-xnk gained a parallel Admin-only bank account API
+(`/api/v1/users/{userId}/bank-accounts...`) first — see its PROGRESS.md,
+`add-admin-bank-account-management` — this session wires that into the FE.
+
+**Done:**
+- New `BankAccountsFields` component (`components/bank-accounts-fields.jsx`)
+  — an editable rows grid (Số tài khoản / Ngân hàng dropdown / Chi nhánh /
+  "Đặt mặc định" or "Mặc định" label / trash), reusing existing Astryx
+  components only (`TextInput`, `Selector`, `Button`, `IconButton`) per the
+  user's "không cần chỉnh component" instruction — no new low-level UI
+  component, just a new `IconTrash` (`shared/components/icon/icon-trash.jsx`,
+  Feather MIT, mirrors the existing `IconShuffle`/`IconRefresh` pattern —
+  the theme's icon registry has no trash icon).
+- `use-bank-account-rows.js`: local-only row state (add/remove/clear/
+  update-field/set-primary) shared by both forms — the grid itself never
+  calls the API; callers persist on submit (see below). This split matters
+  because Create and Edit have very different persistence needs.
+- `api/bank-accounts.js`: `listVietnamBanks` (public) +
+  `adminAddBankAccount`/`adminUpdateBankAccount`/`adminRemoveBankAccount`/
+  `adminSetPrimaryBankAccount`/`adminListBankAccounts` (Admin-only, hit the
+  new BE-kt-xnk endpoints).
+- `use-create-user-form.js`: after `Register` succeeds, sequentially
+  `adminAddBankAccount`s every row that has both a bank and account number
+  (empty rows silently dropped) using the newly-created user's id — order
+  matters, since the backend makes the *first* one saved primary
+  regardless of the row's local flag.
+- `use-edit-user-form.js`: loads the user's existing bank accounts once
+  (`useAdminBankAccountsQuery`, seeded into the grid via a
+  `hasSeededBankAccountRowsRef` guard so a background refetch can't wipe
+  live edits) and, after `UpdateUser` succeeds, diffs the grid against
+  that original snapshot — new rows added, changed rows updated, a newly-
+  checked primary set, rows removed from the grid deleted on the server.
+  Every step's failure is collected into a message instead of aborting,
+  since `UpdateUser` itself already succeeded by that point.
+- Both forms surface partial bank-account-save failures as a success-with-
+  caveat banner (`submitSuccess` on `EditUserForm`, which didn't have that
+  banner state before) rather than as a hard error, since the user/profile
+  half of the save already went through.
+- **Verification:** `pnpm eslint`/`pnpm exec tsc --noEmit`/`pnpm run
+  structure` all clean (same pre-existing `icon-canary.jsx`/
+  `icon-rocket.jsx`/`react-dev-callouts.jsx`/`user-list.jsx` typecheck
+  failures as prior sessions, nothing new). Manually drove the full flow
+  in a real browser against the live BE-kt-xnk docker backend: created a
+  user with one bank account row (bank dropdown populated from the real
+  `GET /vietnam-banks`, 35 real banks) — confirmed via `curl` the account
+  was persisted and marked primary; then opened that user's Edit dialog,
+  confirmed the existing account loaded correctly, added a second row for
+  a different bank, saved, and confirmed via `curl` both accounts persisted
+  (second one correctly not primary).
+
+**Harness gap (self-inflicted, fixed same session):** an earlier
+`pkill -f "next dev"` — meant to stop only the throwaway dev server this
+session started on port 3001 for a quick check — matched and killed a
+different dev server already running on port 3000 that this session did
+not start. Restarted it (plain `pnpm run dev`, back on port 3000, no
+config changes) so nothing was left down, but the pattern is worth
+avoiding: `pkill -f` matches by command line, not by "did I start this",
+so it can take down another session's/human's process sharing the same
+command. Prefer killing by the specific PID captured at launch time.
+
+
+## 2026-08-19 — Personal + identity document fields on Create/Edit User (`admin-users`)
+
+**Context:** Backend (BE-kt-xnk) added `YearOfBirth`, `Gender`,
+`NationalIdIssueDate`, `NationalIdIssuePlace`, `PassportNumber` to
+`RegisterCommand`/`UpdateUserCommand` (now required except passport) —
+without matching frontend fields, `CreateUserForm`/`EditUserForm` would
+send incomplete payloads and 400 on every submit. User also supplied a
+reference screenshot of a MISA-style "Thông tin nhân viên" modal (Ngày
+sinh/Giới tính row, Số CMND/Ngày cấp row, Nơi cấp/Số hộ chiếu row) to base
+the layout/grouping on — reusing existing Astryx components, not building
+new ones ("Không cần chỉnh component").
+
+**Done:**
+- `create-user-form.jsx`/`edit-user-form.jsx`: added, grouped to mirror the
+  reference layout — `NumberInput` "Năm sinh" + `RadioList`
+  ("Nam"/"Nữ"/"Khác" — Domain has a third `Other` value the screenshot
+  didn't show) side by side; `DateInput` "Ngày cấp CCCD" + `TextInput`
+  "Nơi cấp CCCD" side by side; `TextInput` "Số hộ chiếu" (optional,
+  `description="Không bắt buộc"`) standalone.
+- `create-user-schema.js`/`update-user-schema.js`: added Zod v4 validation
+  mirroring the backend (`yearOfBirth` 1900–current year,
+  `gender` enum, `nationalIdIssueDate` not in the future,
+  `nationalIdIssuePlace` required, `passportNumber` max 20 chars) — hit and
+  fixed a Zod v3→v4 API break along the way (`required_error`/
+  `invalid_type_error`/`errorMap` don't exist in v4; use a single `error`
+  string param instead).
+- `use-create-user-form.js`/`use-edit-user-form.js`: `EMPTY_VALUES`/
+  `toFormValues` extended; broadened `setField`/`applyFieldChange`'s value
+  type from `string` to `string | number | undefined` (yearOfBirth is a
+  number, not a string like every other field) with a JSDoc return-type
+  cast on `applyFieldChange` to keep `tsc --noEmit` (strict `checkJs`)
+  green — the generic `{ ...values, [field]: value }` spread doesn't type-
+  narrow per key on its own.
+- `types/index.js`: added a `Gender` typedef + the five new fields to
+  `CreateUserFormValues`/`EditUserFormValues`/`UserListItem`.
+- `api/register.js`/`api/users.js`: send the five fields to the backend in
+  PascalCase (matching `RegisterRequest`/`UpdateUserRequest`); empty
+  `passportNumber` sent as `null`, same pattern as `district`.
+- `DateInput`'s `value`/`onChange` use a branded `ISODateString` template-
+  literal type, not plain `string` — needed an inline JSDoc `@type` cast at
+  the two call sites (`import('@astryxdesign/core/Calendar').ISODateString`)
+  since our form state just tracks it as `string`.
+- **Verification:** `pnpm eslint src/features/admin-users` and
+  `pnpm exec tsc --noEmit -p jsconfig.json` both clean on every file this
+  session touched (remaining `typecheck` output is only the pre-existing
+  `icon-canary.jsx`/`icon-rocket.jsx`/`react-dev-callouts.jsx`/
+  `user-list.jsx` failures logged repeatedly elsewhere in this file — none
+  from this change). `pnpm run structure` clean (272 modules, 0
+  violations). Manually drove the full Create User flow against the real
+  BE-kt-xnk docker backend on `localhost:3000` (logged in as the seeded
+  Admin, filled every field including the calendar picker for "Ngày cấp
+  CCCD", submitted) — new user appeared in the list with `Nhân viên` role;
+  opened its Edit dialog and confirmed all five new fields round-tripped
+  correctly (1995 / Nam / 2026-08-19 / Cuc Canh sat QLHC ve TTXH /
+  C1234567). No delete-user endpoint exists yet, so this smoke-test user
+  (`100000000077`, "Test FE Nguyen") is still in the local dev DB —
+  harmless, dev-only.
+
+**Harness gap noted, not fixed (out of scope):** navigating to a protected
+page immediately after clicking "Đăng nhập" (before the login
+response/session write completes) makes the very next data fetch on that
+page 403 with "User is forbidden from taking this action" — cosmetically
+identical to a real authorization failure, wasted real debugging time
+before a slower retry proved it was just a race. Worth a "wait for session"
+guard or a documented note in `AGENTS.md`/README for anyone else who hits
+this while testing by hand.
+
 ## 2026-08-19 — Claude Code (/admin/users list page: create + edit via Dialog)
 
 **Context:** User asked for a `/admin/users` list page with a "Tạo mới"
