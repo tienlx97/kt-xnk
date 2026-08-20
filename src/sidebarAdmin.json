@@ -10,6 +10,15 @@
           "path": "/admin/users"
         }
       ]
+    },
+    {
+      "title": "Phân quyền",
+      "routes": [
+        {
+          "title": "Quyền cấp riêng",
+          "path": "/admin/permissions"
+        }
+      ]
     }
   ]
 }

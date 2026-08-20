@@ -5,6 +5,40 @@ Append-only session log. Newest entry FIRST.
 This file is the handoff between sessions/agents — write for a reader with zero conversation context.
 -->
 
+## 2026-08-20 — Admin UI to create a grantable permission; quality gate fixed
+
+**Context:** User asked for the FE UI to `BE-kt-xnk`'s
+`POST /permissions/grantable`, plus a security check and to apply any
+improvements found. Change: `openspec/changes/add-create-grantable-permission/`.
+
+**What shipped.** New `/admin/permissions` page — catalog table + create
+form (`PermissionCatalog`), reachable via a new "Phân quyền" group in
+`sidebarAdmin.json`. Client-side key validation mirrors the backend's
+regex (saves an obvious-typo round trip; the backend stays the real
+authority). An explicit banner states that adding a permission here does
+not protect anything by itself — it only makes the permission grantable;
+a business endpoint still needs its own backend
+`[Authorize(Permissions = ...)]`.
+
+**Harness fix, found while re-verifying this change.**
+`harness/checks/quality.mjs` built its root path with
+`new URL(...).pathname` — a URL component, not a filesystem path. It
+percent-encodes (this checkout's `VIBE CODE` directory became
+`VIBE%20CODE`) and on Windows leaves a leading slash before the drive
+letter, so the gate had been failing on every run this session regardless
+of whether a build existed — it was never actually measuring bundle size.
+Fixed with `fileURLToPath`. `./harness/verify.sh` now passes **10/10 for
+the first time this session** (bundle: 168.7 kB / 250 kB threshold).
+
+**BE-side security fix (same date, `BE-kt-xnk`):** the new DB-backed
+permission catalog had dropped a guard the old static whitelist enforced
+by omission — nothing stopped Admin from adding a role-derived permission
+(`logistics:view`) to the individually-grantable catalog, which would let
+a grant of it outlive the holder leaving that department. Fixed
+server-side (`RolePermissions.RoleDerived` reserved namespace); no FE
+change needed since the backend rejects it with a 409 that the create
+form's existing error banner already surfaces.
+
 ## 2026-08-20 — Grantable permissions catalog is now DB-backed (BE)
 
 **Context:** `BE-kt-xnk`'s `add-create-grantable-permission` moved

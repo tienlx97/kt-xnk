@@ -34,3 +34,26 @@ export function labelForPermission(permission, apiDescription) {
     ? { label: permission, description: apiDescription }
     : { label: permission };
 }
+
+/**
+ * Mirrors the backend's `CreateGrantablePermissionCommandValidator` so a
+ * typo is caught before the round trip. The backend stays the authority —
+ * this only saves a 400, it does not decide anything.
+ */
+const PERMISSION_KEY_PATTERN = /^[a-z0-9]+(:[a-z0-9]+)+$/;
+
+/**
+ * @param {string} key
+ * @returns {string} empty when valid, else the Vietnamese reason.
+ */
+export function validatePermissionKey(key) {
+  if (!key.trim()) return 'Vui lòng nhập mã quyền';
+
+  if (!PERMISSION_KEY_PATTERN.test(key)) {
+    return 'Mã quyền phải dạng nhom:hanh-dong, chữ thường không dấu (vd: sales:secret)';
+  }
+
+  if (key.length > 100) return 'Mã quyền tối đa 100 ký tự';
+
+  return '';
+}

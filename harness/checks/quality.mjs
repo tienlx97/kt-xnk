@@ -4,8 +4,15 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = new URL('../..', import.meta.url).pathname;
+// `new URL(...).pathname` is a URL component, not a filesystem path: it
+// percent-encodes (a checkout under "VIBE CODE" became "VIBE%20CODE") and on
+// Windows leaves a leading slash before the drive letter. Both make every
+// path derived from it miss, so this gate reported "run `next build`" even
+// with a fresh build sitting right there. fileURLToPath is the
+// platform-correct conversion.
+const ROOT = fileURLToPath(new URL('../..', import.meta.url));
 const BUNDLE_THRESHOLD_KB = 250;
 
 function fail(message) {
