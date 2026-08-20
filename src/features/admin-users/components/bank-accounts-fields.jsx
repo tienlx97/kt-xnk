@@ -9,18 +9,38 @@ import { Selector } from '@astryxdesign/core/Selector';
 import { pixel, proportional, Table } from '@astryxdesign/core/Table';
 import { Text } from '@astryxdesign/core/Text';
 import { TextInput } from '@astryxdesign/core/TextInput';
+import { colorVars, radiusVars, spacingVars } from '@astryxdesign/core/theme/tokens.stylex';
 import { VStack } from '@astryxdesign/core/VStack';
+import * as stylex from '@stylexjs/stylex';
+import { useState } from 'react';
 
 import { IconTrash } from '../../../shared/components/icon/icon-trash.jsx';
+
+const styles = stylex.create({
+  staticCell: {
+    backgroundColor: {
+      default: 'transparent',
+      ':hover': colorVars['--color-overlay-hover'],
+    },
+    borderRadius: radiusVars['--radius-inner'],
+    cursor: 'pointer',
+    display: 'block',
+    marginInline: `calc(${spacingVars['--spacing-2']} * -1)`,
+    paddingBlock: spacingVars['--spacing-1'],
+    paddingInline: spacingVars['--spacing-2'],
+  },
+});
 
 /**
  * "Tài khoản ngân hàng" grid — shared by `CreateUserForm`/`EditUserForm`.
  * Purely a controlled view over `useBankAccountRows`'s state; it never
  * calls the API itself (see that hook's doc comment for why). Rendered as
- * a real `Table` (bordered grid with a header row) rather than stacked
- * inputs, per the reference layout — each cell is an inline input/select,
- * not a `renderCell` reading plain text, since this table is always
- * editable, never a read view.
+ * a real `Table` (bordered grid with a header row), per the reference
+ * layout. Rows already saved (`bankAccountId` set) render as plain text
+ * until clicked — matching the reference screenshot, where existing
+ * accounts read as static rows and only a freshly-added row is an open
+ * input grid. Rows with no `bankAccountId` yet (added this session, not
+ * saved) always render as inputs since there's no saved value to display.
  * @param {{
  *   rows: import('../types/index.js').BankAccountRow[],
  *   vietnamBanks: import('../types/index.js').VietnamBank[],
@@ -40,10 +60,24 @@ export function BankAccountsFields({
   onSetPrimaryRow,
   onUpdateRowField,
 }) {
+  // Rows are saved-and-static by default; clicking one opts it into edit mode
+  // for the rest of this session. Never needs to come back out — once you've
+  // touched a saved value there's no read-only view left worth returning to
+  // before the whole form saves.
+  const [editingRowKeys, setEditingRowKeys] = useState(() => new Set());
+
+  /** @param {string} rowKey */
+  function startEditing(rowKey) {
+    setEditingRowKeys((current) =>
+      current.has(rowKey) ? current : new Set(current).add(rowKey),
+    );
+  }
+
   const bankOptions = vietnamBanks.map((bank) => ({
     value: bank.id,
     label: `${bank.shortName} — ${bank.name}`,
   }));
+  const bankLabelById = new Map(bankOptions.map((option) => [option.value, option.label]));
 
   /** @type {import('@astryxdesign/core/Table').TableColumn<import('../types/index.js').BankAccountRow & Record<string, unknown>>[]} */
   const columns = [
@@ -51,46 +85,83 @@ export function BankAccountsFields({
       key: 'accountNumber',
       header: 'Số tài khoản',
       width: proportional(1),
-      renderCell: (row) => (
-        <TextInput
-          label="Số tài khoản"
-          isLabelHidden
-          value={row.accountNumber}
-          onChange={(value) =>
-            onUpdateRowField(row.rowKey, 'accountNumber', value)
-          }
-        />
-      ),
+      renderCell: (row) => {
+        if (!row.bankAccountId || editingRowKeys.has(row.rowKey)) {
+          return (
+            <TextInput
+              label="Số tài khoản"
+              isLabelHidden
+              value={row.accountNumber}
+              onChange={(value) =>
+                onUpdateRowField(row.rowKey, 'accountNumber', value)
+              }
+            />
+          );
+        }
+        return (
+          <Text
+            as="div"
+            xstyle={styles.staticCell}
+            onClick={() => startEditing(row.rowKey)}>
+            {row.accountNumber}
+          </Text>
+        );
+      },
     },
     {
       key: 'vietnamBankId',
       header: 'Tên ngân hàng',
       width: proportional(1.4),
-      renderCell: (row) => (
-        <Selector
-          label="Ngân hàng"
-          isLabelHidden
-          placeholder="Chọn ngân hàng"
-          value={row.vietnamBankId}
-          onChange={(value) =>
-            onUpdateRowField(row.rowKey, 'vietnamBankId', value ?? '')
-          }
-          options={bankOptions}
-        />
-      ),
+      renderCell: (row) => {
+        if (!row.bankAccountId || editingRowKeys.has(row.rowKey)) {
+          return (
+            <Selector
+              label="Ngân hàng"
+              isLabelHidden
+              placeholder="Chọn ngân hàng"
+              value={row.vietnamBankId}
+              onChange={(value) =>
+                onUpdateRowField(row.rowKey, 'vietnamBankId', value ?? '')
+              }
+              options={bankOptions}
+            />
+          );
+        }
+        return (
+          <Text
+            as="div"
+            maxLines={1}
+            xstyle={styles.staticCell}
+            onClick={() => startEditing(row.rowKey)}>
+            {bankLabelById.get(row.vietnamBankId) ?? ''}
+          </Text>
+        );
+      },
     },
     {
       key: 'branch',
       header: 'Chi nhánh',
       width: proportional(1),
-      renderCell: (row) => (
-        <TextInput
-          label="Chi nhánh"
-          isLabelHidden
-          value={row.branch}
-          onChange={(value) => onUpdateRowField(row.rowKey, 'branch', value)}
-        />
-      ),
+      renderCell: (row) => {
+        if (!row.bankAccountId || editingRowKeys.has(row.rowKey)) {
+          return (
+            <TextInput
+              label="Chi nhánh"
+              isLabelHidden
+              value={row.branch}
+              onChange={(value) => onUpdateRowField(row.rowKey, 'branch', value)}
+            />
+          );
+        }
+        return (
+          <Text
+            as="div"
+            xstyle={styles.staticCell}
+            onClick={() => startEditing(row.rowKey)}>
+            {row.branch}
+          </Text>
+        );
+      },
     },
     {
       key: 'isPrimary',
@@ -102,6 +173,13 @@ export function BankAccountsFields({
       // there's no single DOM parent to share a group under. Mutual
       // exclusivity (only one row primary at a time) is already enforced
       // by `onSetPrimaryRow`/`useBankAccountRows`, not by radio grouping.
+      // The item's own label is left empty: the column header already reads
+      // "Mặc định", so repeating that word next to every radio circle was
+      // pure noise — the radio alone, centered, reads clearly against the
+      // header. Width stays at 100 (not shrunk to fit just the radio):
+      // TableHeaderCell always truncates header text with an ellipsis
+      // regardless of the table's textOverflow setting, and anything
+      // narrower clips "Mặc định" itself.
       renderCell: (row) => (
         <RadioList
           label="Đặt làm tài khoản mặc định"
@@ -110,7 +188,7 @@ export function BankAccountsFields({
           value={row.isPrimary ? row.rowKey : ''}
           onChange={() => onSetPrimaryRow(row.rowKey)}
         >
-          <RadioListItem label="Mặc định" value={row.rowKey} />
+          <RadioListItem label="" value={row.rowKey} />
         </RadioList>
       ),
     },
