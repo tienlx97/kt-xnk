@@ -347,6 +347,9 @@ export function useEditUserForm(user, { onSuccess } = {}) {
     clearBankAccountRows,
     updateBankAccountRowField,
     setPrimaryBankAccountRow,
+    extraPermissions: userDetailQuery.data?.success
+      ? userDetailQuery.data.user.extraPermissions
+      : [],
     handleSubmit,
   };
 }

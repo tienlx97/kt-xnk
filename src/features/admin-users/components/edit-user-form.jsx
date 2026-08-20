@@ -32,7 +32,9 @@ export const EDIT_USER_DIALOG_WIDTH = 880;
  */
 export function EditUserForm({ isOpen, onOpenChange, user, onSuccess }) {
   const [activeTab, setActiveTab] = useState(
-    /** @type {'contact' | 'salary' | 'bank' | 'dependents'} */ ('contact'),
+    /** @type {'contact' | 'salary' | 'bank' | 'dependents' | 'permissions'} */ (
+      'contact'
+    ),
   );
   const {
     values,
@@ -53,6 +55,7 @@ export function EditUserForm({ isOpen, onOpenChange, user, onSuccess }) {
     clearBankAccountRows,
     updateBankAccountRowField,
     setPrimaryBankAccountRow,
+    extraPermissions,
     handleSubmit,
   } = useEditUserForm(user, { onSuccess });
 
@@ -218,7 +221,7 @@ export function EditUserForm({ isOpen, onOpenChange, user, onSuccess }) {
                   activeTab={activeTab}
                   onActiveTabChange={(tab) =>
                     setActiveTab(
-                      /** @type {'contact' | 'salary' | 'bank' | 'dependents'} */ (
+                      /** @type {'contact' | 'salary' | 'bank' | 'dependents' | 'permissions'} */ (
                         tab
                       ),
                     )
@@ -232,6 +235,11 @@ export function EditUserForm({ isOpen, onOpenChange, user, onSuccess }) {
                     onClearRows: clearBankAccountRows,
                     onUpdateRowField: updateBankAccountRowField,
                     onSetPrimaryRow: setPrimaryBankAccountRow,
+                  }}
+                  permissionsFieldsProps={{
+                    userId: user.id,
+                    extraPermissions,
+                    isLoading: isLoadingUser,
                   }}
                 />
               </VStack>

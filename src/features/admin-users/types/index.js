@@ -107,6 +107,8 @@
  *   district: string | null,
  *   ward: string | null,
  *   addressDetail: string | null,
+ *   allowConcurrentSessions: boolean,
+ *   extraPermissions: string[],
  * }} UserDetail
  */
 

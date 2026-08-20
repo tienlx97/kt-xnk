@@ -5,6 +5,38 @@ Append-only session log. Newest entry FIRST.
 This file is the handoff between sessions/agents — write for a reader with zero conversation context.
 -->
 
+## 2026-08-20 — Admin UI for individual permission grants
+
+**Context:** `BE-kt-xnk` shipped `add-user-permission-grants` (same date):
+`POST/DELETE /users/{id}/permissions` lets Admin grant one permission to one
+specific user, independent of role/department — the escape hatch for "a
+department head" or "one hand-picked employee" that role/department buckets
+can't express. It shipped API-only. Change:
+`openspec/changes/admin-user-permission-grants/`.
+
+**What shipped.** A new "Quyền" tab in `EditUserForm` (`UserFormTabs`),
+Contact/Bank-tab sibling, shown only when editing an existing user (not
+`CreateUserForm` — granting to an account that doesn't exist yet is
+meaningless). One `Switch` per permission in the new
+`GRANTABLE_PERMISSIONS` list (currently just `logistics:secret`, hardcoded
+to mirror the backend's `Permission.Grantable` whitelist rather than fetched
+— tiny list, and the backend independently rejects anything not on its own
+copy, so staleness can only under-offer, never over-grant). Toggling calls
+the grant/revoke API **immediately**, not staged behind "Lưu thay đổi" — the
+backend applies it immediately too (rotates the target's `SecurityStamp`),
+so batching it behind a save button would misrepresent when it actually
+takes effect.
+
+Complementary to, not overlapping with, `permission-based-nav-route-gating`:
+that change reads the `permissions` JWT claim to gate nav/routes: this one
+lets an Admin set what ends up in that claim for one user.
+
+**Done:** `harness/verify.sh` — lint/typecheck/structure/unit-tests/build all
+pass. `quality-thresholds` fails on a pre-existing path-encoding bug in
+`harness/checks/quality.mjs` (breaks under a directory path containing a
+space — `VIBE CODE`) unrelated to this change; `build-manifest.json`
+confirmed to actually exist.
+
 ## 2026-08-20 — Silent refresh in the proxy; real server-side logout
 
 **Context:** Frontend half of the API's

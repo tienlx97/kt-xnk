@@ -6,19 +6,26 @@ import { VStack } from '@astryxdesign/core/VStack';
 
 import { BankAccountsFields } from './bank-accounts-fields.jsx';
 import { UserContactFields } from './user-contact-fields.jsx';
+import { UserPermissionsFields } from './user-permissions-fields.jsx';
 
 /**
- * The 4-tab strip from the reference layout ("Thông tin liên hệ" / "Thông
- * tin tiền lương" / "Tài khoản ngân hàng" / "Thông tin người phụ thuộc").
- * Only the first and third tabs have real fields today — the other two
- * are shown for layout parity with the reference but carry no data yet
- * (no backing feature/API), so they render a placeholder instead of fake
- * inputs.
+ * The tab strip from the reference layout, plus "Quyền" (permissions —
+ * no backing reference screen, added for `add-user-permission-grants`).
+ * Only "contact", "bank" and "permissions" have real fields today — the
+ * other two are shown for layout parity with the reference but carry no
+ * data yet (no backing feature/API), so they render a placeholder instead
+ * of fake inputs.
+ *
+ * "permissions" itself only applies to an existing user — granting to an
+ * account that doesn't exist yet is meaningless — so `CreateUserForm` omits
+ * `permissionsFieldsProps` and the tab doesn't render at all there, rather
+ * than showing a dead tab.
  * @param {{
- *   activeTab: 'contact' | 'salary' | 'bank' | 'dependents',
+ *   activeTab: 'contact' | 'salary' | 'bank' | 'dependents' | 'permissions',
  *   onActiveTabChange: (tab: string) => void,
  *   contactFieldsProps: import('react').ComponentProps<typeof UserContactFields>,
  *   bankAccountsFieldsProps: import('react').ComponentProps<typeof BankAccountsFields>,
+ *   permissionsFieldsProps?: import('react').ComponentProps<typeof UserPermissionsFields>,
  * }} props
  */
 export function UserFormTabs({
@@ -26,6 +33,7 @@ export function UserFormTabs({
   onActiveTabChange,
   contactFieldsProps,
   bankAccountsFieldsProps,
+  permissionsFieldsProps,
 }) {
   return (
     <VStack gap={4} hAlign="stretch">
@@ -38,6 +46,9 @@ export function UserFormTabs({
           label="Thông tin người phụ thuộc"
           // endContent={<Badge label="Mới" variant="info" />}
         />
+        {permissionsFieldsProps ? (
+          <Tab value="permissions" label="Quyền" />
+        ) : null}
       </TabList>
 
       {/* Fixed min-height so the dialog doesn't grow/shrink (and re-center
@@ -67,6 +78,10 @@ export function UserFormTabs({
             description="Tính năng đang phát triển."
             isCompact
           />
+        ) : null}
+
+        {activeTab === 'permissions' && permissionsFieldsProps ? (
+          <UserPermissionsFields {...permissionsFieldsProps} />
         ) : null}
       </VStack>
     </VStack>
