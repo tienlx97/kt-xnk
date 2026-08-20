@@ -3,7 +3,10 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useSyncExternalStore } from 'react';
 
-import { SESSION_EXPIRED_QUERY_PARAM } from '../../../shared/api/api-client.js';
+import {
+  SESSION_ELSEWHERE_QUERY_PARAM,
+  SESSION_EXPIRED_QUERY_PARAM,
+} from '../../../shared/api/api-client.js';
 import { SESSION_CHANGE_EVENT } from '../../../shared/api/session-cookies.js';
 import { loginSchema } from '../config/login-schema.js';
 import { useLoginMutation } from './use-login-mutation.js';
@@ -70,6 +73,12 @@ export function useLoginForm() {
     !isSessionExpiredNoticeDismissed &&
     searchParams.get(SESSION_EXPIRED_QUERY_PARAM) === '1';
 
+  // Distinct from a plain expiry: if the user did not just sign in elsewhere
+  // themselves, this is the first thing that tells them someone else did.
+  const signedInElsewhereNotice =
+    !isSessionExpiredNoticeDismissed &&
+    searchParams.get(SESSION_ELSEWHERE_QUERY_PARAM) === '1';
+
   /** @param {import('react').FormEvent<HTMLFormElement>} event */
   async function handleSubmit(event) {
     event.preventDefault();
@@ -123,6 +132,7 @@ export function useLoginForm() {
     passwordStatus: fieldStatus(fieldErrors.password),
     submitError,
     sessionExpiredNotice,
+    signedInElsewhereNotice,
     isSubmitting: loginMutation.isPending,
     handleSubmit,
   };

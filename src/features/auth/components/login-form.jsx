@@ -23,6 +23,7 @@ export function LoginForm() {
     passwordStatus,
     submitError,
     sessionExpiredNotice,
+    signedInElsewhereNotice,
     isSubmitting,
     handleSubmit,
   } = useLoginForm();
@@ -36,6 +37,14 @@ export function LoginForm() {
               <VStack gap={1} hAlign="center">
                 <Heading level={2}>ĐĂNG NHẬP</Heading>
               </VStack>
+
+              {signedInElsewhereNotice ? (
+                <Banner
+                  status="warning"
+                  title="Tài khoản đã được đăng nhập ở thiết bị khác. Nếu không phải bạn, hãy đổi mật khẩu ngay."
+                  container="card"
+                />
+              ) : null}
 
               {sessionExpiredNotice ? (
                 <Banner

@@ -23,6 +23,13 @@ import { clearClientSessionCookies } from './session-cookies.js';
 
 export const SESSION_EXPIRED_MESSAGE =
   'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+export const SIGNED_IN_ELSEWHERE_MESSAGE =
+  'Tài khoản đã được đăng nhập ở thiết bị khác.';
+
+/** The API's `detail` when a newer sign-in displaced this session. */
+const SUPERSEDED_DETAIL = 'Signed in on another device';
+
+export const SESSION_ELSEWHERE_QUERY_PARAM = 'elsewhere';
 export const FORBIDDEN_MESSAGE =
   'Bạn không có quyền thực hiện thao tác này.';
 export const RATE_LIMITED_MESSAGE =
@@ -39,8 +46,9 @@ const LOGIN_PATH = '/login';
  * gone, so every cached React Query result and every server-rendered fragment
  * on the current page is now unauthorised. Reloading throws all of that away
  * instead of leaving stale privileged data on screen.
+ * @param {boolean} signedInElsewhere
  */
-async function handleSessionExpired() {
+async function handleSessionExpired(signedInElsewhere) {
   if (typeof window === 'undefined') {
     return;
   }
@@ -53,7 +61,15 @@ async function handleSessionExpired() {
     return;
   }
 
-  window.location.assign(`${LOGIN_PATH}?${SESSION_EXPIRED_QUERY_PARAM}=1`);
+  // Which of the two is carried through, because they mean different things to
+  // the user: an expiry is routine, whereas "someone signed into your account
+  // elsewhere" is either you on another machine or the first sign that it is
+  // not you at all.
+  const reason = signedInElsewhere
+    ? SESSION_ELSEWHERE_QUERY_PARAM
+    : SESSION_EXPIRED_QUERY_PARAM;
+
+  window.location.assign(`${LOGIN_PATH}?${reason}=1`);
 }
 
 /**
@@ -113,13 +129,17 @@ export async function apiRequest(path, options = {}) {
   }
 
   if (response.status === 401) {
+    const problem = await response.json().catch(() => null);
+    const signedInElsewhere = problem?.detail === SUPERSEDED_DETAIL;
+
     if (redirectOnSessionExpiry) {
-      await handleSessionExpired();
+      await handleSessionExpired(signedInElsewhere);
     }
+
     return {
       success: false,
       status: 401,
-      message: SESSION_EXPIRED_MESSAGE,
+      message: signedInElsewhere ? SIGNED_IN_ELSEWHERE_MESSAGE : SESSION_EXPIRED_MESSAGE,
       sessionExpired: true,
     };
   }
