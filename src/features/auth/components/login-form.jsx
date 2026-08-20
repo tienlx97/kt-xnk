@@ -22,6 +22,7 @@ export function LoginForm() {
     nationalIdStatus,
     passwordStatus,
     submitError,
+    sessionExpiredNotice,
     isSubmitting,
     handleSubmit,
   } = useLoginForm();
@@ -35,6 +36,14 @@ export function LoginForm() {
               <VStack gap={1} hAlign="center">
                 <Heading level={2}>ĐĂNG NHẬP</Heading>
               </VStack>
+
+              {sessionExpiredNotice ? (
+                <Banner
+                  status="warning"
+                  title="Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại."
+                  container="card"
+                />
+              ) : null}
 
               {submitError ? (
                 <Banner status="error" title={submitError} container="card" />

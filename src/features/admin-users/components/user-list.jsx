@@ -48,9 +48,7 @@ function toNameById(items) {
   return new Map(items.map((item) => [item.id, item.name]));
 }
 
-/** @param {{ token: string }} props */
-export function UserList({ token }) {
-  const usersQuery = useUsersQuery(token);
+export function UserList() {
   const companiesQuery = useCompaniesQuery();
   const departmentsQuery = useDepartmentsQuery();
   const positionsQuery = usePositionsQuery();
@@ -74,6 +72,8 @@ export function UserList({ token }) {
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [pageIndex, setPageIndex] = useState(1);
 
+  const usersQuery = useUsersQuery({ page: pageIndex, pageSize });
+
   const companyNameById = toNameById(companiesQuery.data ?? []);
   const departmentNameById = toNameById(departmentsQuery.data ?? []);
   const positionNameById = toNameById(positionsQuery.data ?? []);
@@ -81,6 +81,9 @@ export function UserList({ token }) {
   const listResult = usersQuery.data;
   const users = listResult?.success ? listResult.users : [];
 
+  // Search filters the page currently on screen, not the whole table: the
+  // endpoint is paginated server-side and has no search parameter yet. Worth
+  // adding one before the staff list outgrows a single page.
   const normalizedQuery = searchQuery.trim().toLowerCase();
   const filteredUsers = normalizedQuery
     ? users.filter((user) => {
@@ -93,13 +96,16 @@ export function UserList({ token }) {
       })
     : users;
 
-  const totalUsers = filteredUsers.length;
-  const totalPages = Math.max(1, Math.ceil(totalUsers / pageSize));
+  // Paging is the server's answer now, not a slice of a fully downloaded
+  // table — the endpoint stopped returning every user at once
+  // (see the API's docs/security.md, M-4).
+  const totalUsers = listResult?.success ? listResult.totalCount : 0;
+  const totalPages = Math.max(1, listResult?.success ? listResult.totalPages : 1);
   const currentPage = Math.min(pageIndex, totalPages);
   const pageStart = (currentPage - 1) * pageSize;
-  const pagedUsers = filteredUsers.slice(pageStart, pageStart + pageSize);
+  const pagedUsers = filteredUsers;
   const rangeStart = totalUsers === 0 ? 0 : pageStart + 1;
-  const rangeEnd = Math.min(pageStart + pageSize, totalUsers);
+  const rangeEnd = Math.min(pageStart + pagedUsers.length, totalUsers);
 
   /** @param {string} value */
   function handleSearchChange(value) {
@@ -315,7 +321,6 @@ export function UserList({ token }) {
         <CreateUserForm
           isOpen={isCreateOpen}
           onOpenChange={setIsCreateOpen}
-          token={token}
           onSuccess={() => setIsCreateOpen(false)}
         />
       ) : null}
@@ -327,7 +332,6 @@ export function UserList({ token }) {
           onOpenChange={(isOpen) => {
             if (!isOpen) setEditingUser(null);
           }}
-          token={token}
           user={editingUser}
           onSuccess={() => setEditingUser(null)}
         />

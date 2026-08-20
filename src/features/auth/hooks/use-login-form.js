@@ -3,12 +3,13 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useSyncExternalStore } from 'react';
 
+import { SESSION_EXPIRED_QUERY_PARAM } from '../../../shared/api/api-client.js';
 import {
   decodeJwtPayload,
   normalizePermissions,
   normalizeRoles,
 } from '../../../shared/api/jwt.js';
-import { writeSession } from '../api/session.js';
+import { writeSession } from '../../../shared/api/session-cookies.js';
 import { loginSchema } from '../config/login-schema.js';
 import { useLoginMutation } from './use-login-mutation.js';
 
@@ -63,10 +64,22 @@ export function useLoginForm() {
   );
   const [submitError, setSubmitError] = useState('');
 
+  // Set by `shared/api/api-client.js` when a request came back 401 and it
+  // ended the session. Explains *why* the user is looking at the login page
+  // again — without it an expired session reads as the app randomly logging
+  // them out. Dismissed as soon as they submit, so it can't linger next to a
+  // genuine "wrong password" error.
+  const [isSessionExpiredNoticeDismissed, setIsSessionExpiredNoticeDismissed] =
+    useState(false);
+  const sessionExpiredNotice =
+    !isSessionExpiredNoticeDismissed &&
+    searchParams.get(SESSION_EXPIRED_QUERY_PARAM) === '1';
+
   /** @param {import('react').FormEvent<HTMLFormElement>} event */
   async function handleSubmit(event) {
     event.preventDefault();
     setSubmitError('');
+    setIsSessionExpiredNoticeDismissed(true);
 
     const result = loginSchema.safeParse({ nationalId, password, rememberMe });
     if (!result.success) {
@@ -97,7 +110,9 @@ export function useLoginForm() {
     }
 
     const payload = decodeJwtPayload(loginResult.token);
-    writeSession({
+    // Async now: only the server can set the HttpOnly token cookie, so this
+    // posts to the /api/session route handler (docs/security.md, H-4).
+    await writeSession({
       token: loginResult.token,
       nationalId: loginResult.nationalId,
       displayName: `${loginResult.firstName} ${loginResult.lastName}`.trim(),
@@ -117,6 +132,7 @@ export function useLoginForm() {
     nationalIdStatus: fieldStatus(fieldErrors.nationalId),
     passwordStatus: fieldStatus(fieldErrors.password),
     submitError,
+    sessionExpiredNotice,
     isSubmitting: loginMutation.isPending,
     handleSubmit,
   };

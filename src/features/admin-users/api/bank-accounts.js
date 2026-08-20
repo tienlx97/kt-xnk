@@ -1,51 +1,47 @@
-import { API_BASE_URL } from '../config/api-config.js';
+import { apiRequest } from '../../../shared/api/api-client.js';
 
 const GENERIC_ERROR_MESSAGE = 'Không thể lưu tài khoản ngân hàng';
+const GENERIC_LIST_ERROR_MESSAGE = 'Không thể tải danh sách tài khoản ngân hàng';
 
 /**
- * Public endpoint — populates the bank Selector in the bank accounts grid.
+ * Populates the bank Selector in the bank accounts grid. Requires a signed-in
+ * caller (authentication only, no `Admin` role) — this catalogue used to be an
+ * anonymous endpoint, see the backend's
+ * `openspec/changes/fix-401-vs-403-authentication/`.
  * @returns {Promise<import('../types/index.js').VietnamBank[]>}
  */
 export async function listVietnamBanks() {
-  const response = await fetch(`${API_BASE_URL}/api/v1/vietnam-banks`);
-  if (!response.ok) return [];
-  return response.json();
+  const result = await apiRequest('/api/v1/vietnam-banks');
+  return result.success ? (result.data ?? []) : [];
 }
 
 /**
  * Admin-only endpoint.
  * @param {string} userId
- * @param {string} token
  * @returns {Promise<import('../types/index.js').BankAccountListResult>}
  */
-export async function adminListBankAccounts(userId, token) {
-  let response;
-  try {
-    response = await fetch(`${API_BASE_URL}/api/v1/users/${userId}/bank-accounts`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-  } catch {
-    return { success: false, message: 'Không thể kết nối đến máy chủ' };
+export async function adminListBankAccounts(userId) {
+  const result = await apiRequest(
+    `/api/v1/users/${userId}/bank-accounts`,
+    { errorMessage: GENERIC_LIST_ERROR_MESSAGE },
+  );
+
+  if (!result.success) {
+    return { success: false, message: result.message };
   }
 
-  if (!response.ok) {
-    const problem = await response.json().catch(() => null);
-    return { success: false, message: problem?.detail ?? 'Không thể tải danh sách tài khoản ngân hàng' };
-  }
-
-  return { success: true, bankAccounts: await response.json() };
+  return { success: true, bankAccounts: result.data ?? [] };
 }
 
 /**
  * Admin-only endpoint.
  * @param {string} userId
  * @param {import('../types/index.js').BankAccountRow} row
- * @param {string} token
  * @returns {Promise<import('../types/index.js').BankAccountResult>}
  */
-export async function adminAddBankAccount(userId, row, token) {
+export async function adminAddBankAccount(userId, row) {
   return sendBankAccountRequest(
-    `${API_BASE_URL}/api/v1/users/${userId}/bank-accounts`,
+    `/api/v1/users/${userId}/bank-accounts`,
     'POST',
     {
       VietnamBankId: row.vietnamBankId,
@@ -53,7 +49,6 @@ export async function adminAddBankAccount(userId, row, token) {
       Branch: row.branch || null,
       IsPrimary: row.isPrimary,
     },
-    token,
   );
 }
 
@@ -62,19 +57,17 @@ export async function adminAddBankAccount(userId, row, token) {
  * @param {string} userId
  * @param {string} bankAccountId
  * @param {import('../types/index.js').BankAccountRow} row
- * @param {string} token
  * @returns {Promise<import('../types/index.js').BankAccountResult>}
  */
-export async function adminUpdateBankAccount(userId, bankAccountId, row, token) {
+export async function adminUpdateBankAccount(userId, bankAccountId, row) {
   return sendBankAccountRequest(
-    `${API_BASE_URL}/api/v1/users/${userId}/bank-accounts/${bankAccountId}`,
+    `/api/v1/users/${userId}/bank-accounts/${bankAccountId}`,
     'PUT',
     {
       VietnamBankId: row.vietnamBankId,
       AccountNumber: row.accountNumber,
       Branch: row.branch || null,
     },
-    token,
   );
 }
 
@@ -82,15 +75,13 @@ export async function adminUpdateBankAccount(userId, bankAccountId, row, token) 
  * Admin-only endpoint.
  * @param {string} userId
  * @param {string} bankAccountId
- * @param {string} token
  * @returns {Promise<import('../types/index.js').BankAccountResult>}
  */
-export async function adminSetPrimaryBankAccount(userId, bankAccountId, token) {
+export async function adminSetPrimaryBankAccount(userId, bankAccountId) {
   return sendBankAccountRequest(
-    `${API_BASE_URL}/api/v1/users/${userId}/bank-accounts/${bankAccountId}/primary`,
+    `/api/v1/users/${userId}/bank-accounts/${bankAccountId}/primary`,
     'PUT',
     undefined,
-    token,
   );
 }
 
@@ -98,23 +89,16 @@ export async function adminSetPrimaryBankAccount(userId, bankAccountId, token) {
  * Admin-only endpoint.
  * @param {string} userId
  * @param {string} bankAccountId
- * @param {string} token
  * @returns {Promise<{ success: true } | { success: false, message: string }>}
  */
-export async function adminRemoveBankAccount(userId, bankAccountId, token) {
-  let response;
-  try {
-    response = await fetch(`${API_BASE_URL}/api/v1/users/${userId}/bank-accounts/${bankAccountId}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` },
-    });
-  } catch {
-    return { success: false, message: 'Không thể kết nối đến máy chủ' };
-  }
+export async function adminRemoveBankAccount(userId, bankAccountId) {
+  const result = await apiRequest(
+    `/api/v1/users/${userId}/bank-accounts/${bankAccountId}`,
+    { method: 'DELETE', errorMessage: GENERIC_ERROR_MESSAGE },
+  );
 
-  if (!response.ok) {
-    const problem = await response.json().catch(() => null);
-    return { success: false, message: problem?.detail ?? GENERIC_ERROR_MESSAGE };
+  if (!result.success) {
+    return { success: false, message: result.message };
   }
 
   return { success: true };
@@ -124,28 +108,18 @@ export async function adminRemoveBankAccount(userId, bankAccountId, token) {
  * @param {string} url
  * @param {'POST' | 'PUT'} method
  * @param {Record<string, unknown> | undefined} body
- * @param {string} token
  * @returns {Promise<import('../types/index.js').BankAccountResult>}
  */
-async function sendBankAccountRequest(url, method, body, token) {
-  let response;
-  try {
-    response = await fetch(url, {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: body ? JSON.stringify(body) : undefined,
-    });
-  } catch {
-    return { success: false, message: 'Không thể kết nối đến máy chủ' };
+async function sendBankAccountRequest(url, method, body) {
+  const result = await apiRequest(url, {
+    method,
+    body,
+    errorMessage: GENERIC_ERROR_MESSAGE,
+  });
+
+  if (!result.success) {
+    return { success: false, message: result.message };
   }
 
-  if (!response.ok) {
-    const problem = await response.json().catch(() => null);
-    return { success: false, message: problem?.detail ?? GENERIC_ERROR_MESSAGE };
-  }
-
-  return { success: true, bankAccount: await response.json() };
+  return { success: true, bankAccount: result.data };
 }

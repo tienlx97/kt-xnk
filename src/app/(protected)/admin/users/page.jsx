@@ -1,9 +1,7 @@
 import { BreadcrumbItem,Breadcrumbs } from '@astryxdesign/core/Breadcrumbs';
 import { VStack } from '@astryxdesign/core/VStack';
-import { cookies } from 'next/headers';
 
 import { UserList } from '../../../../features/admin-users/index.js';
-import { ACCESS_TOKEN_KEY } from '../../../../features/auth/index.js';
 import { PageContentShell } from '../../../../shared/components/page-content-shell.jsx';
 
 export const metadata = {
@@ -11,14 +9,11 @@ export const metadata = {
 };
 
 /**
- * Same token-passed-down-as-a-prop contract as
- * `admin/users/new/page.jsx` used — see that file's comment for why
- * `features/admin-users` can't read the session cookie itself.
+ * No token is read or threaded down: client components call the app's own
+ * `/api/backend` proxy, which attaches the bearer token from the HttpOnly
+ * session cookie server-side (docs/security.md, H-4).
  */
-export default async function UsersListPage() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(ACCESS_TOKEN_KEY)?.value ?? '';
-
+export default function UsersListPage() {
   return (
     <PageContentShell>
       <VStack gap={4} hAlign="stretch">
@@ -27,7 +22,7 @@ export default async function UsersListPage() {
           <BreadcrumbItem isCurrent>Người dùng</BreadcrumbItem>
         </Breadcrumbs>
 
-        <UserList token={token} />
+        <UserList />
       </VStack>
     </PageContentShell>
   );

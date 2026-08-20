@@ -1,14 +1,14 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-import {
-  ACCESS_TOKEN_KEY,
-  SESSION_PERMISSIONS_KEY,
-  UserMenu,
-} from '../../features/auth/index.js';
+import { UserMenu } from '../../features/auth/index.js';
 import { parsePermissionsCookie } from '../../shared/api/jwt.js';
 import { filterNavLinksByPermissions } from '../../shared/api/nav.js';
 import { ProtectedAppShell } from '../../shared/components/protected-app-shell.jsx';
+import {
+  ACCESS_TOKEN_KEY,
+  SESSION_PERMISSIONS_KEY,
+} from '../../shared/config/session-keys.js';
 import { site, topNavLinks } from '../../shared/config/site.js';
 import sidebarAdmin from '../../sidebarAdmin.json';
 import sidebarPost from '../../sidebarPost.json';

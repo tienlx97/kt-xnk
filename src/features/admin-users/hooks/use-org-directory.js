@@ -10,6 +10,12 @@ import {
   listPositions,
 } from '../api/org-directory.js';
 
+/**
+ * Selector options for the create/edit user forms. No token is threaded
+ * through: the `/api/backend` proxy attaches it from the HttpOnly session
+ * cookie, so client code never handles credentials (docs/security.md, H-4).
+ */
+
 export function useCompaniesQuery() {
   return useQuery({
     queryKey: ['admin-users', 'companies'],

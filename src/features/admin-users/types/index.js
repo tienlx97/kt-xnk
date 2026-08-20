@@ -97,7 +97,12 @@
 /**
  * @typedef {Object} UserListSuccess
  * @property {true} success
- * @property {UserListItem[]} users
+ * @property {UserListItem[]} users One page of rows, not the whole table —
+ *   `GET /api/v1/users` is paginated and returns a slim projection.
+ * @property {number} page
+ * @property {number} pageSize
+ * @property {number} totalCount
+ * @property {number} totalPages
  */
 
 /**

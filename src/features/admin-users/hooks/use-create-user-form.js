@@ -78,17 +78,16 @@ function applyFieldChange(values, field, value) {
  * must be preserved.
  * @param {string} userId
  * @param {import('../types/index.js').BankAccountRow[]} rows
- * @param {string} token
  * @returns {Promise<string[]>} human-readable messages for rows that failed to save
  */
-async function addFilledBankAccountRows(userId, rows, token) {
+async function addFilledBankAccountRows(userId, rows) {
   /** @type {string[]} */
   const failures = [];
 
   for (const row of rows) {
     if (!row.vietnamBankId || !row.accountNumber.trim()) continue;
 
-    const result = await adminAddBankAccount(userId, row, token);
+    const result = await adminAddBankAccount(userId, row);
     if (!result.success) {
       failures.push(`${row.accountNumber}: ${result.message}`);
     }
@@ -97,11 +96,8 @@ async function addFilledBankAccountRows(userId, rows, token) {
   return failures;
 }
 
-/**
- * @param {string} token
- * @param {{ onSuccess?: () => void }} [options]
- */
-export function useCreateUserForm(token, { onSuccess } = {}) {
+/** @param {{ onSuccess?: () => void }} [options] */
+export function useCreateUserForm({ onSuccess } = {}) {
   const [values, setValues] = useState(EMPTY_VALUES);
   const [fieldErrors, setFieldErrors] = useState(
     /** @type {Record<string, string>} */ ({}),
@@ -114,7 +110,7 @@ export function useCreateUserForm(token, { onSuccess } = {}) {
   const departmentsQuery = useDepartmentsQuery();
   const positionsQuery = usePositionsQuery();
   const vietnamBanksQuery = useVietnamBanksQuery();
-  const createUserMutation = useCreateUserMutation(token);
+  const createUserMutation = useCreateUserMutation();
   const bankAccountRows = useBankAccountRows();
 
   const departmentsInBranch = (departmentsQuery.data ?? []).filter(
@@ -168,7 +164,6 @@ export function useCreateUserForm(token, { onSuccess } = {}) {
     const bankAccountFailures = await addFilledBankAccountRows(
       createResult.id,
       bankAccountRows.rows,
-      token,
     );
 
     setSubmitSuccess(

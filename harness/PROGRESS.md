@@ -5,6 +5,138 @@ Append-only session log. Newest entry FIRST.
 This file is the handoff between sessions/agents — write for a reader with zero conversation context.
 -->
 
+## 2026-08-20 — HttpOnly session + BFF proxy; token leaves the browser
+
+**Context:** Second half of the same day's security work. The backend review
+(`CLEAN ARCHITECTURE/docs/security.md`) found the access token sitting in a
+JS-readable cookie (finding H-4) — any XSS, including one in a dependency,
+could lift it and impersonate the user. Backend remediation is
+`openspec/changes/harden-security-findings/` in that repo; this is the frontend
+half. The full request-by-request write-up now lives in that repo's
+`docs/flow.md`.
+
+**The decision that shaped everything else.** Making the token cookie
+`HttpOnly` means client JavaScript can no longer read it — so client code can
+no longer attach `Authorization` either. Two ways out: thread a
+server-fetched token as props through ~12 files, or stop having the browser
+call the backend at all. Chose the second: a **BFF proxy** at
+`src/app/api/backend/[...path]/route.js` that attaches the token server-side
+from the HttpOnly cookie. It removed more code than it added, and two things
+fell out for free — the browser never makes a cross-origin request (CORS stops
+being involved) and the backend's address is no longer in the client bundle.
+
+**Done:**
+- `src/app/api/session/route.js` — POST sets the session cookies (token
+  `HttpOnly; Secure; SameSite=Lax`), DELETE clears them. Only the server can
+  set HttpOnly, so login now posts here instead of writing `document.cookie`.
+  Cookie `maxAge` is derived from the token's own `exp`: it used to be pinned
+  to 7 days while the token expired in 60 minutes, so the app rendered as
+  "signed in" for days against a dead token (finding M-1 — and the original
+  symptom the user reported two sessions ago).
+- `src/app/api/backend/[...path]/route.js` — the proxy. Strips hop-by-hop
+  headers and **always** deletes any client-supplied `Authorization` before
+  setting its own, so a caller can't present their own token through it.
+- Every `token` parameter and prop deleted: the four `admin-users/api/*`
+  modules, six hooks, `UserList`, `CreateUserForm`, `EditUserForm`,
+  `admin/users/page.jsx`. `shared/api/api-client.js` now takes no token at all.
+- Only the token cookie is HttpOnly. Display name / national ID / roles /
+  permissions stay readable — they are not credentials, the header and nav
+  render from them client-side, and the backend re-checks every role from the
+  signed token regardless. `use-session.js` now judges "signed in" from a
+  readable companion cookie via `hasSessionCookie()`.
+- `GET /api/v1/users` became paginated with a slim projection (backend M-4), so
+  `listUsers` reads the envelope and `user-list` drives server-side paging.
+  **New `useUserDetailQuery`**: the edit form must re-seed from
+  `GET /users/{id}`, because the list row no longer carries passport number,
+  CCCD issue date/place, year of birth or address — and `PUT` is
+  replace-everything, so saving a form built from a list row would have blanked
+  those fields. That is a data-loss bug, not a cosmetic one; worth re-checking
+  whenever a field is added to `UserResponse`.
+- `resolveApiBaseUrl()` (server-only) throws on a production build when
+  `API_BASE_URL`/`NEXT_PUBLIC_API_BASE_URL` is unset, instead of silently
+  pointing every user's browser at their own `localhost:8080`. The two
+  per-feature `api-config.js` copies are gone.
+- 429 from the new login rate limiter is surfaced as
+  "Bạn đã thử quá nhiều lần…".
+
+**Verification:** lint, structure (depcruise), harness-tests, unit-tests,
+build, quality-thresholds all pass.
+
+**Still failing, still pre-existing:** `typecheck` — the same 8 errors present
+at `HEAD` before any of this work (`user-list.jsx` ×2, `icon-canary.jsx` ×4,
+`icon-rocket.jsx`, `react-dev-callouts.jsx`), confirmed in a clean
+`git worktree` in the previous session. Not caused here and not fixed here.
+`verify.sh` has therefore been red in this repo for a while, which means the
+gate has stopped functioning as a gate — worth its own task.
+
+## 2026-08-20 — Central API client: 401 = session expired, 403 = no permission
+
+**Context:** A user on `/admin/users` saw the error banner render the raw
+backend string `"User is forbidden from taking this action"` — English, in
+a Vietnamese UI — and asked whether it meant their token had expired. It
+might have: the backend returned the *same* 403 for an expired token and
+for a genuine permission denial. The backend fix is in the
+`CLEAN ARCHITECTURE` repo (`openspec/changes/fix-401-vs-403-authentication/`,
+same date); it now returns **401** for missing/expired/invalid tokens and
+reserves **403** for "signed in but not allowed". This is the frontend half.
+
+**Done:**
+- New `src/shared/api/api-client.js` — the single place that turns a
+  response into a UI result. On `401` it clears the session cookies and
+  does a **full-page** `window.location.assign('/login?expired=1')` (not a
+  router push: the token is gone, so every cached React Query result and
+  server-rendered fragment on the page is now unauthorised — reloading
+  discards them instead of leaving stale privileged data on screen). On
+  `403` it returns "Bạn không có quyền thực hiện thao tác này." rather than
+  echoing the backend's developer-facing English `detail`. Guards against a
+  redirect loop when already on `/login`.
+- `features/auth/api/login.js` **deliberately stays on raw `fetch`** and is
+  the one caller not routed through the client: its `401` means "sai CCCD
+  hoặc mật khẩu", on a page that already *is* `/login`. Routing it through
+  would replace an accurate message with "phiên đã hết hạn". Commented in
+  place so it doesn't look like an oversight.
+- Refactored `admin-users/api/{users,register,bank-accounts,org-directory}.js`
+  onto `apiRequest`, deleting four copies of the same
+  `if (!response.ok) { detail ?? GENERIC }` block.
+- **Session cookie helpers moved out of the auth feature into `shared/`**:
+  `features/auth/config/session-keys.js` → `shared/config/session-keys.js`,
+  `features/auth/api/session.js` → `shared/api/session-cookies.js`, and the
+  `Session` typedef → `shared/types/index.js`. Forced by the structure
+  rules: `api-client.js` lives in `shared/` and must call `clearSession()`,
+  but `no-shared-to-feature` forbids `shared/` importing a feature. Callers
+  updated (`middleware.js`, `(protected)/layout.jsx`,
+  `admin/users/page.jsx`, the two auth hooks); `features/auth/index.js` no
+  longer re-exports the cookie keys. `depcruise` passes.
+- The org-directory + Vietnam-banks reads stopped being anonymous backend
+  endpoints, so they now send a token. `use-org-directory.js` reads it from
+  the cookie itself rather than taking a prop — prop-threading a token
+  through every consumer of a selector's options would touch the whole
+  create/edit form tree for nothing, and these are all `'use client'`
+  components inside `(protected)`. That is only possible now that the
+  cookie helpers live in `shared/`; the old comment in `register.js`
+  explaining why the feature *couldn't* read the cookie is obsolete. Token
+  is part of each `queryKey`, so re-logging-in refetches.
+- Login page shows a warning Banner "Phiên đăng nhập đã hết hạn. Vui lòng
+  đăng nhập lại." on `?expired=1`, dismissed on submit so it can't sit next
+  to a genuine wrong-password error.
+
+**Not done — pre-existing `verify.sh` failure (task 2.3 in the backend's
+openspec change):** `typecheck` fails with 8 errors —
+`features/admin-users/components/user-list.jsx` ×2 (`DropdownMenuOption`
+`description`, `UserListItem` row type), `shared/components/icon/icon-canary.jsx`
+×4, `icon-rocket.jsx`, `shared/components/mdx/react-dev-callouts.jsx`.
+**Confirmed identical at `HEAD` in a clean `git worktree`**, so this change
+did not cause them and did not fix them — every other step (lint,
+structure, harness-tests, unit-tests, build, quality-thresholds) passes.
+Whoever picks this up should treat it as its own task; `verify.sh` has
+apparently been red here for a while, which means the gate has stopped
+being a gate.
+
+**Also note:** `eslint --fix` (run for import sorting) touched
+`components/{bank-accounts-fields,create-user-form,user-org-fields}.jsx`,
+which already had uncommitted edits from an earlier session — import-order
+only, no logic changed.
+
 ## 2026-08-19 — Create/Edit User dialog redesign: wider, tabbed, scrollable (`admin-users`)
 
 **Context:** Follow-up to the bank-accounts-grid session, same day. User

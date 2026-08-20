@@ -23,13 +23,4 @@
 
 /** @typedef {LoginSuccess | LoginFailure} LoginResult */
 
-/**
- * @typedef {Object} Session
- * @property {string} token
- * @property {string} nationalId
- * @property {string} displayName
- * @property {string[]} roles
- * @property {string[]} permissions
- */
-
 export {};

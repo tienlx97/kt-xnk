@@ -4,14 +4,13 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { registerUser } from '../api/register.js';
 
-/** @param {string} token */
-export function useCreateUserMutation(token) {
+export function useCreateUserMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (
       /** @type {import('../types/index.js').CreateUserFormValues} */ values,
-    ) => registerUser(values, token),
+    ) => registerUser(values),
     onSuccess: (result) => {
       if (result.success) {
         queryClient.invalidateQueries({ queryKey: ['admin-users', 'users'] });

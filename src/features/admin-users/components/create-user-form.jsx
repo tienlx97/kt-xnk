@@ -24,8 +24,8 @@ import { UserOrgFields } from './user-org-fields.jsx';
 
 export const CREATE_USER_DIALOG_WIDTH = 880;
 
-/** @param {{ isOpen: boolean, onOpenChange: (isOpen: boolean) => void, token: string, onSuccess?: () => void }} props */
-export function CreateUserForm({ isOpen, onOpenChange, token, onSuccess }) {
+/** @param {{ isOpen: boolean, onOpenChange: (isOpen: boolean) => void, onSuccess?: () => void }} props */
+export function CreateUserForm({ isOpen, onOpenChange, onSuccess }) {
   const [activeTab, setActiveTab] = useState(
     /** @type {'contact' | 'salary' | 'bank' | 'dependents'} */ ('contact'),
   );
@@ -48,7 +48,7 @@ export function CreateUserForm({ isOpen, onOpenChange, token, onSuccess }) {
     updateBankAccountRowField,
     setPrimaryBankAccountRow,
     handleSubmit,
-  } = useCreateUserForm(token, { onSuccess });
+  } = useCreateUserForm({ onSuccess });
 
   return (
     <Dialog
@@ -130,6 +130,7 @@ export function CreateUserForm({ isOpen, onOpenChange, token, onSuccess }) {
                         value={values.gender}
                         onChange={(value) => setField('gender', value)}
                         status={fieldStatuses.gender}
+                        size="sm"
                       >
                         <RadioListItem label="Nam" value="Male" />
                         <RadioListItem label="Nữ" value="Female" />

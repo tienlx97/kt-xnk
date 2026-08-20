@@ -5,11 +5,11 @@ import { useSyncExternalStore } from 'react';
 
 import {
   clearSession,
-  readAccessToken,
+  hasSessionCookie,
   readSessionDisplayName,
   readSessionNationalId,
   SESSION_CHANGE_EVENT,
-} from '../api/session.js';
+} from '../../../shared/api/session-cookies.js';
 
 /** @param {() => void} callback */
 function subscribeToSessionChange(callback) {
@@ -18,7 +18,10 @@ function subscribeToSessionChange(callback) {
 }
 
 function getIsAuthenticated() {
-  return readAccessToken() !== null;
+  // Not the access token — that cookie is HttpOnly and invisible here. A
+  // readable companion cookie stands in; both are written and cleared together
+  // by /api/session (docs/security.md, H-4).
+  return hasSessionCookie();
 }
 
 function getIsAuthenticatedServerSnapshot() {
@@ -59,8 +62,8 @@ export function useSession() {
     getNationalIdServerSnapshot,
   );
 
-  function logout() {
-    clearSession();
+  async function logout() {
+    await clearSession();
     router.push('/login');
   }
 

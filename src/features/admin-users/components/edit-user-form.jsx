@@ -25,12 +25,11 @@ export const EDIT_USER_DIALOG_WIDTH = 880;
  * @param {{
  *   isOpen: boolean,
  *   onOpenChange: (isOpen: boolean) => void,
- *   token: string,
  *   user: import('../types/index.js').UserListItem,
  *   onSuccess?: () => void,
  * }} props
  */
-export function EditUserForm({ isOpen, onOpenChange, token, user, onSuccess }) {
+export function EditUserForm({ isOpen, onOpenChange, user, onSuccess }) {
   const [activeTab, setActiveTab] = useState(
     /** @type {'contact' | 'salary' | 'bank' | 'dependents'} */ ('contact'),
   );
@@ -53,7 +52,7 @@ export function EditUserForm({ isOpen, onOpenChange, token, user, onSuccess }) {
     updateBankAccountRowField,
     setPrimaryBankAccountRow,
     handleSubmit,
-  } = useEditUserForm(token, user, { onSuccess });
+  } = useEditUserForm(user, { onSuccess });
 
   return (
     <Dialog

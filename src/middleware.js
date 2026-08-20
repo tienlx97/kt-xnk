@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 
+import { parsePermissionsCookie } from './shared/api/jwt.js';
+import { routeAccessRules } from './shared/config/route-access.js';
 import {
   ACCESS_TOKEN_KEY,
   SESSION_PERMISSIONS_KEY,
-} from './features/auth/index.js';
-import { parsePermissionsCookie } from './shared/api/jwt.js';
-import { routeAccessRules } from './shared/config/route-access.js';
+} from './shared/config/session-keys.js';
 
 /**
  * Route-level permission gate. Layered on top of `(protected)/layout.jsx`'s

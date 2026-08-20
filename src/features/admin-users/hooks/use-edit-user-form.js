@@ -19,6 +19,7 @@ import {
   useVietnamBanksQuery,
 } from './use-org-directory.js';
 import { useUpdateUserMutation } from './use-update-user-mutation.js';
+import { useUserDetailQuery } from './use-user-detail-query.js';
 
 /** @param {string} [message] @returns {{ type: 'error', message: string } | undefined} */
 function fieldStatus(message) {
@@ -102,10 +103,9 @@ function toBankAccountRow(account) {
  * @param {string} userId
  * @param {import('../types/index.js').BankAccountRow[]} rows
  * @param {import('../types/index.js').BankAccountApiItem[]} originalAccounts
- * @param {string} token
  * @returns {Promise<string[]>}
  */
-async function persistBankAccountRowChanges(userId, rows, originalAccounts, token) {
+async function persistBankAccountRowChanges(userId, rows, originalAccounts) {
   /** @type {string[]} */
   const failures = [];
   const originalById = new Map(originalAccounts.map((account) => [account.id, account]));
@@ -115,7 +115,7 @@ async function persistBankAccountRowChanges(userId, rows, originalAccounts, toke
     if (!row.bankAccountId) {
       if (!row.vietnamBankId || !row.accountNumber.trim()) continue;
 
-      const result = await adminAddBankAccount(userId, row, token);
+      const result = await adminAddBankAccount(userId, row);
       if (!result.success) {
         failures.push(`${row.accountNumber}: ${result.message}`);
       }
@@ -131,14 +131,14 @@ async function persistBankAccountRowChanges(userId, rows, originalAccounts, toke
         original.accountNumber !== row.accountNumber ||
         (original.branch ?? '') !== row.branch)
     ) {
-      const result = await adminUpdateBankAccount(userId, row.bankAccountId, row, token);
+      const result = await adminUpdateBankAccount(userId, row.bankAccountId, row);
       if (!result.success) {
         failures.push(`${row.accountNumber}: ${result.message}`);
       }
     }
 
     if (row.isPrimary && !original?.isPrimary) {
-      const result = await adminSetPrimaryBankAccount(userId, row.bankAccountId, token);
+      const result = await adminSetPrimaryBankAccount(userId, row.bankAccountId);
       if (!result.success) {
         failures.push(`${row.accountNumber}: ${result.message}`);
       }
@@ -146,7 +146,7 @@ async function persistBankAccountRowChanges(userId, rows, originalAccounts, toke
   }
 
   for (const removedId of remainingIds) {
-    const result = await adminRemoveBankAccount(userId, removedId, token);
+    const result = await adminRemoveBankAccount(userId, removedId);
     if (!result.success) {
       const removedAccount = originalById.get(removedId);
       failures.push(`${removedAccount?.accountNumber ?? removedId}: ${result.message}`);
@@ -157,11 +157,11 @@ async function persistBankAccountRowChanges(userId, rows, originalAccounts, toke
 }
 
 /**
- * @param {string} token
- * @param {import('../types/index.js').UserListItem} user
+ * @param {import('../types/index.js').UserListItem} user The list row that was
+ *   clicked. Only its `id` is trusted for form values — see below.
  * @param {{ onSuccess?: () => void }} [options]
  */
-export function useEditUserForm(token, user, { onSuccess } = {}) {
+export function useEditUserForm(user, { onSuccess } = {}) {
   const [values, setValues] = useState(() => toFormValues(user));
   const [fieldErrors, setFieldErrors] = useState(
     /** @type {Record<string, string>} */ ({}),
@@ -174,8 +174,22 @@ export function useEditUserForm(token, user, { onSuccess } = {}) {
   const departmentsQuery = useDepartmentsQuery();
   const positionsQuery = usePositionsQuery();
   const vietnamBanksQuery = useVietnamBanksQuery();
-  const bankAccountsQuery = useAdminBankAccountsQuery(user.id, token);
-  const updateUserMutation = useUpdateUserMutation(token);
+  const bankAccountsQuery = useAdminBankAccountsQuery(user.id);
+  const updateUserMutation = useUpdateUserMutation();
+
+  // The list row is a slim projection — it has no passport number, national-ID
+  // issue date/place, year of birth or address (docs/security.md, M-4). Seeding
+  // the form from it and saving would write those blanks back over the real
+  // values, so the full record is fetched and the form re-seeded once it lands.
+  const userDetailQuery = useUserDetailQuery(user.id);
+  const hasSeededFromDetailRef = useRef(false);
+
+  useEffect(() => {
+    if (hasSeededFromDetailRef.current || !userDetailQuery.data?.success) return;
+
+    setValues(toFormValues(userDetailQuery.data.user));
+    hasSeededFromDetailRef.current = true;
+  }, [userDetailQuery.data]);
 
   const departmentsInBranch = (departmentsQuery.data ?? []).filter(
     (department) => department.branchId === values.branchId,
@@ -251,7 +265,6 @@ export function useEditUserForm(token, user, { onSuccess } = {}) {
       user.id,
       bankAccountRowsState,
       originalBankAccountsRef.current,
-      token,
     );
 
     if (bankAccountFailures.length > 0) {

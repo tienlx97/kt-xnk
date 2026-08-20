@@ -25,4 +25,15 @@
 
 /** @typedef {SidebarRouteItem & { title: string, path: string, routes: SidebarRouteItem[] }} SidebarRouteTree */
 
+/**
+ * What a logged-in session persists as cookies — see
+ * `src/shared/api/session-cookies.js`.
+ * @typedef {Object} Session
+ * @property {string} token
+ * @property {string} nationalId
+ * @property {string} displayName
+ * @property {string[]} roles
+ * @property {string[]} permissions
+ */
+
 export {};

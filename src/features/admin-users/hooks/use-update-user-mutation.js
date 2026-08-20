@@ -4,8 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { updateUser } from '../api/users.js';
 
-/** @param {string} token */
-export function useUpdateUserMutation(token) {
+export function useUpdateUserMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -14,7 +13,7 @@ export function useUpdateUserMutation(token) {
         userId,
         values,
       },
-    ) => updateUser(userId, values, token),
+    ) => updateUser(userId, values),
     onSuccess: (result) => {
       if (result.success) {
         queryClient.invalidateQueries({ queryKey: ['admin-users', 'users'] });
