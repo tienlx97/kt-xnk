@@ -5,11 +5,14 @@ const GENERIC_GRANT_ERROR = 'Không thể cấp quyền';
 const GENERIC_REVOKE_ERROR = 'Không thể thu hồi quyền';
 
 /**
- * Admin-only. `Permission.Grantable` — the whitelist a permission must be
- * on before `grantUserPermission` will accept it. Fetched rather than
- * hardcoded so the FE never has its own stale copy of the backend's list
- * (see `openspec/changes/add-grantable-permissions-endpoint/proposal.md`).
- * @returns {Promise<string[]>}
+ * Admin-only. The `GrantablePermission` catalog — the whitelist a
+ * permission must be on before `grantUserPermission` will accept it.
+ * Backend-owned (a DB table, not a compile-time list), so Admin can add a
+ * new entry via `createGrantablePermission` without a code change/deploy
+ * (see `openspec/changes/add-create-grantable-permission/proposal.md`).
+ * `description` is whatever Admin wrote when creating the permission —
+ * used as a label fallback when the FE has no curated one.
+ * @returns {Promise<{ key: string, description: string | null }[]>}
  */
 export async function listGrantablePermissions() {
   const result = await apiRequest('/api/v1/permissions/grantable', {
@@ -17,6 +20,30 @@ export async function listGrantablePermissions() {
   });
 
   return result.success ? (result.data ?? []) : [];
+}
+
+/**
+ * Admin-only. Adds a permission to the grantable catalog. `key` must match
+ * `namespace:action`, lowercase (e.g. `sales:secret`) — rejected (400)
+ * otherwise. Does not, by itself, make any endpoint enforce it — a
+ * business endpoint still needs its own `[Authorize(Permissions = ...)]`
+ * on the backend.
+ * @param {string} key
+ * @param {string} [description]
+ * @returns {Promise<{ success: true } | { success: false, message: string }>}
+ */
+export async function createGrantablePermission(key, description) {
+  const result = await apiRequest('/api/v1/permissions/grantable', {
+    method: 'POST',
+    errorMessage: 'Không thể thêm permission mới',
+    body: { Key: key, Description: description || null },
+  });
+
+  if (!result.success) {
+    return { success: false, message: result.message };
+  }
+
+  return { success: true };
 }
 
 /**

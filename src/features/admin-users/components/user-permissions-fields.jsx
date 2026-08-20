@@ -63,15 +63,15 @@ export function UserPermissionsFields({ userId, extraPermissions, isLoading }) {
       </Text>
 
       <VStack gap={3} hAlign="stretch">
-        {(grantablePermissionsQuery.data ?? []).map((permission) => {
-          const { label, description } = labelForPermission(permission);
+        {(grantablePermissionsQuery.data ?? []).map(({ key, description: apiDescription }) => {
+          const { label, description } = labelForPermission(key, apiDescription);
           return (
             <Switch
-              key={permission}
+              key={key}
               label={label}
               description={description}
-              value={extraPermissions.includes(permission)}
-              changeAction={(checked) => togglePermission(permission, checked)}
+              value={extraPermissions.includes(key)}
+              changeAction={(checked) => togglePermission(key, checked)}
               labelSpacing="spread"
             />
           );

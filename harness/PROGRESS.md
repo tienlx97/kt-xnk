@@ -5,6 +5,26 @@ Append-only session log. Newest entry FIRST.
 This file is the handoff between sessions/agents — write for a reader with zero conversation context.
 -->
 
+## 2026-08-20 — Grantable permissions catalog is now DB-backed (BE)
+
+**Context:** `BE-kt-xnk`'s `add-create-grantable-permission` moved
+`GET /permissions/grantable` off a static array onto a real
+`GrantablePermission` DB catalog Admin can add to via a new `POST`. The
+response shape changed: `string[]` → `[{ key, description }]`.
+
+**What shipped.** `api/permissions.js`'s `listGrantablePermissions` return
+type updated; `createGrantablePermission` added (no UI wired to it yet —
+this thread has consistently shipped grant-management API-first, UI
+later, same as `admin-role`). `grantable-permissions.js`'s
+`labelForPermission` now takes the backend's `description` as a second
+preference, ahead of the raw key: curated local `PERMISSION_LABELS` (nicest)
+→ backend description (works for anything created via the API, no FE
+change needed) → raw key (never disappears).
+
+**Done:** `./harness/verify.sh` — lint/typecheck/structure/unit-tests/build
+pass; `quality-thresholds` fails on the same pre-existing path-encoding bug
+(directory path contains a space), unrelated.
+
 ## 2026-08-20 — Grantable permissions fetched, not hardcoded
 
 **Context:** `admin-user-permission-grants` (same date, earlier) hardcoded
