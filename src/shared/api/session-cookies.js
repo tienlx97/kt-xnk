@@ -64,26 +64,6 @@ export function readSessionPermissions() {
   return parsePermissionsCookie(readCookie(SESSION_PERMISSIONS_KEY));
 }
 
-/**
- * Persists a session after a successful login. Delegates to the route handler
- * because the access token cookie must be `HttpOnly`, which `document.cookie`
- * cannot set.
- * @param {import('../types/index.js').Session} session
- */
-export async function writeSession(session) {
-  const response = await fetch('/api/session', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(session),
-  });
-
-  if (!response.ok) {
-    throw new Error('Không thể lưu phiên đăng nhập');
-  }
-
-  window.dispatchEvent(new Event(SESSION_CHANGE_EVENT));
-}
-
 export async function clearSession() {
   await fetch('/api/session', { method: 'DELETE' }).catch(() => {});
 

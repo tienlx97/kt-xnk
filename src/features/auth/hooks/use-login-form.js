@@ -4,12 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useSyncExternalStore } from 'react';
 
 import { SESSION_EXPIRED_QUERY_PARAM } from '../../../shared/api/api-client.js';
-import {
-  decodeJwtPayload,
-  normalizePermissions,
-  normalizeRoles,
-} from '../../../shared/api/jwt.js';
-import { writeSession } from '../../../shared/api/session-cookies.js';
+import { SESSION_CHANGE_EVENT } from '../../../shared/api/session-cookies.js';
 import { loginSchema } from '../config/login-schema.js';
 import { useLoginMutation } from './use-login-mutation.js';
 
@@ -109,17 +104,11 @@ export function useLoginForm() {
       window.localStorage.removeItem(REMEMBERED_NATIONAL_ID_KEY);
     }
 
-    const payload = decodeJwtPayload(loginResult.token);
-    // Async now: only the server can set the HttpOnly token cookie, so this
-    // posts to the /api/session route handler (docs/security.md, H-4).
-    await writeSession({
-      token: loginResult.token,
-      refreshToken: loginResult.refreshToken,
-      nationalId: loginResult.nationalId,
-      displayName: `${loginResult.firstName} ${loginResult.lastName}`.trim(),
-      roles: normalizeRoles(payload),
-      permissions: normalizePermissions(payload),
-    });
+    // Cookies are already set — `/api/session/login` did it server-side, so no
+    // token ever reached this code. All that is left is telling the components
+    // subscribed to the session (the header's user menu) to re-read them.
+    window.dispatchEvent(new Event(SESSION_CHANGE_EVENT));
+
     router.replace(searchParams.get('next') || '/');
   }
 

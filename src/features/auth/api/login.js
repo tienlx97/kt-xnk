@@ -1,29 +1,30 @@
 const GENERIC_ERROR_MESSAGE = 'Sai CCCD hoặc mật khẩu';
+const RATE_LIMITED_MESSAGE = 'Bạn đã thử quá nhiều lần. Vui lòng đợi ít phút rồi thử lại.';
 
 /**
- * Calls the real auth backend's `POST /api/v1/authentication/login`. On
- * success it responds with `{ id, firstName, lastName, nationalId, token,
- * refreshToken }`;
- * on failure a `problem+json` body with a human-readable `detail`.
+ * Signs in via this app's own `/api/session/login` route handler, which calls
+ * the backend server-side and stores the session as `HttpOnly` cookies.
  *
- * Goes through the same `/api/backend` proxy as everything else (so the
- * backend's address never reaches the browser), but deliberately NOT through
- * `shared/api/api-client.js`. That client treats `401` as "your session expired"
- * — it clears the session and redirects to `/login`. Here a `401` means
- * "wrong CCCD or password", on a page that *is* `/login`. Sending it through
- * the client would replace an accurate error message with a misleading one.
- * This is the one endpoint that needs no token, so there is no session for
- * the client to manage anyway.
+ * **No token is returned here, deliberately.** The client used to receive the
+ * access and refresh tokens and hand them to `/api/session` to be stored — so
+ * for that moment they lived in JavaScript memory, reachable by an XSS hooking
+ * `fetch`, which undercut the point of `HttpOnly` cookies (the API's
+ * docs/security.md). Now the tokens never leave the server.
+ *
+ * Also not routed through `shared/api/api-client.js`: that client treats `401`
+ * as "your session expired" and redirects to `/login`. Here `401` means "wrong
+ * CCCD or password", on a page that already *is* `/login`.
+ *
  * @param {import('../types/index.js').LoginFormValues} values
  * @returns {Promise<import('../types/index.js').LoginResult>}
  */
 export async function login({ nationalId, password }) {
   let response;
   try {
-    response = await fetch('/api/backend/api/v1/authentication/login', {
+    response = await fetch('/api/session/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ NationalId: nationalId, Password: password }),
+      body: JSON.stringify({ nationalId, password }),
     });
   } catch {
     return { success: false, message: 'Không thể kết nối đến máy chủ' };
@@ -31,17 +32,15 @@ export async function login({ nationalId, password }) {
 
   if (!response.ok) {
     const problem = await response.json().catch(() => null);
+
+    if (response.status === 429) {
+      return { success: false, message: RATE_LIMITED_MESSAGE };
+    }
+
     return { success: false, message: problem?.detail ?? GENERIC_ERROR_MESSAGE };
   }
 
   const body = await response.json();
-  return {
-    success: true,
-    token: body.token,
-    refreshToken: body.refreshToken,
-    id: body.id,
-    firstName: body.firstName,
-    lastName: body.lastName,
-    nationalId: body.nationalId,
-  };
+
+  return { success: true, displayName: body.displayName };
 }

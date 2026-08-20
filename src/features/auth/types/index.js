@@ -7,13 +7,11 @@
 
 /**
  * @typedef {Object} LoginSuccess
+ * The client learns nothing about the session beyond a name to greet the user
+ * with. Tokens and identifiers stay on the server — see
+ * `src/app/api/session/login/route.js`.
  * @property {true} success
- * @property {string} token
- * @property {string} [refreshToken]
- * @property {string} id
- * @property {string} firstName
- * @property {string} lastName
- * @property {string} nationalId
+ * @property {string} [displayName]
  */
 
 /**

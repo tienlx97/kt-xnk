@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 
+import { clientAddressHeaders } from '../../../../shared/api/client-address.js';
 import {
   sessionClaimsFromToken,
   writeSessionCookies,
@@ -70,6 +71,14 @@ async function proxy(request, context) {
   // Always set by us, never forwarded from the client — a caller must not be
   // able to present their own Authorization header through the proxy.
   headers.delete('authorization');
+
+  // Likewise ours to set: the API sees every request coming from this server,
+  // so anything it partitions per client (rate limits, logs) needs the real
+  // address. It only believes the header from proxies it trusts.
+  headers.delete('x-forwarded-for');
+  for (const [name, value] of Object.entries(clientAddressHeaders(request))) {
+    headers.set(name, value);
+  }
 
   // Buffered up front so the request can be replayed after a refresh; a
   // stream can only be consumed once.

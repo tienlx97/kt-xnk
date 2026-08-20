@@ -60,7 +60,8 @@ export function normalizePermissions(payload) {
 
 /**
  * Parses a `JSON.stringify`d `string[]` cookie value (written once at
- * login — see `normalizeRoles`/`normalizePermissions`/`writeSession`).
+ * login — see `normalizeRoles`/`normalizePermissions` and
+ * `shared/api/server-session.js`).
  * Shared shape for both the roles and permissions cookies, and safe to call
  * from `(protected)/layout.jsx` (Node runtime) or `middleware.js` (Edge
  * runtime) — it's plain `JSON.parse`, no runtime-specific API. A missing or

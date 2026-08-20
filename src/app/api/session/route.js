@@ -1,50 +1,19 @@
 import { cookies } from 'next/headers';
 
-import {
-  clearSessionCookies,
-  writeSessionCookies,
-} from '../../../shared/api/server-session.js';
+import { clearSessionCookies } from '../../../shared/api/server-session.js';
 import { resolveApiBaseUrl } from '../../../shared/config/api-config.js';
 import { REFRESH_TOKEN_KEY } from '../../../shared/config/session-keys.js';
 
 /**
- * Owns the session cookies.
+ * Ends a session. Signing *in* lives at `/api/session/login`, which never hands
+ * the browser a token at all.
  *
- * They used to be written with `document.cookie` on the client, which cannot
- * set `HttpOnly` — so the access token was readable by any script on the page
- * (the API's docs/security.md, H-4). Writing them server-side is the only way
- * to mark the tokens `HttpOnly`.
- *
- * Only the two tokens are `HttpOnly`. Display name, national ID, roles and
- * permissions stay readable: they are not credentials, the header and nav
- * render from them on the client, and the backend re-checks every role on
- * every request regardless.
+ * There is deliberately **no `POST` here**. An earlier version accepted a
+ * session payload from the client and stored it — which, besides meaning the
+ * tokens had to pass through JavaScript, was an endpoint that wrote whatever
+ * session it was handed. Now nothing outside this server can put a session
+ * into a browser.
  */
-
-/** @param {Request} request */
-export async function POST(request) {
-  let session;
-  try {
-    session = await request.json();
-  } catch {
-    return Response.json({ detail: 'Malformed session payload' }, { status: 400 });
-  }
-
-  if (typeof session?.token !== 'string' || session.token.length === 0) {
-    return Response.json({ detail: 'Missing token' }, { status: 400 });
-  }
-
-  const cookieStore = await cookies();
-
-  if (!writeSessionCookies(cookieStore, session)) {
-    return Response.json(
-      { detail: 'Token is expired or has no expiry' },
-      { status: 400 },
-    );
-  }
-
-  return Response.json({ ok: true });
-}
 
 /**
  * Signs out. Revokes the refresh token at the backend *before* clearing the
