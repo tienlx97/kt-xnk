@@ -1,6 +1,5 @@
 'use client';
 
-import { Badge } from '@astryxdesign/core/Badge';
 import { EmptyState } from '@astryxdesign/core/EmptyState';
 import { Tab, TabList } from '@astryxdesign/core/TabList';
 import { VStack } from '@astryxdesign/core/VStack';
@@ -32,12 +31,12 @@ export function UserFormTabs({
     <VStack gap={4} hAlign="stretch">
       <TabList value={activeTab} onChange={onActiveTabChange} hasDivider>
         <Tab value="contact" label="Thông tin liên hệ" />
-        <Tab value="salary" label="Thông tin tiền lương" />
         <Tab value="bank" label="Tài khoản ngân hàng" />
+        <Tab value="salary" label="Thông tin tiền lương" />
         <Tab
           value="dependents"
           label="Thông tin người phụ thuộc"
-          endContent={<Badge label="Mới" variant="info" />}
+          // endContent={<Badge label="Mới" variant="info" />}
         />
       </TabList>
 
