@@ -28,18 +28,23 @@ that claim for one user.
   thay đổi" button — because the backend applies it immediately too
   (rotates the target's `SecurityStamp`). Staging it behind a save button
   would misrepresent when the change actually takes effect.
-- `GRANTABLE_PERMISSIONS` is a small hardcoded list mirroring the backend's
-  `Permission.Grantable` whitelist, not fetched from an endpoint — it's
-  tiny today, and the backend independently rejects (400) anything not on
-  its own copy, so a stale FE list can only under-offer options, never
-  grant something it shouldn't.
 - `UserDetail` type gains `extraPermissions: string[]` (and
   `allowConcurrentSessions`, which the backend response already carried but
   the FE type hadn't caught up to).
+
+## Update 2026-08-20 (same day): fetched instead of hardcoded
+
+Originally shipped with `GRANTABLE_PERMISSIONS` as a small hardcoded list
+mirroring the backend's `Permission.Grantable` whitelist — explicitly
+YAGNI, on the stated condition *"if the list grows, do it as a separate
+change."* `BE-kt-xnk` added `GET /permissions/grantable`
+(`add-grantable-permissions-endpoint`) once that condition was met; this FE
+change now fetches it (`useGrantablePermissionsQuery`) instead.
+`grantable-permissions.js` keeps only `PERMISSION_LABELS`, a local
+Vietnamese-label fallback — a permission with no label entry still renders
+(raw key as its own label) rather than disappearing.
 
 ## Out of scope
 
 - No UI change to `admin-role` or `concurrent-sessions` — still API-only,
   a separate change if/when needed.
-- No endpoint to enumerate grantable permissions — see the hardcoded-list
-  rationale above.

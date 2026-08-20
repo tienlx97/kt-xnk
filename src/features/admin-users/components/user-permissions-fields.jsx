@@ -6,7 +6,8 @@ import { Text } from '@astryxdesign/core/Text';
 import { VStack } from '@astryxdesign/core/VStack';
 import { useState } from 'react';
 
-import { GRANTABLE_PERMISSIONS } from '../config/grantable-permissions.js';
+import { labelForPermission } from '../config/grantable-permissions.js';
+import { useGrantablePermissionsQuery } from '../hooks/use-grantable-permissions-query.js';
 import {
   useGrantUserPermissionMutation,
   useRevokeUserPermissionMutation,
@@ -28,10 +29,11 @@ import {
  */
 export function UserPermissionsFields({ userId, extraPermissions, isLoading }) {
   const [error, setError] = useState('');
+  const grantablePermissionsQuery = useGrantablePermissionsQuery();
   const grantMutation = useGrantUserPermissionMutation(userId);
   const revokeMutation = useRevokeUserPermissionMutation(userId);
 
-  if (isLoading) {
+  if (isLoading || grantablePermissionsQuery.isLoading) {
     return <Text color="secondary">Đang tải quyền của người dùng…</Text>;
   }
 
@@ -61,16 +63,19 @@ export function UserPermissionsFields({ userId, extraPermissions, isLoading }) {
       </Text>
 
       <VStack gap={3} hAlign="stretch">
-        {GRANTABLE_PERMISSIONS.map((permission) => (
-          <Switch
-            key={permission.key}
-            label={permission.label}
-            description={permission.description}
-            value={extraPermissions.includes(permission.key)}
-            changeAction={(checked) => togglePermission(permission.key, checked)}
-            labelSpacing="spread"
-          />
-        ))}
+        {(grantablePermissionsQuery.data ?? []).map((permission) => {
+          const { label, description } = labelForPermission(permission);
+          return (
+            <Switch
+              key={permission}
+              label={label}
+              description={description}
+              value={extraPermissions.includes(permission)}
+              changeAction={(checked) => togglePermission(permission, checked)}
+              labelSpacing="spread"
+            />
+          );
+        })}
       </VStack>
     </VStack>
   );

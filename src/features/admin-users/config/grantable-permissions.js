@@ -1,22 +1,25 @@
 /**
- * Mirrors the backend's whitelist — `Permission.Grantable`
- * (BE-kt-xnk, `CompanyManagement.Application/Common/Authorization/Permission.cs`).
- * Kept as a small hardcoded list rather than fetched from an endpoint: it is
- * tiny today and the backend already rejects (400) anything not on its own
- * copy, so a stale FE list can only under-offer options, never grant
- * something it shouldn't.
- * @typedef {Object} GrantablePermission
- * @property {string} key
- * @property {string} label
- * @property {string} [description]
+ * Vietnamese display labels for permissions from `GET /permissions/grantable`
+ * — a **local fallback**, not the source of which permissions exist (that's
+ * the backend's `Permission.Grantable`, fetched at runtime; see
+ * `openspec/changes/add-grantable-permissions-endpoint/proposal.md`). A
+ * permission the backend returns but this map has no entry for still
+ * renders — using the raw key as its own label — instead of silently
+ * disappearing from the tab.
+ * @type {Record<string, { label: string, description?: string }>}
  */
-
-/** @type {GrantablePermission[]} */
-export const GRANTABLE_PERMISSIONS = [
-  {
-    key: 'logistics:secret',
+export const PERMISSION_LABELS = {
+  'logistics:secret': {
     label: 'Dữ liệu mật Logistics',
     description:
       'Dành cho trưởng phòng hoặc 1 nhân viên được chỉ định riêng — độc lập với phòng ban.',
   },
-];
+};
+
+/**
+ * @param {string} permission
+ * @returns {{ label: string, description?: string }}
+ */
+export function labelForPermission(permission) {
+  return PERMISSION_LABELS[permission] ?? { label: permission };
+}

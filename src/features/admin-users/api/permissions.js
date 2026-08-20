@@ -1,7 +1,23 @@
 import { apiRequest } from '../../../shared/api/api-client.js';
 
+const GENERIC_LIST_ERROR = 'Không thể tải danh sách quyền có thể cấp';
 const GENERIC_GRANT_ERROR = 'Không thể cấp quyền';
 const GENERIC_REVOKE_ERROR = 'Không thể thu hồi quyền';
+
+/**
+ * Admin-only. `Permission.Grantable` — the whitelist a permission must be
+ * on before `grantUserPermission` will accept it. Fetched rather than
+ * hardcoded so the FE never has its own stale copy of the backend's list
+ * (see `openspec/changes/add-grantable-permissions-endpoint/proposal.md`).
+ * @returns {Promise<string[]>}
+ */
+export async function listGrantablePermissions() {
+  const result = await apiRequest('/api/v1/permissions/grantable', {
+    errorMessage: GENERIC_LIST_ERROR,
+  });
+
+  return result.success ? (result.data ?? []) : [];
+}
 
 /**
  * Admin-only. Grants one permission directly to a user, independent of

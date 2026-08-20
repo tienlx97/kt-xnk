@@ -5,6 +5,30 @@ Append-only session log. Newest entry FIRST.
 This file is the handoff between sessions/agents — write for a reader with zero conversation context.
 -->
 
+## 2026-08-20 — Grantable permissions fetched, not hardcoded
+
+**Context:** `admin-user-permission-grants` (same date, earlier) hardcoded
+`GRANTABLE_PERMISSIONS` deliberately, flagged as YAGNI with an explicit
+trigger: do it as a real endpoint once the list grows. `BE-kt-xnk` shipped
+`GET /permissions/grantable` (`add-grantable-permissions-endpoint`, same
+date) once the user called that condition met. Change:
+`openspec/changes/admin-user-permission-grants/` (updated in place, no new
+change folder — small enough to fold into the existing one).
+
+**What shipped.** `api/permissions.js`'s `listGrantablePermissions` +
+`useGrantablePermissionsQuery` fetch the whitelist at runtime.
+`grantable-permissions.js` no longer defines *which* permissions exist —
+only `PERMISSION_LABELS`, a local Vietnamese-label fallback map. A
+permission the backend returns with no matching label entry still renders
+(raw key as its own label) instead of silently disappearing from the
+"Quyền" tab — that's the actual fix: the backend can add a new grantable
+permission and it appears as an option immediately, even before anyone
+adds a nice FE label for it.
+
+**Done:** `./harness/verify.sh` — lint/typecheck/structure/unit-tests/build
+pass; `quality-thresholds` fails on the same pre-existing path-encoding bug
+noted in the previous entry (directory path contains a space), unrelated.
+
 ## 2026-08-20 — Admin UI for individual permission grants
 
 **Context:** `BE-kt-xnk` shipped `add-user-permission-grants` (same date):
