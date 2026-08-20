@@ -9,6 +9,7 @@
  * @typedef {Object} LoginSuccess
  * @property {true} success
  * @property {string} token
+ * @property {string} [refreshToken]
  * @property {string} id
  * @property {string} firstName
  * @property {string} lastName

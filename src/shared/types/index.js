@@ -30,6 +30,7 @@
  * `src/shared/api/session-cookies.js`.
  * @typedef {Object} Session
  * @property {string} token
+ * @property {string} [refreshToken]
  * @property {string} nationalId
  * @property {string} displayName
  * @property {string[]} roles

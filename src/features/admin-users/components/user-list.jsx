@@ -45,6 +45,7 @@ const skeletonRows = Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => ({
   companyId: null,
   branchId: null,
   departmentIds: [],
+  isAdmin: false,
 }));
 const DEFAULT_PAGE_SIZE = 100;
 const PAGE_SIZE_OPTIONS = ['20', '50', '100'];

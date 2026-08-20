@@ -2,7 +2,8 @@ const GENERIC_ERROR_MESSAGE = 'Sai CCCD hoặc mật khẩu';
 
 /**
  * Calls the real auth backend's `POST /api/v1/authentication/login`. On
- * success it responds with `{ id, firstName, lastName, nationalId, token }`;
+ * success it responds with `{ id, firstName, lastName, nationalId, token,
+ * refreshToken }`;
  * on failure a `problem+json` body with a human-readable `detail`.
  *
  * Goes through the same `/api/backend` proxy as everything else (so the
@@ -37,6 +38,7 @@ export async function login({ nationalId, password }) {
   return {
     success: true,
     token: body.token,
+    refreshToken: body.refreshToken,
     id: body.id,
     firstName: body.firstName,
     lastName: body.lastName,

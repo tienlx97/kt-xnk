@@ -86,6 +86,9 @@
  * @property {string | null} companyId
  * @property {string | null} branchId
  * @property {string[]} departmentIds
+ * @property {boolean} isAdmin Whether the user holds the Admin role. Replaces
+ *   the removed `GET /users/{id}/profiles`, a leftover of the gym template the
+ *   API was scaffolded from.
  */
 
 /**

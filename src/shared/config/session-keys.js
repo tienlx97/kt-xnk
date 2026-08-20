@@ -3,6 +3,10 @@
 // from ever being rendered for a logged-out visitor — localStorage isn't
 // visible there.
 export const ACCESS_TOKEN_KEY = 'kt-xnk-access-token';
+
+// The refresh token. HttpOnly like the access token, and never read by client
+// code — `/api/backend` redeems it server-side when the access token expires.
+export const REFRESH_TOKEN_KEY = 'kt-xnk-refresh-token';
 export const SESSION_NATIONAL_ID_KEY = 'kt-xnk-session-national-id';
 export const SESSION_DISPLAY_NAME_KEY = 'kt-xnk-session-display-name';
 // JSON-stringified string[] — decoded once from the JWT's `roles`/
@@ -16,8 +20,12 @@ export const SESSION_DISPLAY_NAME_KEY = 'kt-xnk-session-display-name';
 export const SESSION_ROLES_KEY = 'kt-xnk-session-roles';
 export const SESSION_PERMISSIONS_KEY = 'kt-xnk-session-permissions';
 
-// The backend's JWT already carries its own `exp` (see the `token` claims
-// returned by `POST /api/v1/authentication/login`); this cookie just needs to
-// outlive that so the client doesn't drop the session before the token
-// itself expires.
+// The session as a whole lasts as long as the refresh token, since that is
+// what can still produce a working access token. The access-token cookie gets
+// its own, much shorter lifetime from the JWT's `exp` — see
+// `src/app/api/session/route.js`.
+//
+// These two used to be one value pinned at 7 days while the access token
+// expired in 60 minutes, which left the app rendering as "signed in" for days
+// against a dead token (the API's docs/security.md, M-1).
 export const SESSION_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;

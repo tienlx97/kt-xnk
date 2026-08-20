@@ -114,6 +114,7 @@ export function useLoginForm() {
     // posts to the /api/session route handler (docs/security.md, H-4).
     await writeSession({
       token: loginResult.token,
+      refreshToken: loginResult.refreshToken,
       nationalId: loginResult.nationalId,
       displayName: `${loginResult.firstName} ${loginResult.lastName}`.trim(),
       roles: normalizeRoles(payload),

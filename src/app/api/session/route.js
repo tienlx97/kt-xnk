@@ -1,49 +1,25 @@
 import { cookies } from 'next/headers';
 
-import { decodeJwtPayload } from '../../../shared/api/jwt.js';
 import {
-  ACCESS_TOKEN_KEY,
-  SESSION_DISPLAY_NAME_KEY,
-  SESSION_NATIONAL_ID_KEY,
-  SESSION_PERMISSIONS_KEY,
-  SESSION_ROLES_KEY,
-} from '../../../shared/config/session-keys.js';
+  clearSessionCookies,
+  writeSessionCookies,
+} from '../../../shared/api/server-session.js';
+import { resolveApiBaseUrl } from '../../../shared/config/api-config.js';
+import { REFRESH_TOKEN_KEY } from '../../../shared/config/session-keys.js';
 
 /**
  * Owns the session cookies.
  *
  * They used to be written with `document.cookie` on the client, which cannot
  * set `HttpOnly` — so the access token was readable by any script on the page
- * (docs/security.md, H-4). Writing them here, server-side, is the only way to
- * mark the token `HttpOnly`.
+ * (the API's docs/security.md, H-4). Writing them server-side is the only way
+ * to mark the tokens `HttpOnly`.
  *
- * Only the token is `HttpOnly`. Display name, national ID, roles and
+ * Only the two tokens are `HttpOnly`. Display name, national ID, roles and
  * permissions stay readable: they are not credentials, the header and nav
  * render from them on the client, and the backend re-checks every role on
- * every request regardless of what the browser claims.
+ * every request regardless.
  */
-
-const isProduction = process.env.NODE_ENV === 'production';
-
-/**
- * The session must not outlive the token it carries. Previously the cookie was
- * pinned to 7 days while the token expired in 60 minutes, so the app kept
- * rendering as "signed in" for days against a dead token
- * (docs/security.md, M-1).
- * @param {string} token
- */
-function maxAgeFromToken(token) {
-  const payload = decodeJwtPayload(token);
-  const expiresAt = typeof payload?.exp === 'number' ? payload.exp : null;
-
-  if (expiresAt === null) {
-    return null;
-  }
-
-  const seconds = expiresAt - Math.floor(Date.now() / 1000);
-
-  return seconds > 0 ? seconds : null;
-}
 
 /** @param {Request} request */
 export async function POST(request) {
@@ -54,48 +30,48 @@ export async function POST(request) {
     return Response.json({ detail: 'Malformed session payload' }, { status: 400 });
   }
 
-  const { token, nationalId, displayName, roles, permissions } = session ?? {};
-
-  if (typeof token !== 'string' || token.length === 0) {
+  if (typeof session?.token !== 'string' || session.token.length === 0) {
     return Response.json({ detail: 'Missing token' }, { status: 400 });
   }
 
-  const maxAge = maxAgeFromToken(token);
-
-  if (maxAge === null) {
-    return Response.json({ detail: 'Token is expired or has no expiry' }, { status: 400 });
-  }
-
-  const base = {
-    path: '/',
-    sameSite: /** @type {const} */ ('lax'),
-    secure: isProduction,
-    maxAge,
-  };
-
   const cookieStore = await cookies();
 
-  cookieStore.set(ACCESS_TOKEN_KEY, token, { ...base, httpOnly: true });
-  cookieStore.set(SESSION_NATIONAL_ID_KEY, nationalId ?? '', base);
-  cookieStore.set(SESSION_DISPLAY_NAME_KEY, displayName ?? '', base);
-  cookieStore.set(SESSION_ROLES_KEY, JSON.stringify(roles ?? []), base);
-  cookieStore.set(SESSION_PERMISSIONS_KEY, JSON.stringify(permissions ?? []), base);
+  if (!writeSessionCookies(cookieStore, session)) {
+    return Response.json(
+      { detail: 'Token is expired or has no expiry' },
+      { status: 400 },
+    );
+  }
 
   return Response.json({ ok: true });
 }
 
+/**
+ * Signs out. Revokes the refresh token at the backend *before* clearing the
+ * cookies — deleting them locally only stops this browser from using the
+ * session; anyone holding a copy of the refresh token would otherwise keep a
+ * working one (the API's docs/security.md, H-2).
+ */
 export async function DELETE() {
   const cookieStore = await cookies();
+  const refreshToken = cookieStore.get(REFRESH_TOKEN_KEY)?.value;
 
-  for (const key of [
-    ACCESS_TOKEN_KEY,
-    SESSION_NATIONAL_ID_KEY,
-    SESSION_DISPLAY_NAME_KEY,
-    SESSION_ROLES_KEY,
-    SESSION_PERMISSIONS_KEY,
-  ]) {
-    cookieStore.set(key, '', { path: '/', maxAge: 0, sameSite: 'lax', secure: isProduction });
+  if (refreshToken) {
+    try {
+      await fetch(`${resolveApiBaseUrl()}/api/v1/authentication/logout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ RefreshToken: refreshToken }),
+        cache: 'no-store',
+      });
+    } catch {
+      // The backend being unreachable must not strand the user in a
+      // half-signed-in state; clear locally regardless. The token still
+      // expires on its own.
+    }
   }
+
+  clearSessionCookies(cookieStore);
 
   return Response.json({ ok: true });
 }

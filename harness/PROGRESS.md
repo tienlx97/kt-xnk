@@ -5,6 +5,37 @@ Append-only session log. Newest entry FIRST.
 This file is the handoff between sessions/agents — write for a reader with zero conversation context.
 -->
 
+## 2026-08-20 — Silent refresh in the proxy; real server-side logout
+
+**Context:** Frontend half of the API's
+`openspec/changes/add-refresh-tokens-and-remove-gym-template/`. The backend now
+issues a refresh token alongside the access token; this makes the 60-minute
+access-token expiry invisible to the user, and makes signing out actually end
+the session rather than just forgetting it locally.
+
+**Done:**
+- Second `HttpOnly` cookie (`REFRESH_TOKEN_KEY`). The two now have *different*
+  lifetimes: the access cookie expires exactly with the token's `exp`, the rest
+  of the session lasts as long as the refresh token. They used to be one value.
+- `src/shared/api/server-session.js` — the cookie-writing logic, extracted so
+  `/api/session` (login, logout) and `/api/backend` (silent refresh) cannot
+  drift. Server-only; nothing client-side may import it.
+- **`/api/backend` refreshes silently.** On a 401 it redeems the refresh token,
+  writes the rotated pair back, and replays the original request. Two details
+  worth keeping: the request body is buffered *before* the first attempt (a
+  stream can only be consumed once, so a retry without buffering would send an
+  empty body), and the refresh path itself is excluded or the retry would
+  recurse. Roles and permissions are re-derived from the new token, because a
+  refresh can legitimately change them — an Admin grant rotates the security
+  stamp — and stale cookies would leave the nav showing the old ones.
+- `DELETE /api/session` calls the backend's `logout` to revoke the family
+  *before* clearing cookies. Wrapped in try/catch: an unreachable backend must
+  not strand the user half-signed-in, and the token still expires on its own.
+- `UserListItem` gains `isAdmin`; the API's `GET /users/{id}/profiles` is gone
+  along with the gym template it came from.
+
+**Verification:** `./harness/verify.sh` passes all 10 steps in both repos.
+
 ## 2026-08-20 — HttpOnly session + BFF proxy; token leaves the browser
 
 **Context:** Second half of the same day's security work. The backend review
