@@ -40,6 +40,10 @@ const HOP_BY_HOP = new Set([
   'upgrade',
   'host',
   'content-length',
+  // Not hop-by-hop, but deliberately dropped: the browser's cookie header
+  // carries our HttpOnly session cookies. The API authenticates from the
+  // Authorization header alone and has no business receiving them.
+  'cookie',
 ]);
 
 /** Never proxied — refreshing a refresh call would recurse. */
@@ -143,6 +147,22 @@ async function forward(target, method, headers, body, accessToken) {
 }
 
 /**
+ * In-flight refreshes, keyed by the refresh token being redeemed.
+ *
+ * A page load fires several requests at once; when the access token expires
+ * they all 401 together and would each redeem the same token. The backend
+ * tolerates that (it has a short reuse leeway for exactly this race), but
+ * there is no reason to make N calls when one will do — and the calls that
+ * lose the race waste a round trip and burn tokens in the family.
+ *
+ * Per server instance, so this narrows the window rather than closing it;
+ * the backend's leeway is what actually makes the race safe.
+ *
+ * @type {Map<string, Promise<string | null>>}
+ */
+const inFlightRefreshes = new Map();
+
+/**
  * Redeems the refresh token for a new access token and writes both back.
  *
  * Refresh tokens are single-use and rotated, so the replacement must be
@@ -160,6 +180,27 @@ async function refreshAccessToken(cookieStore) {
   if (!refreshToken) {
     return null;
   }
+
+  const existing = inFlightRefreshes.get(refreshToken);
+  if (existing) {
+    return existing;
+  }
+
+  const attempt = redeem(cookieStore, refreshToken).finally(() => {
+    inFlightRefreshes.delete(refreshToken);
+  });
+
+  inFlightRefreshes.set(refreshToken, attempt);
+
+  return attempt;
+}
+
+/**
+ * @param {Awaited<ReturnType<typeof cookies>>} cookieStore
+ * @param {string} refreshToken
+ * @returns {Promise<string | null>}
+ */
+async function redeem(cookieStore, refreshToken) {
 
   let response;
   try {
