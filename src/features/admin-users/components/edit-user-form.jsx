@@ -9,6 +9,7 @@ import { HStack } from '@astryxdesign/core/HStack';
 import { Layout, LayoutContent, LayoutFooter } from '@astryxdesign/core/Layout';
 import { NumberInput } from '@astryxdesign/core/NumberInput';
 import { RadioList, RadioListItem } from '@astryxdesign/core/RadioList';
+import { Skeleton } from '@astryxdesign/core/Skeleton';
 import { StackItem } from '@astryxdesign/core/Stack';
 import { Text } from '@astryxdesign/core/Text';
 import { TextInput } from '@astryxdesign/core/TextInput';
@@ -40,6 +41,7 @@ export function EditUserForm({ isOpen, onOpenChange, user, onSuccess }) {
     submitError,
     submitSuccess,
     isSubmitting,
+    isLoadingUser,
     companies,
     branches,
     departments,
@@ -71,6 +73,20 @@ export function EditUserForm({ isOpen, onOpenChange, user, onSuccess }) {
           }
           content={
             <LayoutContent padding={6}>
+              {/*
+                The list row is a slim projection, so the form is empty until
+                `GET /users/{id}` lands. Showing the blank form meanwhile would
+                invite a save that erases every field the row omits — see
+                `use-edit-user-form.js`.
+              */}
+              {isLoadingUser ? (
+                <VStack gap={4} hAlign="stretch">
+                  <Text color="secondary">Đang tải thông tin người dùng…</Text>
+                  {[0, 1, 2, 3, 4, 5].map((row) => (
+                    <Skeleton key={row} height={40} index={row} />
+                  ))}
+                </VStack>
+              ) : (
               <VStack gap={5} hAlign="stretch">
                 {submitError ? (
                   <Banner status="error" title={submitError} container="card" />
@@ -219,6 +235,7 @@ export function EditUserForm({ isOpen, onOpenChange, user, onSuccess }) {
                   }}
                 />
               </VStack>
+              )}
             </LayoutContent>
           }
           footer={

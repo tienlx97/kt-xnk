@@ -147,9 +147,12 @@ function Callout({ type = 'note', title, children }) {
   );
 }
 
-/** @param {{ type: string }} props */
+/** @param {{ type: keyof typeof variants }} props */
 function CalloutIcon({ type }) {
-  const { Icon } = variants[type];
+  // `variants` has a fixed set of keys, so an arbitrary string cannot index
+  // it — and a `type` that isn't one of them would blow up on destructuring
+  // rather than fall through to the `!Icon` guard below.
+  const { Icon } = variants[type] ?? {};
   if (!Icon) return null;
 
   return <Icon aria-hidden="true" {...stylex.props(styles.icon)} />;

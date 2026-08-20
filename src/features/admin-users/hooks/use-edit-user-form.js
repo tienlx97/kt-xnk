@@ -51,7 +51,33 @@ function applyFieldChange(values, field, value) {
 }
 
 /**
- * @param {import('../types/index.js').UserListItem} user
+ * The form before the detail record arrives. Every field the API accepts must
+ * appear here — a field missing from this object is one the form silently
+ * cannot edit.
+ * @type {import('../types/index.js').EditUserFormValues}
+ */
+const EMPTY_EDIT_VALUES = {
+  firstName: '',
+  lastName: '',
+  yearOfBirth: undefined,
+  gender: '',
+  nationalIdIssueDate: '',
+  nationalIdIssuePlace: '',
+  passportNumber: '',
+  phone: '',
+  addressType: 'NewUnits',
+  province: '',
+  district: '',
+  ward: '',
+  addressDetail: '',
+  positionId: '',
+  companyId: '',
+  branchId: '',
+  departmentId: '',
+};
+
+/**
+ * @param {import('../types/index.js').UserDetail} user
  * @returns {import('../types/index.js').EditUserFormValues}
  */
 function toFormValues(user) {
@@ -158,11 +184,17 @@ async function persistBankAccountRowChanges(userId, rows, originalAccounts) {
 
 /**
  * @param {import('../types/index.js').UserListItem} user The list row that was
- *   clicked. Only its `id` is trusted for form values — see below.
+ *   clicked. Only its `id` is used — the form values come from the detail
+ *   endpoint, because the row is a slim projection (see below).
  * @param {{ onSuccess?: () => void }} [options]
  */
 export function useEditUserForm(user, { onSuccess } = {}) {
-  const [values, setValues] = useState(() => toFormValues(user));
+  // Starts blank rather than seeded from the list row. The row has no
+  // passport number, CCCD issue date/place, year of birth or address
+  // (docs/security.md, M-4), and `PUT` replaces everything — seeding from it
+  // and saving before the detail arrives would erase those fields. The form
+  // is gated on `isLoadingUser` until the real record lands.
+  const [values, setValues] = useState(EMPTY_EDIT_VALUES);
   const [fieldErrors, setFieldErrors] = useState(
     /** @type {Record<string, string>} */ ({}),
   );
@@ -183,6 +215,9 @@ export function useEditUserForm(user, { onSuccess } = {}) {
   // values, so the full record is fetched and the form re-seeded once it lands.
   const userDetailQuery = useUserDetailQuery(user.id);
   const hasSeededFromDetailRef = useRef(false);
+  // Derived from the query, not the seeding ref — a ref mutation does not
+  // re-render, so the form would stay stuck on its loading state.
+  const isLoadingUser = !userDetailQuery.data?.success;
 
   useEffect(() => {
     if (hasSeededFromDetailRef.current || !userDetailQuery.data?.success) return;
@@ -279,6 +314,7 @@ export function useEditUserForm(user, { onSuccess } = {}) {
   return {
     values,
     setField,
+    isLoadingUser,
     fieldStatuses: {
       firstName: fieldStatus(fieldErrors.firstName),
       lastName: fieldStatus(fieldErrors.lastName),

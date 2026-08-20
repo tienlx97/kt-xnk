@@ -72,26 +72,39 @@
 /**
  * Shape of `GET /users` list items — `UserResponse` (BE-kt-xnk,
  * `CompanyManagement.Contracts/Users/UserResponse.cs`).
+ * A row from `GET /api/v1/users`. Deliberately **slim** — the endpoint omits
+ * identity-document and address fields so a staff list does not ship every
+ * employee's papers to the browser (see the API's `docs/security.md`, M-4).
+ * For the complete record use {@link UserDetail} via `GET /users/{id}`.
  * @typedef {Object} UserListItem
  * @property {string} id
  * @property {string} firstName
  * @property {string} lastName
  * @property {string} nationalId
- * @property {number | null} yearOfBirth
- * @property {Gender | null} gender
- * @property {string | null} nationalIdIssueDate
- * @property {string | null} nationalIdIssuePlace
- * @property {string | null} passportNumber
  * @property {string | null} phone
- * @property {AddressType | null} addressType
- * @property {string | null} province
- * @property {string | null} district
- * @property {string | null} ward
- * @property {string | null} addressDetail
  * @property {string | null} positionId
  * @property {string | null} companyId
  * @property {string | null} branchId
  * @property {string[]} departmentIds
+ */
+
+/**
+ * The full record from `GET /api/v1/users/{userId}`. This — not
+ * {@link UserListItem} — is what the edit form must be populated from:
+ * `PUT` replaces everything, so saving a form built from a list row would
+ * blank out every field the row omits.
+ * @typedef {UserListItem & {
+ *   yearOfBirth: number | null,
+ *   gender: Gender | null,
+ *   nationalIdIssueDate: string | null,
+ *   nationalIdIssuePlace: string | null,
+ *   passportNumber: string | null,
+ *   addressType: AddressType | null,
+ *   province: string | null,
+ *   district: string | null,
+ *   ward: string | null,
+ *   addressDetail: string | null,
+ * }} UserDetail
  */
 
 /**

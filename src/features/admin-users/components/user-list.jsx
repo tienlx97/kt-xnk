@@ -27,8 +27,24 @@ import { CreateUserForm } from './create-user-form.jsx';
 import { EditUserForm } from './edit-user-form.jsx';
 
 const SKELETON_ROW_COUNT = 6;
+
+/**
+ * Placeholder rows shown while the page loads. `Table` infers its row type
+ * from `data`, so these have to be full `UserListItem`s even though the
+ * skeleton columns ignore every field but `id` — a bare `{ id }` makes the
+ * two branches of the ternary disagree.
+ * @type {import('../types/index.js').UserListItem[]}
+ */
 const skeletonRows = Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => ({
   id: `skeleton-${index}`,
+  firstName: '',
+  lastName: '',
+  nationalId: '',
+  phone: null,
+  positionId: null,
+  companyId: null,
+  branchId: null,
+  departmentIds: [],
 }));
 const DEFAULT_PAGE_SIZE = 100;
 const PAGE_SIZE_OPTIONS = ['20', '50', '100'];
@@ -235,8 +251,9 @@ export function UserList() {
                   alignment="end"
                   items={[
                     {
-                      label: 'Thêm từ Excel',
-                      description: 'Tính năng đang phát triển',
+                      // No `description` field on DropdownMenuItemData — the
+                      // menu cannot render one, so the hint goes in the label.
+                      label: 'Thêm từ Excel (đang phát triển)',
                       isDisabled: true,
                     },
                   ]}

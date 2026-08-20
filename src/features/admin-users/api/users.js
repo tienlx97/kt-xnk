@@ -36,7 +36,7 @@ export async function listUsers({ page = 1, pageSize = 25 } = {}) {
  * projection omits — the edit form needs them, and populating that form from a
  * list row would blank out whatever the row left out on the next save.
  * @param {string} userId
- * @returns {Promise<{ success: true, user: import('../types/index.js').UserListItem } | { success: false, message: string }>}
+ * @returns {Promise<{ success: true, user: import('../types/index.js').UserDetail } | { success: false, message: string }>}
  */
 export async function getUser(userId) {
   const result = await apiRequest(`/api/v1/users/${userId}`, {
