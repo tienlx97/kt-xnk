@@ -12,4 +12,5 @@
  */
 export const routeAccessRules = [
   { pathPrefix: '/admin', allowedPermissions: ['users:manage'] },
+  { pathPrefix: '/logistics', allowedPermissions: ['logistics:view'] },
 ];

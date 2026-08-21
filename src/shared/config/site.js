@@ -20,6 +20,11 @@ export const navLinks = [
   { label: 'Tin tức', href: '/news' },
   { label: 'Tài liệu', href: '/docs' },
   {
+    label: 'Logistics',
+    href: '/logistics',
+    allowedPermissions: ['logistics:view'],
+  },
+  {
     label: 'Quản trị',
     href: '/admin',
     allowedPermissions: ['users:manage'],
@@ -29,5 +34,5 @@ export const navLinks = [
 
 /** @type {NavLink[]} */
 export const topNavLinks = navLinks.filter(({ href }) =>
-  ['/news', '/docs', '/admin'].includes(href),
+  ['/news', '/docs', '/logistics', '/admin'].includes(href),
 );
