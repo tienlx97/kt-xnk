@@ -5,6 +5,130 @@ Append-only session log. Newest entry FIRST.
 This file is the handoff between sessions/agents — write for a reader with zero conversation context.
 -->
 
+## 2026-08-21 — Admin concurrent-session control + revoked-session notice
+
+**Context:** Follow-up to the backend single-session hardening. The wire
+contract already exposed `allowConcurrentSessions` on user detail and
+`PUT /users/{id}/concurrent-sessions`, but the FE had no control for it and
+treated the backend's explicit revoked-session 401 as an ordinary expiry.
+
+**What shipped.** The edit-user dialog now has an edit-only "Phiên đăng nhập"
+section with an Astryx `Switch`. It applies the dedicated endpoint immediately,
+shows loading/error/success state, and warns that turning the exception off
+revokes every current session. The shared API boundary now distinguishes
+`Signed in on another device`, `Session has been revoked; sign in again`, and
+ordinary expiration; revoked sessions redirect to `/login?revoked=1` and get
+the Vietnamese "Phiên đăng nhập đã bị thu hồi" notice.
+
+**Harness gap fixed.** On Windows, `node --test 'src/**/*.test.js'` passed while
+running zero tests because the quoted glob was not expanded. The script now
+uses Node's built-in test discovery (`node --test`), which ran 78 tests. Added
+coverage for the concurrent-session request contract and all three 401 message
+mappings.
+
+**Verification:** `./harness/verify.sh` passed every gate. Evidence:
+`harness/runs/20260821-102339-387/`.
+
+**Blockers:** Visual browser verification was not available in this CLI-only
+session; build, typecheck, structure, and behavioral unit tests passed.
+
+---
+
+## 2026-08-21 — "+ Thêm mới" on the Công ty/Chi nhánh/Phòng ban/Chức vụ Selectors
+
+**Context:** User asked to add a "create new" affordance to the four
+org-directory Selectors in the create/edit user form. `BE-kt-xnk` already
+has Admin-only create endpoints for all four
+(`POST /companies`, `POST /companies/{id}/branches`, `POST /departments`,
+`POST /positions` — each just `[Authorize(Roles = "Admin")]` + a `Name`,
+plus a parent id for Branch/Department). No `openspec/changes/` entry —
+direct request, small addition to `admin-users`.
+
+**What shipped.**
+- `api/org-directory.js` — `createCompany`/`createBranch`/`createDepartment`/
+  `createPosition`.
+- `hooks/use-org-directory.js` — one mutation hook per create call, each
+  invalidating the matching list query key so every consumer sharing the
+  queryClient (this form, `UserList`) picks up the new item without a manual
+  refetch.
+- `shared/components/icon/icon-plus.jsx` — Astryx has no built-in plus/add
+  semantic icon name (`astryx docs icons`), so a local SVG like the existing
+  `icon-shuffle.jsx`/`icon-refresh.jsx`.
+- `components/create-org-item-dialog.jsx` — one generic "add a new X" dialog
+  reused by all four (every create endpoint takes only a `Name`).
+- `components/user-org-fields.jsx` — each Selector now sits next to a "+"
+  `IconButton` (`SelectorWithAdd`) that opens the dialog; Branch/Department's
+  buttons are disabled until their parent (Company/Branch) is picked, same
+  as the Selector itself. On success the new item is auto-selected via
+  `setField` so the Admin doesn't have to find it in the list again.
+
+**Bug caught during manual verification (real one, not a misclick):**
+`CreateOrgItemDialog` initially used its own `<form onSubmit>` +
+`type="submit"`. Astryx's `Dialog` renders a native `<dialog>` **inline in
+the DOM, not through a portal** — and this dialog is nested inside
+`UserFormDialogShell`'s own `<form>` (`UserOrgFields` renders inside a
+`FormSection` inside the edit/create dialog's form). A `<form>` nested
+inside a `<form>` is invalid HTML; the browser's parser drops the inner
+`<form>` tag and merges its submit button into the *outer* form. Result:
+clicking "Thêm" silently submitted (and closed) the whole user-edit dialog
+instead of creating the item — nothing reached the backend. Fixed by
+dropping the `<form>` entirely in favor of a plain `Button` + `onClick`.
+Verified after the fix: created a real Position ("Kỹ sư QA Test") from the
+edit-user dialog against the local Docker BE, confirmed it round-tripped via
+`GET /positions`, auto-selected in the Chức vụ Selector, then deleted the
+test row directly in MySQL to keep `db/sample-data.sql`'s fixture clean.
+
+**Verification:** `pnpm lint` / `pnpm typecheck` / `pnpm structure` all
+clean. Full browser flow against the local Docker BE (see bug note above).
+
+**Next step:** none planned.
+
+**Blockers:** none
+
+---
+
+## 2026-08-21 — Admin "Reset password" action on the user list
+
+**Context:** User asked for a reset-password feature on the FE. `BE-kt-xnk`
+already exposes `POST /users/{id}/password/reset`
+(`[Authorize(Roles = "Admin")]`, sets the password directly, no current-
+password check) — a different endpoint from the self-service
+`POST /users/me/password`. No `openspec/changes/` entry — direct request,
+small addition to the existing `admin-users` feature.
+
+**What shipped.**
+- `api/users.js` — `resetPassword(userId, newPassword)`, `POST
+  /users/{id}/password/reset`, body `{ NewPassword }`.
+- `hooks/use-reset-password-mutation.js` — thin `useMutation` wrapper, no
+  query invalidation (the endpoint doesn't change anything `GET /users` or
+  `GET /users/{id}` return).
+- `components/reset-password-dialog.jsx` — new dialog: password field +
+  "Tạo mật khẩu ngẫu nhiên" shuffle button (reuses `generateRandomPassword`
+  from the create-user form), submit calls the mutation. On success shows
+  the new password in a persistent success Banner instead of closing — the
+  backend sends no email/SMS, so this is the only place the Admin can ever
+  see it again to hand it to the employee.
+- `user-list.jsx` — added "Đặt lại mật khẩu" to each row's "Thao tác"
+  dropdown, alongside "Sửa".
+
+**Verification:** `pnpm lint` (one auto-fixed import-sort error),
+`pnpm typecheck`, `pnpm structure` all clean. Full browser flow verified
+against the local Docker BE: reset Nguyễn Văn A's password from the admin
+list, then logged in as that user with the exact generated password —
+succeeded, confirming the reset actually persisted server-side.
+
+**Bug caught during manual verification:** the dialog subtitle first showed
+the name reversed ("A Nguyễn Văn") because it was built as
+`${lastName} ${firstName}` (copied from `user-identity-fields.jsx`'s
+avatar-name convention) instead of `${firstName} ${lastName}`, which is what
+`user-list.jsx`'s own "Tên" column uses. Fixed before commit.
+
+**Next step:** none planned. If a self-service "forgot password" flow is
+wanted later, that needs a new BE endpoint — the current `ChangePassword`
+requires being already authenticated and knowing the current password.
+
+**Blockers:** none
+
 ## 2026-08-21 — v2 create/edit user dialog (card + collapse layout)
 
 **Context:** User asked for a v2 of the create/edit user forms, keeping v1

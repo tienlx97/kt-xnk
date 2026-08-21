@@ -18,6 +18,7 @@ import { UserEmployeeFields } from './user-employee-fields.jsx';
 import { UserIdentityFields } from './user-identity-fields.jsx';
 import { UserOrgFields } from './user-org-fields.jsx';
 import { UserPermissionsFields } from './user-permissions-fields.jsx';
+import { UserSessionFields } from './user-session-fields.jsx';
 
 // v1's 880 was sized for its two-column tab layout (identity fields beside
 // org fields, wide address rows). v2 is a single stack of cards, so it only
@@ -94,6 +95,7 @@ function UserFormDialogShell({ isOpen, onOpenChange, controller }) {
     updateBankAccountRowField,
     setPrimaryBankAccountRow,
     permissionsFieldsProps,
+    concurrentSessionsProps,
     handleSubmit,
   } = controller;
 
@@ -218,6 +220,12 @@ function UserFormDialogShell({ isOpen, onOpenChange, controller }) {
                             <UserPermissionsFields
                               {...permissionsFieldsProps}
                             />
+                          </FormSection>
+                        ) : null}
+
+                        {concurrentSessionsProps ? (
+                          <FormSection value="sessions" title="Phiên đăng nhập">
+                            <UserSessionFields {...concurrentSessionsProps} />
                           </FormSection>
                         ) : null}
                       </VStack>

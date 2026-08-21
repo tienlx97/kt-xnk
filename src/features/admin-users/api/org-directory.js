@@ -15,6 +15,11 @@ import { apiRequest } from '../../../shared/api/api-client.js';
  * dropdowns.
  */
 
+const GENERIC_CREATE_COMPANY_ERROR = 'Không thể thêm công ty';
+const GENERIC_CREATE_BRANCH_ERROR = 'Không thể thêm chi nhánh';
+const GENERIC_CREATE_DEPARTMENT_ERROR = 'Không thể thêm phòng ban';
+const GENERIC_CREATE_POSITION_ERROR = 'Không thể thêm chức vụ';
+
 /** @returns {Promise<import('../types/index.js').Company[]>} */
 export async function listCompanies() {
   const result = await apiRequest('/api/v1/companies');
@@ -51,4 +56,84 @@ export async function listDepartments() {
 export async function listPositions() {
   const result = await apiRequest('/api/v1/positions');
   return result.success ? (result.data ?? []) : [];
+}
+
+/**
+ * Admin-only (`CreateCompanyCommand`, `[Authorize(Roles = "Admin")]`) — safe
+ * to expose here because every caller of this module already sits behind
+ * `/admin/users`.
+ * @param {string} name
+ * @returns {Promise<{ success: true, id: string } | { success: false, message: string }>}
+ */
+export async function createCompany(name) {
+  const result = await apiRequest('/api/v1/companies', {
+    method: 'POST',
+    errorMessage: GENERIC_CREATE_COMPANY_ERROR,
+    body: { Name: name },
+  });
+
+  if (!result.success) {
+    return { success: false, message: result.message };
+  }
+
+  return { success: true, id: result.data?.id };
+}
+
+/**
+ * Admin-only (`CreateBranchCommand`).
+ * @param {string} companyId
+ * @param {string} name
+ * @returns {Promise<{ success: true, id: string } | { success: false, message: string }>}
+ */
+export async function createBranch(companyId, name) {
+  const result = await apiRequest(`/api/v1/companies/${companyId}/branches`, {
+    method: 'POST',
+    errorMessage: GENERIC_CREATE_BRANCH_ERROR,
+    body: { Name: name },
+  });
+
+  if (!result.success) {
+    return { success: false, message: result.message };
+  }
+
+  return { success: true, id: result.data?.id };
+}
+
+/**
+ * Admin-only (`CreateDepartmentCommand`).
+ * @param {string} branchId
+ * @param {string} name
+ * @returns {Promise<{ success: true, id: string } | { success: false, message: string }>}
+ */
+export async function createDepartment(branchId, name) {
+  const result = await apiRequest('/api/v1/departments', {
+    method: 'POST',
+    errorMessage: GENERIC_CREATE_DEPARTMENT_ERROR,
+    body: { Name: name, BranchId: branchId },
+  });
+
+  if (!result.success) {
+    return { success: false, message: result.message };
+  }
+
+  return { success: true, id: result.data?.id };
+}
+
+/**
+ * Admin-only (`CreatePositionCommand`).
+ * @param {string} name
+ * @returns {Promise<{ success: true, id: string } | { success: false, message: string }>}
+ */
+export async function createPosition(name) {
+  const result = await apiRequest('/api/v1/positions', {
+    method: 'POST',
+    errorMessage: GENERIC_CREATE_POSITION_ERROR,
+    body: { Name: name },
+  });
+
+  if (!result.success) {
+    return { success: false, message: result.message };
+  }
+
+  return { success: true, id: result.data?.id };
 }

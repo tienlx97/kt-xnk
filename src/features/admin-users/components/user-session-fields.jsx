@@ -1,0 +1,29 @@
+'use client';
+
+import { Switch } from '@astryxdesign/core/Switch';
+
+/**
+ * @param {{
+ *   allowed: boolean,
+ *   isUpdating: boolean,
+ *   status?: { type: 'error' | 'success', message: string },
+ *   onChange: (allowed: boolean) => void,
+ * }} props
+ */
+export function UserSessionFields({ allowed, isUpdating, status, onChange }) {
+  return (
+    <Switch
+      label="Cho phép đăng nhập trên nhiều thiết bị"
+      description="Áp dụng ngay. Khi tắt, tất cả phiên đăng nhập hiện tại của tài khoản sẽ bị thu hồi và người dùng phải đăng nhập lại."
+      value={allowed}
+      onChange={onChange}
+      isLoading={isUpdating}
+      isDisabled={isUpdating}
+      disabledMessage="Đang cập nhật cài đặt phiên đăng nhập"
+      status={status}
+      labelPosition="start"
+      labelSpacing="spread"
+      width="100%"
+    />
+  );
+}

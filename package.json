@@ -12,7 +12,7 @@
     "lint": "eslint .",
     "start": "next start",
     "structure": "depcruise src --config harness/structure.rules.cjs",
-    "test": "node --test 'src/**/*.test.js'",
+    "test": "node --test",
     "test:harness": "node --test harness/tests/*.test.cjs",
     "theme:build": "astryx theme build src/shared/components/theme.js -o src/shared/components/theme.built.css",
     "typecheck": "tsc --noEmit -p jsconfig.json",

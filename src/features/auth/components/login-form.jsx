@@ -24,6 +24,7 @@ export function LoginForm() {
     submitError,
     sessionExpiredNotice,
     signedInElsewhereNotice,
+    sessionRevokedNotice,
     isSubmitting,
     handleSubmit,
   } = useLoginForm();
@@ -50,6 +51,14 @@ export function LoginForm() {
                 <Banner
                   status="warning"
                   title="Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại."
+                  container="card"
+                />
+              ) : null}
+
+              {sessionRevokedNotice ? (
+                <Banner
+                  status="warning"
+                  title="Phiên đăng nhập đã bị thu hồi. Vui lòng đăng nhập lại."
                   container="card"
                 />
               ) : null}

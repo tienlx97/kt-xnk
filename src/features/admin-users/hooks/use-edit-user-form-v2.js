@@ -29,5 +29,6 @@ export function useEditUserFormV2(user, { onSuccess } = {}) {
       extraPermissions: form.extraPermissions,
       isLoading: form.isLoadingUser,
     },
+    concurrentSessionsProps: form.concurrentSessionsProps,
   };
 }

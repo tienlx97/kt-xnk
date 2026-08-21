@@ -18,6 +18,7 @@ import {
   usePositionsQuery,
   useVietnamBanksQuery,
 } from './use-org-directory.js';
+import { useSetConcurrentSessionsMutation } from './use-set-concurrent-sessions-mutation.js';
 import { useUpdateUserMutation } from './use-update-user-mutation.js';
 import { useUserDetailQuery } from './use-user-detail-query.js';
 import {
@@ -219,6 +220,12 @@ export function useEditUserForm(user, { onSuccess } = {}) {
   );
   const [submitError, setSubmitError] = useState('');
   const [submitSuccess, setSubmitSuccess] = useState('');
+  const [allowConcurrentSessions, setAllowConcurrentSessions] = useState(false);
+  const [concurrentSessionsStatus, setConcurrentSessionsStatus] = useState(
+    /** @type {{ type: 'error' | 'success', message: string } | undefined} */ (
+      undefined
+    ),
+  );
 
   const companiesQuery = useCompaniesQuery();
   const branchesQuery = useBranchesQuery(values.companyId);
@@ -229,6 +236,7 @@ export function useEditUserForm(user, { onSuccess } = {}) {
   const newAddressQuery = useNewAddressQuery();
   const bankAccountsQuery = useAdminBankAccountsQuery(user.id);
   const updateUserMutation = useUpdateUserMutation();
+  const concurrentSessionsMutation = useSetConcurrentSessionsMutation();
 
   // The list row is a slim projection — it has no passport number, national-ID
   // issue date/place, year of birth or address (docs/security.md, M-4). Seeding
@@ -244,8 +252,37 @@ export function useEditUserForm(user, { onSuccess } = {}) {
     if (hasSeededFromDetailRef.current || !userDetailQuery.data?.success) return;
 
     setValues(toFormValues(userDetailQuery.data.user));
+    setAllowConcurrentSessions(
+      userDetailQuery.data.user.allowConcurrentSessions,
+    );
     hasSeededFromDetailRef.current = true;
   }, [userDetailQuery.data]);
+
+  /** @param {boolean} allowed */
+  async function handleConcurrentSessionsChange(allowed) {
+    setConcurrentSessionsStatus(undefined);
+
+    const result = await concurrentSessionsMutation.mutateAsync({
+      userId: user.id,
+      allowed,
+    });
+
+    if (!result.success) {
+      setConcurrentSessionsStatus({
+        type: 'error',
+        message: result.message,
+      });
+      return;
+    }
+
+    setAllowConcurrentSessions(allowed);
+    setConcurrentSessionsStatus({
+      type: 'success',
+      message: allowed
+        ? 'Đã cho phép tài khoản đăng nhập đồng thời trên nhiều thiết bị.'
+        : 'Đã giới hạn đăng nhập một nơi và thu hồi tất cả phiên hiện tại.',
+    });
+  }
 
   const departmentsInBranch = (departmentsQuery.data ?? []).filter(
     (department) => department.branchId === values.branchId,
@@ -389,6 +426,12 @@ export function useEditUserForm(user, { onSuccess } = {}) {
     extraPermissions: userDetailQuery.data?.success
       ? userDetailQuery.data.user.extraPermissions
       : [],
+    concurrentSessionsProps: {
+      allowed: allowConcurrentSessions,
+      isUpdating: concurrentSessionsMutation.isPending,
+      status: concurrentSessionsStatus,
+      onChange: handleConcurrentSessionsChange,
+    },
     handleSubmit,
   };
 }

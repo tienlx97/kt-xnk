@@ -25,11 +25,15 @@ export const SESSION_EXPIRED_MESSAGE =
   'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
 export const SIGNED_IN_ELSEWHERE_MESSAGE =
   'Tài khoản đã được đăng nhập ở thiết bị khác.';
+export const SESSION_REVOKED_MESSAGE =
+  'Phiên đăng nhập đã bị thu hồi. Vui lòng đăng nhập lại.';
 
 /** The API's `detail` when a newer sign-in displaced this session. */
 const SUPERSEDED_DETAIL = 'Signed in on another device';
+const REVOKED_DETAIL = 'Session has been revoked; sign in again';
 
 export const SESSION_ELSEWHERE_QUERY_PARAM = 'elsewhere';
+export const SESSION_REVOKED_QUERY_PARAM = 'revoked';
 export const FORBIDDEN_MESSAGE =
   'Bạn không có quyền thực hiện thao tác này.';
 export const RATE_LIMITED_MESSAGE =
@@ -46,9 +50,9 @@ const LOGIN_PATH = '/login';
  * gone, so every cached React Query result and every server-rendered fragment
  * on the current page is now unauthorised. Reloading throws all of that away
  * instead of leaving stale privileged data on screen.
- * @param {boolean} signedInElsewhere
+ * @param {'expired' | 'elsewhere' | 'revoked'} reason
  */
-async function handleSessionExpired(signedInElsewhere) {
+async function handleSessionExpired(reason) {
   if (typeof window === 'undefined') {
     return;
   }
@@ -65,11 +69,13 @@ async function handleSessionExpired(signedInElsewhere) {
   // the user: an expiry is routine, whereas "someone signed into your account
   // elsewhere" is either you on another machine or the first sign that it is
   // not you at all.
-  const reason = signedInElsewhere
-    ? SESSION_ELSEWHERE_QUERY_PARAM
-    : SESSION_EXPIRED_QUERY_PARAM;
+  const queryParam = {
+    elsewhere: SESSION_ELSEWHERE_QUERY_PARAM,
+    revoked: SESSION_REVOKED_QUERY_PARAM,
+    expired: SESSION_EXPIRED_QUERY_PARAM,
+  }[reason];
 
-  window.location.assign(`${LOGIN_PATH}?${reason}=1`);
+  window.location.assign(`${LOGIN_PATH}?${queryParam}=1`);
 }
 
 /**
@@ -131,15 +137,25 @@ export async function apiRequest(path, options = {}) {
   if (response.status === 401) {
     const problem = await response.json().catch(() => null);
     const signedInElsewhere = problem?.detail === SUPERSEDED_DETAIL;
+    const sessionRevoked = problem?.detail === REVOKED_DETAIL;
+    const sessionEndReason = signedInElsewhere
+      ? 'elsewhere'
+      : sessionRevoked
+        ? 'revoked'
+        : 'expired';
 
     if (redirectOnSessionExpiry) {
-      await handleSessionExpired(signedInElsewhere);
+      await handleSessionExpired(sessionEndReason);
     }
 
     return {
       success: false,
       status: 401,
-      message: signedInElsewhere ? SIGNED_IN_ELSEWHERE_MESSAGE : SESSION_EXPIRED_MESSAGE,
+      message: signedInElsewhere
+        ? SIGNED_IN_ELSEWHERE_MESSAGE
+        : sessionRevoked
+          ? SESSION_REVOKED_MESSAGE
+          : SESSION_EXPIRED_MESSAGE,
       sessionExpired: true,
     };
   }

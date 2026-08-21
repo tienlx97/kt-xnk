@@ -28,5 +28,6 @@ export function useCreateUserFormV2({ onSuccess } = {}) {
     // code surfaces in `submitSuccess` instead once it does.
     readOnlyEmployeeCode: null,
     permissionsFieldsProps: null,
+    concurrentSessionsProps: null,
   };
 }

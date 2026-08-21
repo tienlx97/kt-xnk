@@ -6,6 +6,7 @@ import { useState, useSyncExternalStore } from 'react';
 import {
   SESSION_ELSEWHERE_QUERY_PARAM,
   SESSION_EXPIRED_QUERY_PARAM,
+  SESSION_REVOKED_QUERY_PARAM,
 } from '../../../shared/api/api-client.js';
 import { SESSION_CHANGE_EVENT } from '../../../shared/api/session-cookies.js';
 import { loginSchema } from '../config/login-schema.js';
@@ -79,6 +80,10 @@ export function useLoginForm() {
     !isSessionExpiredNoticeDismissed &&
     searchParams.get(SESSION_ELSEWHERE_QUERY_PARAM) === '1';
 
+  const sessionRevokedNotice =
+    !isSessionExpiredNoticeDismissed &&
+    searchParams.get(SESSION_REVOKED_QUERY_PARAM) === '1';
+
   /** @param {import('react').FormEvent<HTMLFormElement>} event */
   async function handleSubmit(event) {
     event.preventDefault();
@@ -133,6 +138,7 @@ export function useLoginForm() {
     submitError,
     sessionExpiredNotice,
     signedInElsewhereNotice,
+    sessionRevokedNotice,
     isSubmitting: loginMutation.isPending,
     handleSubmit,
   };

@@ -259,5 +259,12 @@ export {};
  * @property {{ userId: string, extraPermissions: string[], isLoading: boolean } | null} permissionsFieldsProps
  *   Edit only — granting a permission to an account that doesn't exist yet is
  *   meaningless, so the create flow leaves this `null` and the card doesn't render.
+ * @property {{
+ *   allowed: boolean,
+ *   isUpdating: boolean,
+ *   status?: { type: 'error' | 'success', message: string },
+ *   onChange: (allowed: boolean) => void,
+ * } | null} concurrentSessionsProps Edit only — the account must exist before
+ *   its session policy can be changed through the dedicated endpoint.
  * @property {(event: import('react').FormEvent<HTMLFormElement>) => void} handleSubmit
  */

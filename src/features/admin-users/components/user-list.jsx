@@ -1,5 +1,6 @@
 'use client';
 
+import { Avatar } from '@astryxdesign/core/Avatar';
 import { Banner } from '@astryxdesign/core/Banner';
 import { Button } from '@astryxdesign/core/Button';
 import { ButtonGroup } from '@astryxdesign/core/ButtonGroup';
@@ -23,6 +24,7 @@ import {
   usePositionsQuery,
 } from '../hooks/use-org-directory.js';
 import { useUsersQuery } from '../hooks/use-users-query.js';
+import { ResetPasswordDialog } from './reset-password-dialog.jsx';
 import { UserFormDialog } from './user-form-dialog.jsx';
 
 const SKELETON_ROW_COUNT = 6;
@@ -85,6 +87,9 @@ export function UserList() {
   const [editingUser, setEditingUser] = useState(
     /** @type {import('../types/index.js').UserListItem | null} */ (null),
   );
+  const [resettingPasswordUser, setResettingPasswordUser] = useState(
+    /** @type {import('../types/index.js').UserListItem | null} */ (null),
+  );
   const [searchQuery, setSearchQuery] = useState('');
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [pageIndex, setPageIndex] = useState(1);
@@ -117,7 +122,10 @@ export function UserList() {
   // table — the endpoint stopped returning every user at once
   // (see the API's docs/security.md, M-4).
   const totalUsers = listResult?.success ? listResult.totalCount : 0;
-  const totalPages = Math.max(1, listResult?.success ? listResult.totalPages : 1);
+  const totalPages = Math.max(
+    1,
+    listResult?.success ? listResult.totalPages : 1,
+  );
   const currentPage = Math.min(pageIndex, totalPages);
   const pageStart = (currentPage - 1) * pageSize;
   const pagedUsers = filteredUsers;
@@ -142,14 +150,21 @@ export function UserList() {
       key: 'name',
       header: 'Tên',
       width: proportional(1.6),
-      renderCell: (user) => `${user.firstName} ${user.lastName}`,
+      renderCell: (user) => {
+        const fullName = `${user.firstName} ${user.lastName}`;
+        return (
+          <HStack gap={2} vAlign="center">
+            <Avatar size="sm" name={fullName} tooltip={false} />
+            <Text>{fullName}</Text>
+          </HStack>
+        );
+      },
     },
     {
-      key: 'position',
-      header: 'Chức vụ',
-      width: proportional(1.2),
-      renderCell: (user) =>
-        (user.positionId && positionNameById.get(user.positionId)) ?? '—',
+      key: 'employeeCode',
+      header: 'Mã nhân viên',
+      width: proportional(1),
+      renderCell: (user) => user.employeeCode || '—',
     },
     {
       key: 'company',
@@ -157,6 +172,13 @@ export function UserList() {
       width: proportional(1.6),
       renderCell: (user) =>
         (user.companyId && companyNameById.get(user.companyId)) ?? '—',
+    },
+    {
+      key: 'position',
+      header: 'Chức vụ',
+      width: proportional(1.2),
+      renderCell: (user) =>
+        (user.positionId && positionNameById.get(user.positionId)) ?? '—',
     },
     {
       key: 'department',
@@ -174,7 +196,13 @@ export function UserList() {
         <DropdownMenu
           button={{ label: 'Thao tác', variant: 'ghost', size: 'sm' }}
           alignment="end"
-          items={[{ label: 'Sửa', onClick: () => setEditingUser(user) }]}
+          items={[
+            { label: 'Sửa', onClick: () => setEditingUser(user) },
+            {
+              label: 'Đặt lại mật khẩu',
+              onClick: () => setResettingPasswordUser(user),
+            },
+          ]}
         />
       ),
     },
@@ -354,6 +382,17 @@ export function UserList() {
           }}
           user={editingUser}
           onSuccess={() => setEditingUser(null)}
+        />
+      ) : null}
+
+      {resettingPasswordUser ? (
+        <ResetPasswordDialog
+          key={resettingPasswordUser.id}
+          isOpen={resettingPasswordUser !== null}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setResettingPasswordUser(null);
+          }}
+          user={resettingPasswordUser}
         />
       ) : null}
     </VStack>
