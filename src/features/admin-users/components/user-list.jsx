@@ -23,8 +23,7 @@ import {
   usePositionsQuery,
 } from '../hooks/use-org-directory.js';
 import { useUsersQuery } from '../hooks/use-users-query.js';
-import { CreateUserForm } from './create-user-form.jsx';
-import { EditUserForm } from './edit-user-form.jsx';
+import { UserFormDialog } from './user-form-dialog.jsx';
 
 const SKELETON_ROW_COUNT = 6;
 
@@ -40,6 +39,7 @@ const skeletonRows = Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => ({
   firstName: '',
   lastName: '',
   nationalId: '',
+  employeeCode: '',
   phone: null,
   positionId: null,
   companyId: null,
@@ -71,7 +71,7 @@ export function UserList() {
   const positionsQuery = usePositionsQuery();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  // `CreateUserForm` stays mounted (not gated on `isCreateOpen`) once opened
+  // `UserFormDialog` stays mounted (not gated on `isCreateOpen`) once opened
   // so the Dialog can animate closed instead of vanishing — but never
   // mounted before the first open. Astryx's Calendar (inside the form's
   // "Ngày cấp CCCD" DateInput) formats its month label via
@@ -336,7 +336,8 @@ export function UserList() {
       </VStack>
 
       {hasOpenedCreate ? (
-        <CreateUserForm
+        <UserFormDialog
+          mode="create"
           isOpen={isCreateOpen}
           onOpenChange={setIsCreateOpen}
           onSuccess={() => setIsCreateOpen(false)}
@@ -344,7 +345,8 @@ export function UserList() {
       ) : null}
 
       {editingUser ? (
-        <EditUserForm
+        <UserFormDialog
+          mode="edit"
           key={editingUser.id}
           isOpen={editingUser !== null}
           onOpenChange={(isOpen) => {

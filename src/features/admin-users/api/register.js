@@ -27,11 +27,13 @@ export async function registerUser(values) {
         NationalIdIssuePlace: values.nationalIdIssuePlace,
         PassportNumber: values.passportNumber || null,
         Phone: values.phone,
-        AddressType: values.addressType,
-        Province: values.province,
-        District: values.district || null,
-        Ward: values.ward,
-        AddressDetail: values.addressDetail,
+        OldProvince: values.oldProvince,
+        OldDistrict: values.oldDistrict,
+        OldWard: values.oldWard,
+        OldAddressDetail: values.oldAddressDetail,
+        NewProvince: values.newProvince,
+        NewWard: values.newWard,
+        NewAddressDetail: values.newAddressDetail,
         PositionId: values.positionId,
         CompanyId: values.companyId,
         BranchId: values.branchId,
@@ -44,5 +46,5 @@ export async function registerUser(values) {
     return { success: false, message: result.message };
   }
 
-  return { success: true, id: result.data?.id };
+  return { success: true, id: result.data?.id, employeeCode: result.data?.employeeCode };
 }

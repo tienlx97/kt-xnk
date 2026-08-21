@@ -13,13 +13,13 @@ import { useLoginForm } from '../hooks/use-login-form.js';
 
 export function LoginForm() {
   const {
-    nationalId,
-    setNationalId,
+    employeeCode,
+    setEmployeeCode,
     password,
     setPassword,
     rememberMe,
     setRememberMe,
-    nationalIdStatus,
+    employeeCodeStatus,
     passwordStatus,
     submitError,
     sessionExpiredNotice,
@@ -59,14 +59,14 @@ export function LoginForm() {
               ) : null}
 
               <TextInput
-                label="Căn cước công dân"
-                value={nationalId}
-                onChange={setNationalId}
-                placeholder="Nhập số CCCD (12 số)"
+                label="Mã nhân viên"
+                value={employeeCode}
+                onChange={setEmployeeCode}
+                placeholder="VD: DNG26A1B2C3"
                 type="text"
                 size="lg"
                 isRequired
-                status={nationalIdStatus}
+                status={employeeCodeStatus}
                 statusVariant="tooltip"
               />
 

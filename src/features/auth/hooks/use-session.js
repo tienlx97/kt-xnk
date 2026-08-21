@@ -7,7 +7,7 @@ import {
   clearSession,
   hasSessionCookie,
   readSessionDisplayName,
-  readSessionNationalId,
+  readSessionEmployeeCode,
   SESSION_CHANGE_EVENT,
 } from '../../../shared/api/session-cookies.js';
 
@@ -36,11 +36,11 @@ function getDisplayNameServerSnapshot() {
   return '';
 }
 
-function getNationalId() {
-  return readSessionNationalId();
+function getEmployeeCode() {
+  return readSessionEmployeeCode();
 }
 
-function getNationalIdServerSnapshot() {
+function getEmployeeCodeServerSnapshot() {
   return '';
 }
 
@@ -56,10 +56,10 @@ export function useSession() {
     getDisplayName,
     getDisplayNameServerSnapshot,
   );
-  const nationalId = useSyncExternalStore(
+  const employeeCode = useSyncExternalStore(
     subscribeToSessionChange,
-    getNationalId,
-    getNationalIdServerSnapshot,
+    getEmployeeCode,
+    getEmployeeCodeServerSnapshot,
   );
 
   async function logout() {
@@ -67,5 +67,5 @@ export function useSession() {
     router.push('/login');
   }
 
-  return { isAuthenticated, displayName, nationalId, logout };
+  return { isAuthenticated, displayName, employeeCode, logout };
 }

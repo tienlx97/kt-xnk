@@ -41,6 +41,11 @@ export function CreateUserForm({ isOpen, onOpenChange, onSuccess }) {
     departments,
     positions,
     vietnamBanks,
+    oldProvinces,
+    oldDistricts,
+    oldWards,
+    newProvinces,
+    newWards,
     bankAccountRows,
     addBankAccountRow,
     removeBankAccountRow,
@@ -230,7 +235,16 @@ export function CreateUserForm({ isOpen, onOpenChange, onSuccess }) {
                       ),
                     )
                   }
-                  contactFieldsProps={{ values, setField, fieldStatuses }}
+                  contactFieldsProps={{
+                    values,
+                    setField,
+                    fieldStatuses,
+                    oldProvinces,
+                    oldDistricts,
+                    oldWards,
+                    newProvinces,
+                    newWards,
+                  }}
                   bankAccountsFieldsProps={{
                     rows: bankAccountRows,
                     vietnamBanks,

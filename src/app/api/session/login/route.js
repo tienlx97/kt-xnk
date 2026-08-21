@@ -31,10 +31,10 @@ export async function POST(request) {
     return Response.json({ detail: 'Malformed request' }, { status: 400 });
   }
 
-  const { nationalId, password } = credentials ?? {};
+  const { employeeCode, password } = credentials ?? {};
 
-  if (typeof nationalId !== 'string' || typeof password !== 'string') {
-    return Response.json({ detail: 'Thiếu CCCD hoặc mật khẩu' }, { status: 400 });
+  if (typeof employeeCode !== 'string' || typeof password !== 'string') {
+    return Response.json({ detail: 'Thiếu mã nhân viên hoặc mật khẩu' }, { status: 400 });
   }
 
   let response;
@@ -47,7 +47,7 @@ export async function POST(request) {
         // address, i.e. one shared bucket for the whole user base.
         ...clientAddressHeaders(request),
       },
-      body: JSON.stringify({ NationalId: nationalId, Password: password }),
+      body: JSON.stringify({ EmployeeCode: employeeCode, Password: password }),
       cache: 'no-store',
     });
   } catch {
@@ -57,8 +57,8 @@ export async function POST(request) {
   const body = await response.json().catch(() => null);
 
   if (!response.ok) {
-    // Pass the backend's own status through — 401 is "sai CCCD hoặc mật khẩu"
-    // and 429 is "quá nhiều lần thử", and the form distinguishes them.
+    // Pass the backend's own status through — 401 is "sai mã nhân viên hoặc
+    // mật khẩu" and 429 is "quá nhiều lần thử", and the form distinguishes them.
     return Response.json(
       { detail: body?.detail ?? 'Đăng nhập thất bại' },
       { status: response.status },
@@ -74,7 +74,7 @@ export async function POST(request) {
   const stored = writeSessionCookies(cookieStore, {
     token: body.token,
     refreshToken: body.refreshToken,
-    nationalId: body.nationalId ?? nationalId,
+    employeeCode: body.employeeCode ?? employeeCode,
     displayName: `${body.firstName ?? ''} ${body.lastName ?? ''}`.trim(),
     ...sessionClaimsFromToken(body.token),
   });

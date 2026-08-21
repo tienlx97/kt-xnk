@@ -3,7 +3,7 @@ import {
   REFRESH_TOKEN_KEY,
   SESSION_COOKIE_MAX_AGE_SECONDS,
   SESSION_DISPLAY_NAME_KEY,
-  SESSION_NATIONAL_ID_KEY,
+  SESSION_EMPLOYEE_CODE_KEY,
   SESSION_PERMISSIONS_KEY,
   SESSION_ROLES_KEY,
 } from '../config/session-keys.js';
@@ -44,12 +44,12 @@ function accessTokenMaxAge(token) {
 /**
  * @param {import('next/dist/compiled/@edge-runtime/cookies').RequestCookies |
  *   Awaited<ReturnType<typeof import('next/headers').cookies>>} cookieStore
- * @param {{ token: string, refreshToken?: string | null, nationalId?: string,
+ * @param {{ token: string, refreshToken?: string | null, employeeCode?: string,
  *   displayName?: string, roles?: string[], permissions?: string[] }} session
  * @returns {boolean} false when the access token is already expired.
  */
 export function writeSessionCookies(cookieStore, session) {
-  const { token, refreshToken, nationalId, displayName, roles, permissions } = session;
+  const { token, refreshToken, employeeCode, displayName, roles, permissions } = session;
 
   const maxAge = accessTokenMaxAge(token);
   if (maxAge === null) {
@@ -82,8 +82,8 @@ export function writeSessionCookies(cookieStore, session) {
   //
   // Only written when supplied, so a silent refresh (which carries no profile
   // payload) leaves them untouched instead of blanking them.
-  if (nationalId !== undefined) {
-    cookieStore.set(SESSION_NATIONAL_ID_KEY, nationalId, sessionCookie);
+  if (employeeCode !== undefined) {
+    cookieStore.set(SESSION_EMPLOYEE_CODE_KEY, employeeCode, sessionCookie);
   }
   if (displayName !== undefined) {
     cookieStore.set(SESSION_DISPLAY_NAME_KEY, displayName, sessionCookie);
@@ -121,7 +121,7 @@ export function clearSessionCookies(cookieStore) {
   for (const key of [
     ACCESS_TOKEN_KEY,
     REFRESH_TOKEN_KEY,
-    SESSION_NATIONAL_ID_KEY,
+    SESSION_EMPLOYEE_CODE_KEY,
     SESSION_DISPLAY_NAME_KEY,
     SESSION_ROLES_KEY,
     SESSION_PERMISSIONS_KEY,

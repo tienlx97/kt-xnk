@@ -1,6 +1,6 @@
 import {
   SESSION_DISPLAY_NAME_KEY,
-  SESSION_NATIONAL_ID_KEY,
+  SESSION_EMPLOYEE_CODE_KEY,
   SESSION_PERMISSIONS_KEY,
   SESSION_ROLES_KEY,
 } from '../config/session-keys.js';
@@ -35,8 +35,8 @@ function readCookie(name) {
   return match ? decodeURIComponent(match[1]) : null;
 }
 
-export function readSessionNationalId() {
-  return readCookie(SESSION_NATIONAL_ID_KEY) ?? '';
+export function readSessionEmployeeCode() {
+  return readCookie(SESSION_EMPLOYEE_CODE_KEY) ?? '';
 }
 
 export function readSessionDisplayName() {
@@ -51,7 +51,7 @@ export function readSessionDisplayName() {
  * request is authorised from the signed token server-side.
  */
 export function hasSessionCookie() {
-  return readCookie(SESSION_NATIONAL_ID_KEY) !== null;
+  return readCookie(SESSION_EMPLOYEE_CODE_KEY) !== null;
 }
 
 /** @returns {string[]} */

@@ -13,6 +13,12 @@ import {
   usePositionsQuery,
   useVietnamBanksQuery,
 } from './use-org-directory.js';
+import {
+  resolveNewAddressLists,
+  resolveOldAddressLists,
+  useNewAddressQuery,
+  useOldAddressQuery,
+} from './use-vn-address.js';
 
 /** @type {import('../types/index.js').CreateUserFormValues} */
 const EMPTY_VALUES = {
@@ -26,11 +32,13 @@ const EMPTY_VALUES = {
   nationalIdIssuePlace: '',
   passportNumber: '',
   phone: '',
-  addressType: 'NewUnits',
-  province: '',
-  district: '',
-  ward: '',
-  addressDetail: '',
+  oldProvince: '',
+  oldDistrict: '',
+  oldWard: '',
+  oldAddressDetail: '',
+  newProvince: '',
+  newWard: '',
+  newAddressDetail: '',
   positionId: '',
   companyId: '',
   branchId: '',
@@ -45,9 +53,10 @@ function fieldStatus(message) {
 /**
  * Company → Branch → Department is a cascade: picking a new Company clears
  * the (now stale) Branch and Department, and picking a new Branch clears
- * the (now stale) Department. Switching address type to `NewUnits` clears
- * `district` too, since the backend rejects a non-empty district for that
- * type (post-2025-merger units have no district level).
+ * the (now stale) Department. The old-address (Province → District → Ward)
+ * and new-address (Province → Ward) cascades work the same way,
+ * independently of each other — both are captured at once, see
+ * `user-contact-fields.jsx`.
  * @param {import('../types/index.js').CreateUserFormValues} values
  * @param {keyof import('../types/index.js').CreateUserFormValues} field
  * @param {string | number | undefined} value
@@ -62,8 +71,15 @@ function applyFieldChange(values, field, value) {
   if (field === 'branchId') {
     next.departmentId = '';
   }
-  if (field === 'addressType' && value === 'NewUnits') {
-    next.district = '';
+  if (field === 'oldProvince') {
+    next.oldDistrict = '';
+    next.oldWard = '';
+  }
+  if (field === 'oldDistrict') {
+    next.oldWard = '';
+  }
+  if (field === 'newProvince') {
+    next.newWard = '';
   }
 
   return /** @type {import('../types/index.js').CreateUserFormValues} */ (next);
@@ -110,11 +126,22 @@ export function useCreateUserForm({ onSuccess } = {}) {
   const departmentsQuery = useDepartmentsQuery();
   const positionsQuery = usePositionsQuery();
   const vietnamBanksQuery = useVietnamBanksQuery();
+  const oldAddressQuery = useOldAddressQuery();
+  const newAddressQuery = useNewAddressQuery();
   const createUserMutation = useCreateUserMutation();
   const bankAccountRows = useBankAccountRows();
 
   const departmentsInBranch = (departmentsQuery.data ?? []).filter(
     (department) => department.branchId === values.branchId,
+  );
+  const {
+    provinces: oldProvinces,
+    districts: oldDistricts,
+    wards: oldWards,
+  } = resolveOldAddressLists(values, oldAddressQuery.data);
+  const { provinces: newProvinces, wards: newWards } = resolveNewAddressLists(
+    values,
+    newAddressQuery.data,
   );
 
   /**
@@ -166,10 +193,17 @@ export function useCreateUserForm({ onSuccess } = {}) {
       bankAccountRows.rows,
     );
 
+    // The Admin must hand this to the new employee — nobody typed it in, and
+    // there is no other place in the UI to find it again except the edit form.
+    const employeeCodeNote = createResult.employeeCode
+      ? ` Mã nhân viên để đăng nhập: ${createResult.employeeCode}.`
+      : '';
+
     setSubmitSuccess(
-      bankAccountFailures.length === 0
+      (bankAccountFailures.length === 0
         ? 'Đã tạo người dùng thành công.'
-        : `Đã tạo người dùng thành công, nhưng ${bankAccountFailures.length} tài khoản ngân hàng lưu thất bại: ${bankAccountFailures.join('; ')}`,
+        : `Đã tạo người dùng thành công, nhưng ${bankAccountFailures.length} tài khoản ngân hàng lưu thất bại: ${bankAccountFailures.join('; ')}`) +
+        employeeCodeNote,
     );
     setValues(EMPTY_VALUES);
     bankAccountRows.clearRows();
@@ -190,10 +224,13 @@ export function useCreateUserForm({ onSuccess } = {}) {
       nationalIdIssuePlace: fieldStatus(fieldErrors.nationalIdIssuePlace),
       passportNumber: fieldStatus(fieldErrors.passportNumber),
       phone: fieldStatus(fieldErrors.phone),
-      province: fieldStatus(fieldErrors.province),
-      district: fieldStatus(fieldErrors.district),
-      ward: fieldStatus(fieldErrors.ward),
-      addressDetail: fieldStatus(fieldErrors.addressDetail),
+      oldProvince: fieldStatus(fieldErrors.oldProvince),
+      oldDistrict: fieldStatus(fieldErrors.oldDistrict),
+      oldWard: fieldStatus(fieldErrors.oldWard),
+      oldAddressDetail: fieldStatus(fieldErrors.oldAddressDetail),
+      newProvince: fieldStatus(fieldErrors.newProvince),
+      newWard: fieldStatus(fieldErrors.newWard),
+      newAddressDetail: fieldStatus(fieldErrors.newAddressDetail),
       positionId: fieldStatus(fieldErrors.positionId),
       companyId: fieldStatus(fieldErrors.companyId),
       branchId: fieldStatus(fieldErrors.branchId),
@@ -207,6 +244,11 @@ export function useCreateUserForm({ onSuccess } = {}) {
     departments: departmentsInBranch,
     positions: positionsQuery.data ?? [],
     vietnamBanks: vietnamBanksQuery.data ?? [],
+    oldProvinces,
+    oldDistricts,
+    oldWards,
+    newProvinces,
+    newWards,
     bankAccountRows: bankAccountRows.rows,
     addBankAccountRow: bankAccountRows.addRow,
     removeBankAccountRow: bankAccountRows.removeRow,

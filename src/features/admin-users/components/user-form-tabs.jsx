@@ -1,6 +1,5 @@
 'use client';
 
-import { EmptyState } from '@astryxdesign/core/EmptyState';
 import { Tab, TabList } from '@astryxdesign/core/TabList';
 import { VStack } from '@astryxdesign/core/VStack';
 
@@ -40,15 +39,16 @@ export function UserFormTabs({
       <TabList value={activeTab} onChange={onActiveTabChange} hasDivider>
         <Tab value="contact" label="Thông tin liên hệ" />
         <Tab value="bank" label="Tài khoản ngân hàng" />
-        <Tab value="salary" label="Thông tin tiền lương" />
-        <Tab
-          value="dependents"
-          label="Thông tin người phụ thuộc"
-          // endContent={<Badge label="Mới" variant="info" />}
-        />
         {permissionsFieldsProps ? (
           <Tab value="permissions" label="Quyền" />
         ) : null}
+        {/* <Tab disabled value="salary" label="Thông tin tiền lương" />
+        <Tab
+          disabled
+          value="dependents"
+          label="Thông tin người phụ thuộc"
+          // endContent={<Badge label="Mới" variant="info" />}
+        /> */}
       </TabList>
 
       {/* Fixed min-height so the dialog doesn't grow/shrink (and re-center
@@ -60,25 +60,25 @@ export function UserFormTabs({
           <UserContactFields {...contactFieldsProps} />
         ) : null}
 
-        {activeTab === 'salary' ? (
+        {/* {activeTab === 'salary' ? (
           <EmptyState
             title="Chưa có thông tin tiền lương"
             description="Tính năng đang phát triển."
             isCompact
           />
-        ) : null}
+        ) : null} */}
 
         {activeTab === 'bank' ? (
           <BankAccountsFields {...bankAccountsFieldsProps} />
         ) : null}
 
-        {activeTab === 'dependents' ? (
+        {/* {activeTab === 'dependents' ? (
           <EmptyState
             title="Chưa có thông tin người phụ thuộc"
             description="Tính năng đang phát triển."
             isCompact
           />
-        ) : null}
+        ) : null} */}
 
         {activeTab === 'permissions' && permissionsFieldsProps ? (
           <UserPermissionsFields {...permissionsFieldsProps} />

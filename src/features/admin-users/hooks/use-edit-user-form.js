@@ -20,6 +20,12 @@ import {
 } from './use-org-directory.js';
 import { useUpdateUserMutation } from './use-update-user-mutation.js';
 import { useUserDetailQuery } from './use-user-detail-query.js';
+import {
+  resolveNewAddressLists,
+  resolveOldAddressLists,
+  useNewAddressQuery,
+  useOldAddressQuery,
+} from './use-vn-address.js';
 
 /** @param {string} [message] @returns {{ type: 'error', message: string } | undefined} */
 function fieldStatus(message) {
@@ -43,8 +49,15 @@ function applyFieldChange(values, field, value) {
   if (field === 'branchId') {
     next.departmentId = '';
   }
-  if (field === 'addressType' && value === 'NewUnits') {
-    next.district = '';
+  if (field === 'oldProvince') {
+    next.oldDistrict = '';
+    next.oldWard = '';
+  }
+  if (field === 'oldDistrict') {
+    next.oldWard = '';
+  }
+  if (field === 'newProvince') {
+    next.newWard = '';
   }
 
   return /** @type {import('../types/index.js').EditUserFormValues} */ (next);
@@ -59,17 +72,20 @@ function applyFieldChange(values, field, value) {
 const EMPTY_EDIT_VALUES = {
   firstName: '',
   lastName: '',
+  nationalId: '',
   yearOfBirth: undefined,
   gender: '',
   nationalIdIssueDate: '',
   nationalIdIssuePlace: '',
   passportNumber: '',
   phone: '',
-  addressType: 'NewUnits',
-  province: '',
-  district: '',
-  ward: '',
-  addressDetail: '',
+  oldProvince: '',
+  oldDistrict: '',
+  oldWard: '',
+  oldAddressDetail: '',
+  newProvince: '',
+  newWard: '',
+  newAddressDetail: '',
   positionId: '',
   companyId: '',
   branchId: '',
@@ -84,17 +100,20 @@ function toFormValues(user) {
   return {
     firstName: user.firstName,
     lastName: user.lastName,
+    nationalId: user.nationalId,
     yearOfBirth: user.yearOfBirth ?? undefined,
     gender: user.gender ?? '',
     nationalIdIssueDate: user.nationalIdIssueDate ?? '',
     nationalIdIssuePlace: user.nationalIdIssuePlace ?? '',
     passportNumber: user.passportNumber ?? '',
     phone: user.phone ?? '',
-    addressType: user.addressType ?? 'NewUnits',
-    province: user.province ?? '',
-    district: user.district ?? '',
-    ward: user.ward ?? '',
-    addressDetail: user.addressDetail ?? '',
+    oldProvince: user.oldProvince ?? '',
+    oldDistrict: user.oldDistrict ?? '',
+    oldWard: user.oldWard ?? '',
+    oldAddressDetail: user.oldAddressDetail ?? '',
+    newProvince: user.newProvince ?? '',
+    newWard: user.newWard ?? '',
+    newAddressDetail: user.newAddressDetail ?? '',
     positionId: user.positionId ?? '',
     companyId: user.companyId ?? '',
     branchId: user.branchId ?? '',
@@ -206,6 +225,8 @@ export function useEditUserForm(user, { onSuccess } = {}) {
   const departmentsQuery = useDepartmentsQuery();
   const positionsQuery = usePositionsQuery();
   const vietnamBanksQuery = useVietnamBanksQuery();
+  const oldAddressQuery = useOldAddressQuery();
+  const newAddressQuery = useNewAddressQuery();
   const bankAccountsQuery = useAdminBankAccountsQuery(user.id);
   const updateUserMutation = useUpdateUserMutation();
 
@@ -228,6 +249,15 @@ export function useEditUserForm(user, { onSuccess } = {}) {
 
   const departmentsInBranch = (departmentsQuery.data ?? []).filter(
     (department) => department.branchId === values.branchId,
+  );
+  const {
+    provinces: oldProvinces,
+    districts: oldDistricts,
+    wards: oldWards,
+  } = resolveOldAddressLists(values, oldAddressQuery.data);
+  const { provinces: newProvinces, wards: newWards } = resolveNewAddressLists(
+    values,
+    newAddressQuery.data,
   );
 
   const { rows: bankAccountRowsState, setRows: setBankAccountRows, addRow: addBankAccountRow, removeRow: removeBankAccountRow, clearRows: clearBankAccountRows, updateRowField: updateBankAccountRowField, setPrimaryRow: setPrimaryBankAccountRow } =
@@ -318,16 +348,20 @@ export function useEditUserForm(user, { onSuccess } = {}) {
     fieldStatuses: {
       firstName: fieldStatus(fieldErrors.firstName),
       lastName: fieldStatus(fieldErrors.lastName),
+      nationalId: fieldStatus(fieldErrors.nationalId),
       yearOfBirth: fieldStatus(fieldErrors.yearOfBirth),
       gender: fieldStatus(fieldErrors.gender),
       nationalIdIssueDate: fieldStatus(fieldErrors.nationalIdIssueDate),
       nationalIdIssuePlace: fieldStatus(fieldErrors.nationalIdIssuePlace),
       passportNumber: fieldStatus(fieldErrors.passportNumber),
       phone: fieldStatus(fieldErrors.phone),
-      province: fieldStatus(fieldErrors.province),
-      district: fieldStatus(fieldErrors.district),
-      ward: fieldStatus(fieldErrors.ward),
-      addressDetail: fieldStatus(fieldErrors.addressDetail),
+      oldProvince: fieldStatus(fieldErrors.oldProvince),
+      oldDistrict: fieldStatus(fieldErrors.oldDistrict),
+      oldWard: fieldStatus(fieldErrors.oldWard),
+      oldAddressDetail: fieldStatus(fieldErrors.oldAddressDetail),
+      newProvince: fieldStatus(fieldErrors.newProvince),
+      newWard: fieldStatus(fieldErrors.newWard),
+      newAddressDetail: fieldStatus(fieldErrors.newAddressDetail),
       positionId: fieldStatus(fieldErrors.positionId),
       companyId: fieldStatus(fieldErrors.companyId),
       branchId: fieldStatus(fieldErrors.branchId),
@@ -341,6 +375,11 @@ export function useEditUserForm(user, { onSuccess } = {}) {
     departments: departmentsInBranch,
     positions: positionsQuery.data ?? [],
     vietnamBanks: vietnamBanksQuery.data ?? [],
+    oldProvinces,
+    oldDistricts,
+    oldWards,
+    newProvinces,
+    newWards,
     bankAccountRows: bankAccountRowsState,
     addBankAccountRow,
     removeBankAccountRow,

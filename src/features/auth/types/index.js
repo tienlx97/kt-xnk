@@ -1,6 +1,6 @@
 /**
  * @typedef {Object} LoginFormValues
- * @property {string} nationalId
+ * @property {string} employeeCode
  * @property {string} password
  * @property {boolean} rememberMe
  */

@@ -9,12 +9,30 @@ import { Selector } from '@astryxdesign/core/Selector';
 import { pixel, proportional, Table } from '@astryxdesign/core/Table';
 import { Text } from '@astryxdesign/core/Text';
 import { TextInput } from '@astryxdesign/core/TextInput';
-import { colorVars, radiusVars, spacingVars } from '@astryxdesign/core/theme/tokens.stylex';
+import {
+  colorVars,
+  radiusVars,
+  spacingVars,
+} from '@astryxdesign/core/theme/tokens.stylex';
 import { VStack } from '@astryxdesign/core/VStack';
 import * as stylex from '@stylexjs/stylex';
 import { useState } from 'react';
 
 import { IconTrash } from '../../../shared/components/icon/icon-trash.jsx';
+
+// `Table` always bleeds edge-to-edge against `--container-padding-block-start`
+// when it's the first child of its parent (see Table's scroll-wrapper
+// `containerBleed` style) — meant for a table sitting directly in a Card/
+// LayoutContent. Here it's nested several `VStack`s deep under the tab
+// strip, but is still DOM-first-child of this wrapper, so it inherits
+// LayoutContent's block padding var from the dialog and yanks itself up
+// by that amount, overlapping the tab strip above. Reset the var at this
+// boundary (plain `style`, not `xstyle` — `@stylexjs/valid-styles` rejects
+// raw `--*` keys) so the table keeps the gap this `VStack` already
+// establishes instead of bleeding into it.
+const tableWrapperStyle = /** @type {import('react').CSSProperties} */ ({
+  '--container-padding-block-start': '0px',
+});
 
 const styles = stylex.create({
   staticCell: {
@@ -77,7 +95,9 @@ export function BankAccountsFields({
     value: bank.id,
     label: `${bank.shortName} — ${bank.name}`,
   }));
-  const bankLabelById = new Map(bankOptions.map((option) => [option.value, option.label]));
+  const bankLabelById = new Map(
+    bankOptions.map((option) => [option.value, option.label]),
+  );
 
   /** @type {import('@astryxdesign/core/Table').TableColumn<import('../types/index.js').BankAccountRow & Record<string, unknown>>[]} */
   const columns = [
@@ -102,7 +122,8 @@ export function BankAccountsFields({
           <Text
             as="div"
             xstyle={styles.staticCell}
-            onClick={() => startEditing(row.rowKey)}>
+            onClick={() => startEditing(row.rowKey)}
+          >
             {row.accountNumber}
           </Text>
         );
@@ -116,6 +137,7 @@ export function BankAccountsFields({
         if (!row.bankAccountId || editingRowKeys.has(row.rowKey)) {
           return (
             <Selector
+              hasSearch
               label="Ngân hàng"
               isLabelHidden
               placeholder="Chọn ngân hàng"
@@ -132,7 +154,8 @@ export function BankAccountsFields({
             as="div"
             maxLines={1}
             xstyle={styles.staticCell}
-            onClick={() => startEditing(row.rowKey)}>
+            onClick={() => startEditing(row.rowKey)}
+          >
             {bankLabelById.get(row.vietnamBankId) ?? ''}
           </Text>
         );
@@ -149,7 +172,9 @@ export function BankAccountsFields({
               label="Chi nhánh"
               isLabelHidden
               value={row.branch}
-              onChange={(value) => onUpdateRowField(row.rowKey, 'branch', value)}
+              onChange={(value) =>
+                onUpdateRowField(row.rowKey, 'branch', value)
+              }
             />
           );
         }
@@ -157,7 +182,8 @@ export function BankAccountsFields({
           <Text
             as="div"
             xstyle={styles.staticCell}
-            onClick={() => startEditing(row.rowKey)}>
+            onClick={() => startEditing(row.rowKey)}
+          >
             {row.branch}
           </Text>
         );
@@ -211,7 +237,7 @@ export function BankAccountsFields({
   ];
 
   return (
-    <VStack gap={3} hAlign="stretch">
+    <VStack gap={3} hAlign="stretch" style={tableWrapperStyle}>
       {rows.length > 0 ? (
         <Table data={rows} columns={columns} idKey="rowKey" dividers="grid" />
       ) : (

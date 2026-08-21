@@ -17,9 +17,12 @@ export function useGrantUserPermissionMutation(userId) {
   return useMutation({
     mutationFn: (/** @type {string} */ permission) =>
       grantUserPermission(userId, permission),
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-users', 'user', userId] });
-    },
+    // Returned, not fire-and-forget: react-query awaits a promise from
+    // onSettled before `mutateAsync` resolves, so the caller's pending state
+    // covers the refetch too. Without the return, the switch would stop
+    // showing "busy" while still rendering the pre-toggle value.
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: ['admin-users', 'user', userId] }),
   });
 }
 
@@ -30,8 +33,7 @@ export function useRevokeUserPermissionMutation(userId) {
   return useMutation({
     mutationFn: (/** @type {string} */ permission) =>
       revokeUserPermission(userId, permission),
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-users', 'user', userId] });
-    },
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: ['admin-users', 'user', userId] }),
   });
 }

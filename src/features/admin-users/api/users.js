@@ -51,8 +51,10 @@ export async function getUser(userId) {
 }
 
 /**
- * Admin-only. Same field shape as `registerUser` minus
- * `nationalId`/`password`.
+ * Admin-only. Same field shape as `registerUser` minus `password`, plus
+ * `nationalId` IS included and editable here — it stopped being the login
+ * identifier (`EmployeeCode` is, and `PUT` never accepts that — it's
+ * immutable) so it's just a normal correctable field now.
  * @param {string} userId
  * @param {import('../types/index.js').EditUserFormValues} values
  * @returns {Promise<import('../types/index.js').CreateUserResult>}
@@ -64,17 +66,20 @@ export async function updateUser(userId, values) {
     body: {
       FirstName: values.firstName,
       LastName: values.lastName,
+      NationalId: values.nationalId,
       YearOfBirth: values.yearOfBirth,
       Gender: values.gender,
       NationalIdIssueDate: values.nationalIdIssueDate,
       NationalIdIssuePlace: values.nationalIdIssuePlace,
       PassportNumber: values.passportNumber || null,
       Phone: values.phone,
-      AddressType: values.addressType,
-      Province: values.province,
-      District: values.district || null,
-      Ward: values.ward,
-      AddressDetail: values.addressDetail,
+      OldProvince: values.oldProvince,
+      OldDistrict: values.oldDistrict,
+      OldWard: values.oldWard,
+      OldAddressDetail: values.oldAddressDetail,
+      NewProvince: values.newProvince,
+      NewWard: values.newWard,
+      NewAddressDetail: values.newAddressDetail,
       PositionId: values.positionId,
       CompanyId: values.companyId,
       BranchId: values.branchId,

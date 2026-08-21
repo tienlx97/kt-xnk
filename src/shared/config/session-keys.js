@@ -7,7 +7,7 @@ export const ACCESS_TOKEN_KEY = 'kt-xnk-access-token';
 // The refresh token. HttpOnly like the access token, and never read by client
 // code — `/api/backend` redeems it server-side when the access token expires.
 export const REFRESH_TOKEN_KEY = 'kt-xnk-refresh-token';
-export const SESSION_NATIONAL_ID_KEY = 'kt-xnk-session-national-id';
+export const SESSION_EMPLOYEE_CODE_KEY = 'kt-xnk-session-employee-code';
 export const SESSION_DISPLAY_NAME_KEY = 'kt-xnk-session-display-name';
 // JSON-stringified string[] — decoded once from the JWT's `roles`/
 // `permissions` claims at login (see `hooks/use-login-form.js`) rather than

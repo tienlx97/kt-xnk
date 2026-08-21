@@ -5,6 +5,61 @@ Append-only session log. Newest entry FIRST.
 This file is the handoff between sessions/agents — write for a reader with zero conversation context.
 -->
 
+## 2026-08-21 — v2 create/edit user dialog (card + collapse layout)
+
+**Context:** User asked for a v2 of the create/edit user forms, keeping v1
+intact: one shared dialog for both modes, laid out as an always-open
+"Thông tin khởi tạo" card plus collapsible cards for công việc / ngân hàng /
+nhân viên, and a SegmentedControl to switch between the old and new address
+standards. No `openspec/changes/` entry — direct request, UI-only.
+
+**What shipped.** New files only; nothing existing was rewired, so v1 is
+still what `user-list.jsx` renders:
+- `hooks/use-create-user-form-v2.js`, `hooks/use-edit-user-form-v2.js` —
+  thin wrappers over the v1 hooks that add the mode-specific bits
+  (title, submit label, password/CCCD availability, permissions props).
+  They deliberately do *not* re-implement the v1 state/validation/mutation
+  logic; v1 and v2 differ only in layout.
+- `types/index.js` — new `UserFormV2Controller` typedef, the contract both
+  v2 hooks return and the dialog consumes.
+- `components/user-form-dialog.jsx` — the shared dialog (`UserFormDialog`
+  with `mode="create" | "edit"`). `CollapsibleGroup type="multiple"`, all
+  sections start closed, each section its own `Card` (the Astryx idiom).
+- `components/user-identity-fields.jsx`, `user-employee-fields.jsx`,
+  `user-address-fields.jsx` — the card bodies. `UserOrgFields`,
+  `BankAccountsFields` and `UserPermissionsFields` are reused unchanged.
+
+**Decisions made.** Avatar is a disabled placeholder (initials `Avatar` +
+disabled button + "Sắp có") because there is no avatar field or upload
+endpoint yet — shown rather than omitted so adding upload later doesn't
+re-flow the card. The address SegmentedControl only chooses which half is
+*on screen*: both the old and new address are still required at once by
+`RegisterCommandValidator`, so neither half is cleared and the payload is
+identical to v1. Because half the required fields are hidden at any moment,
+`UserAddressFields` flips to the failing half when validation rejects only
+the hidden one (state adjusted during render, keyed on which halves fail —
+an effect would trip `react-hooks/set-state-in-effect` and would also fight
+the Admin every time they switched back). Gender offers only Nam/Nữ per the
+spec, with `Khác` shown only for records already set to it.
+
+**Verification:** `pnpm typecheck`, `pnpm lint`, `pnpm structure` all clean.
+No browser verification — the local backend still needs Docker admin
+credentials this session doesn't have.
+
+**Update (same day):** `user-list.jsx` now renders `UserFormDialog` for both
+create and edit — v1 components (`create-user-form.jsx`,
+`edit-user-form.jsx`, `user-form-tabs.jsx`, `user-contact-fields.jsx`) are
+unwired but still in the repo for comparison/rollback. `typecheck`/`lint`/
+`structure` all clean after the swap.
+
+**Next step:** eyeball the new layout in the browser (still blocked on
+Docker admin credentials this session doesn't have); once confirmed, delete
+the now-dead v1 files.
+
+**Blockers:** none
+
+---
+
 ## 2026-08-20 — Admin UI to create a grantable permission; quality gate fixed
 
 **Context:** User asked for the FE UI to `BE-kt-xnk`'s

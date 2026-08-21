@@ -1,6 +1,7 @@
 'use client';
 
 import { Banner } from '@astryxdesign/core/Banner';
+import { Skeleton } from '@astryxdesign/core/Skeleton';
 import { Switch } from '@astryxdesign/core/Switch';
 import { Text } from '@astryxdesign/core/Text';
 import { VStack } from '@astryxdesign/core/VStack';
@@ -29,12 +30,23 @@ import {
  */
 export function UserPermissionsFields({ userId, extraPermissions, isLoading }) {
   const [error, setError] = useState('');
+  // Which key is mid-flight. A grant/revoke rotates the target's session and
+  // is followed by a refetch of the user detail, so the round trip is long
+  // enough to be noticed — without this the switch sits on its old value,
+  // still clickable, giving no sign the toggle was registered.
+  const [pendingKey, setPendingKey] = useState(/** @type {string | null} */ (null));
   const grantablePermissionsQuery = useGrantablePermissionsQuery();
   const grantMutation = useGrantUserPermissionMutation(userId);
   const revokeMutation = useRevokeUserPermissionMutation(userId);
 
   if (isLoading || grantablePermissionsQuery.isLoading) {
-    return <Text color="secondary">Đang tải quyền của người dùng…</Text>;
+    return (
+      <VStack gap={3} hAlign="stretch">
+        {[0, 1, 2].map((row) => (
+          <Skeleton key={row} height={40} index={row} />
+        ))}
+      </VStack>
+    );
   }
 
   /**
@@ -43,13 +55,23 @@ export function UserPermissionsFields({ userId, extraPermissions, isLoading }) {
    */
   async function togglePermission(permission, nextValue) {
     setError('');
+    setPendingKey(permission);
 
-    const result = nextValue
-      ? await grantMutation.mutateAsync(permission)
-      : await revokeMutation.mutateAsync(permission);
+    try {
+      const result = nextValue
+        ? await grantMutation.mutateAsync(permission)
+        : await revokeMutation.mutateAsync(permission);
 
-    if (!result.success) {
-      setError(result.message);
+      if (!result.success) {
+        setError(result.message);
+      }
+    } catch {
+      // The api layer resolves failures as { success: false }, so the only
+      // way here is the post-mutation refetch throwing. The grant/revoke
+      // itself already landed; only the re-read of the user failed.
+      setError('Đã lưu thay đổi nhưng không tải lại được danh sách quyền. Vui lòng tải lại trang.');
+    } finally {
+      setPendingKey(null);
     }
   }
 
@@ -72,6 +94,10 @@ export function UserPermissionsFields({ userId, extraPermissions, isLoading }) {
               description={description}
               value={extraPermissions.includes(key)}
               changeAction={(checked) => togglePermission(key, checked)}
+              isLoading={pendingKey === key}
+              // Serialised on purpose: each toggle rotates the same user's
+              // SecurityStamp, so two in flight at once race over one record.
+              isDisabled={pendingKey !== null && pendingKey !== key}
               labelSpacing="spread"
             />
           );

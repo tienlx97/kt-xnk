@@ -1,8 +1,4 @@
 /**
- * @typedef {'OldUnits' | 'NewUnits'} AddressType
- */
-
-/**
  * @typedef {'Male' | 'Female' | 'Other'} Gender
  */
 
@@ -18,11 +14,13 @@
  * @property {string} nationalIdIssuePlace
  * @property {string} passportNumber - optional, empty string when unset
  * @property {string} phone
- * @property {AddressType} addressType
- * @property {string} province
- * @property {string} district
- * @property {string} ward
- * @property {string} addressDetail
+ * @property {string} oldProvince
+ * @property {string} oldDistrict
+ * @property {string} oldWard
+ * @property {string} oldAddressDetail
+ * @property {string} newProvince
+ * @property {string} newWard
+ * @property {string} newAddressDetail
  * @property {string} positionId
  * @property {string} companyId
  * @property {string} branchId
@@ -33,17 +31,20 @@
  * @typedef {Object} EditUserFormValues
  * @property {string} firstName
  * @property {string} lastName
+ * @property {string} nationalId
  * @property {number | undefined} yearOfBirth
  * @property {Gender | ''} gender
  * @property {string} nationalIdIssueDate - ISO date (YYYY-MM-DD)
  * @property {string} nationalIdIssuePlace
  * @property {string} passportNumber - optional, empty string when unset
  * @property {string} phone
- * @property {AddressType} addressType
- * @property {string} province
- * @property {string} district
- * @property {string} ward
- * @property {string} addressDetail
+ * @property {string} oldProvince
+ * @property {string} oldDistrict
+ * @property {string} oldWard
+ * @property {string} oldAddressDetail
+ * @property {string} newProvince
+ * @property {string} newWard
+ * @property {string} newAddressDetail
  * @property {string} positionId
  * @property {string} companyId
  * @property {string} branchId
@@ -54,6 +55,8 @@
  * @typedef {Object} CreateUserSuccess
  * @property {true} success
  * @property {string} id
+ * @property {string} [employeeCode] System-generated login identifier — the
+ *   Admin must hand this to the new employee, since nobody typed it in.
  */
 
 /**
@@ -81,6 +84,8 @@
  * @property {string} firstName
  * @property {string} lastName
  * @property {string} nationalId
+ * @property {string} employeeCode System-generated login identifier — this,
+ *   not `nationalId`, is what `Login` takes.
  * @property {string | null} phone
  * @property {string | null} positionId
  * @property {string | null} companyId
@@ -102,11 +107,13 @@
  *   nationalIdIssueDate: string | null,
  *   nationalIdIssuePlace: string | null,
  *   passportNumber: string | null,
- *   addressType: AddressType | null,
- *   province: string | null,
- *   district: string | null,
- *   ward: string | null,
- *   addressDetail: string | null,
+ *   oldProvince: string | null,
+ *   oldDistrict: string | null,
+ *   oldWard: string | null,
+ *   oldAddressDetail: string | null,
+ *   newProvince: string | null,
+ *   newWard: string | null,
+ *   newAddressDetail: string | null,
  *   allowConcurrentSessions: boolean,
  *   extraPermissions: string[],
  * }} UserDetail
@@ -139,6 +146,21 @@
  * @property {string} code
  * @property {string} name
  * @property {string} shortName
+ */
+
+/**
+ * `public/data/vn-address-old.json` — pre-2025-merger units (3 levels).
+ * @typedef {Object} OldAddressData
+ * @property {{ code: string, name: string }[]} provinces
+ * @property {{ code: string, name: string, provinceCode: string }[]} districts
+ * @property {{ code: string, name: string, districtCode: string }[]} wards
+ */
+
+/**
+ * `public/data/vn-address-new.json` — post-2025-merger units (2 levels).
+ * @typedef {Object} NewAddressData
+ * @property {{ code: string, name: string }[]} provinces
+ * @property {{ code: string, name: string, provinceCode: string }[]} wards
  */
 
 /**
@@ -190,3 +212,52 @@
 /** @typedef {BankAccountListSuccess | BankAccountFailure} BankAccountListResult */
 
 export {};
+
+/**
+ * What the v2 dialog (`user-form-dialog.jsx`) needs from a form hook. Both
+ * `useCreateUserFormV2` and `useEditUserFormV2` return this shape, so the
+ * dialog renders the same card stack either way and never branches on the
+ * hook it came from — only on the handful of fields below that genuinely
+ * differ between creating and editing.
+ * @typedef {Object} UserFormV2Controller
+ * @property {'create' | 'edit'} mode
+ * @property {string} title Dialog header text.
+ * @property {string} submitLabel Primary button label.
+ * @property {boolean} isLoadingUser True while the detail record is in flight (edit only).
+ * @property {string | null} password Create only — `null` in edit mode, where the
+ *   password has its own reset endpoint and is not part of `PUT /users/{id}`.
+ * @property {string} editableNationalId The CCCD input's value — editable in
+ *   both modes now (BE-kt-xnk `openspec/changes/add-employee-code-login/`:
+ *   the login identifier is the system-generated `EmployeeCode`, not CCCD,
+ *   so CCCD is free to be corrected).
+ * @property {string | null} readOnlyEmployeeCode Edit only — the login
+ *   identifier, immutable, shown as text. `null` in create mode: it does
+ *   not exist until the account is actually created (see `submitSuccess`,
+ *   which surfaces the newly generated code once it does).
+ * @property {CreateUserFormValues | EditUserFormValues} values
+ * @property {(field: string, value: string | number | undefined) => void} setField
+ * @property {Record<string, { type: 'error', message: string } | undefined>} fieldStatuses
+ * @property {string} submitError
+ * @property {string} submitSuccess
+ * @property {boolean} isSubmitting
+ * @property {Company[]} companies
+ * @property {Branch[]} branches
+ * @property {Department[]} departments
+ * @property {Position[]} positions
+ * @property {VietnamBank[]} vietnamBanks
+ * @property {{ code: string, name: string }[]} oldProvinces
+ * @property {{ code: string, name: string }[]} oldDistricts
+ * @property {{ code: string, name: string }[]} oldWards
+ * @property {{ code: string, name: string }[]} newProvinces
+ * @property {{ code: string, name: string }[]} newWards
+ * @property {BankAccountRow[]} bankAccountRows
+ * @property {() => void} addBankAccountRow
+ * @property {(rowKey: string) => void} removeBankAccountRow
+ * @property {() => void} clearBankAccountRows
+ * @property {(rowKey: string, field: 'vietnamBankId' | 'accountNumber' | 'branch', value: string) => void} updateBankAccountRowField
+ * @property {(rowKey: string) => void} setPrimaryBankAccountRow
+ * @property {{ userId: string, extraPermissions: string[], isLoading: boolean } | null} permissionsFieldsProps
+ *   Edit only — granting a permission to an account that doesn't exist yet is
+ *   meaningless, so the create flow leaves this `null` and the card doesn't render.
+ * @property {(event: import('react').FormEvent<HTMLFormElement>) => void} handleSubmit
+ */

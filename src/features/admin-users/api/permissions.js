@@ -49,8 +49,9 @@ export async function createGrantablePermission(key, description) {
 /**
  * Admin-only. Grants one permission directly to a user, independent of
  * their role/department — rejected (400) if `permission` is not in the
- * backend's `Permission.Grantable` whitelist. Rotates the target's
- * `SecurityStamp`, so it takes effect on their very next request.
+ * backend's `GrantablePermission` catalog (a DB table since
+ * `add-create-grantable-permission`, not the old static array). Rotates the
+ * target's `SecurityStamp`, so it takes effect on their very next request.
  * @param {string} userId
  * @param {string} permission
  * @returns {Promise<{ success: true } | { success: false, message: string }>}

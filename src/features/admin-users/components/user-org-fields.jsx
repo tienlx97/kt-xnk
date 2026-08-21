@@ -31,6 +31,7 @@ export function UserOrgFields({
     <VStack gap={3}>
       <Selector
         label="Công ty"
+        hasSearch
         placeholder="Chọn công ty"
         value={values.companyId}
         onChange={(value) => setField('companyId', value ?? '')}
@@ -63,6 +64,7 @@ export function UserOrgFields({
 
       <Selector
         label="Phòng ban"
+        hasSearch
         placeholder="Chọn phòng ban"
         value={values.departmentId}
         onChange={(value) => setField('departmentId', value ?? '')}
@@ -80,6 +82,7 @@ export function UserOrgFields({
 
       <Selector
         label="Chức vụ"
+        hasSearch
         placeholder="Chọn chức vụ"
         value={values.positionId}
         onChange={(value) => setField('positionId', value ?? '')}
