@@ -28,6 +28,14 @@ export function useCreateUserFormV2({ onSuccess } = {}) {
     // code surfaces in `submitSuccess` instead once it does.
     readOnlyEmployeeCode: null,
     permissionsFieldsProps: null,
+    createPermissionsFieldsProps: {
+      inheritedPermissions: form.inheritedPermissions,
+      grantablePermissions: form.grantablePermissions,
+      selectedPermissions: form.values.extraPermissions,
+      isLoading: form.isLoadingPermissions,
+      hasDepartment: Boolean(form.values.departmentId),
+      onChange: form.setExtraPermissions,
+    },
     concurrentSessionsProps: null,
   };
 }

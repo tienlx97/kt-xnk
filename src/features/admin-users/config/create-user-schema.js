@@ -57,4 +57,5 @@ export const createUserSchema = z.object({
   companyId: z.string().min(1, 'Vui lòng chọn công ty'),
   branchId: z.string().min(1, 'Vui lòng chọn chi nhánh'),
   departmentId: z.string().min(1, 'Vui lòng chọn phòng ban'),
+  extraPermissions: z.array(z.string()).default([]),
 });

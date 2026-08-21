@@ -25,6 +25,7 @@
  * @property {string} companyId
  * @property {string} branchId
  * @property {string} departmentId
+ * @property {string[]} extraPermissions
  */
 
 /**
@@ -71,6 +72,8 @@
 /** @typedef {{ id: string, name: string, companyId: string }} Branch */
 /** @typedef {{ id: string, name: string, branchId: string }} Department */
 /** @typedef {{ id: string, name: string }} Position */
+/** @typedef {{ key: string, description: string, scopeType: 'branch', scopeId: string }} InheritedPermission */
+/** @typedef {{ key: string, description: string | null }} GrantablePermission */
 
 /**
  * Shape of `GET /users` list items — `UserResponse` (BE-kt-xnk,
@@ -259,6 +262,15 @@ export {};
  * @property {{ userId: string, extraPermissions: string[], isLoading: boolean } | null} permissionsFieldsProps
  *   Edit only — granting a permission to an account that doesn't exist yet is
  *   meaningless, so the create flow leaves this `null` and the card doesn't render.
+ * @property {{
+ *   inheritedPermissions: InheritedPermission[],
+ *   grantablePermissions: GrantablePermission[],
+ *   selectedPermissions: string[],
+ *   isLoading: boolean,
+ *   hasDepartment: boolean,
+ *   onChange: (permissions: string[]) => void,
+ * } | null} createPermissionsFieldsProps Create only — inherited permissions
+ *   are read-only while grantable permissions are submitted with registration.
  * @property {{
  *   allowed: boolean,
  *   isUpdating: boolean,

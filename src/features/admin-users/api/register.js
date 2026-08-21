@@ -38,6 +38,7 @@ export async function registerUser(values) {
         CompanyId: values.companyId,
         BranchId: values.branchId,
         DepartmentId: values.departmentId,
+        ExtraPermissions: values.extraPermissions,
       },
     },
   );

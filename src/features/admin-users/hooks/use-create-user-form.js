@@ -6,6 +6,8 @@ import { adminAddBankAccount } from '../api/bank-accounts.js';
 import { createUserSchema } from '../config/create-user-schema.js';
 import { useBankAccountRows } from './use-bank-account-rows.js';
 import { useCreateUserMutation } from './use-create-user-mutation.js';
+import { useGrantablePermissionsQuery } from './use-grantable-permissions-query.js';
+import { useInheritedPermissionsQuery } from './use-inherited-permissions-query.js';
 import {
   useBranchesQuery,
   useCompaniesQuery,
@@ -43,6 +45,7 @@ const EMPTY_VALUES = {
   companyId: '',
   branchId: '',
   departmentId: '',
+  extraPermissions: [],
 };
 
 /** @param {string} [message] @returns {{ type: 'error', message: string } | undefined} */
@@ -129,6 +132,8 @@ export function useCreateUserForm({ onSuccess } = {}) {
   const oldAddressQuery = useOldAddressQuery();
   const newAddressQuery = useNewAddressQuery();
   const createUserMutation = useCreateUserMutation();
+  const grantablePermissionsQuery = useGrantablePermissionsQuery();
+  const inheritedPermissionsQuery = useInheritedPermissionsQuery(values.departmentId);
   const bankAccountRows = useBankAccountRows();
 
   const departmentsInBranch = (departmentsQuery.data ?? []).filter(
@@ -149,6 +154,10 @@ export function useCreateUserForm({ onSuccess } = {}) {
    * @param {string | number | undefined} value
    */
   function setField(field, value) {
+    if (field === 'companyId' || field === 'branchId' || field === 'departmentId') {
+      setValues((current) => ({ ...current, extraPermissions: [] }));
+    }
+
     setValues((current) =>
       applyFieldChange(
         current,
@@ -158,6 +167,11 @@ export function useCreateUserForm({ onSuccess } = {}) {
         value,
       ),
     );
+  }
+
+  /** @param {string[]} permissions */
+  function setExtraPermissions(permissions) {
+    setValues((current) => ({ ...current, extraPermissions: permissions }));
   }
 
   /** @param {import('react').FormEvent<HTMLFormElement>} event */
@@ -243,6 +257,11 @@ export function useCreateUserForm({ onSuccess } = {}) {
     branches: branchesQuery.data ?? [],
     departments: departmentsInBranch,
     positions: positionsQuery.data ?? [],
+    inheritedPermissions: inheritedPermissionsQuery.data ?? [],
+    grantablePermissions: grantablePermissionsQuery.data ?? [],
+    isLoadingPermissions:
+      inheritedPermissionsQuery.isLoading || grantablePermissionsQuery.isLoading,
+    setExtraPermissions,
     vietnamBanks: vietnamBanksQuery.data ?? [],
     oldProvinces,
     oldDistricts,

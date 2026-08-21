@@ -23,6 +23,22 @@ export async function listGrantablePermissions() {
 }
 
 /**
+ * Admin-only preview of permissions inherited from the selected department.
+ * The backend owns role-to-permission mapping and branch scope; the FE must
+ * never duplicate that authorization policy.
+ * @param {string} departmentId
+ * @returns {Promise<import('../types/index.js').InheritedPermission[]>}
+ */
+export async function previewInheritedPermissions(departmentId) {
+  const result = await apiRequest(
+    `/api/v1/permissions/inherited?departmentId=${encodeURIComponent(departmentId)}`,
+    { errorMessage: 'Không thể tải quyền kế thừa' },
+  );
+
+  return result.success ? (result.data ?? []) : [];
+}
+
+/**
  * Admin-only. Adds a permission to the grantable catalog. `key` must match
  * `namespace:action`, lowercase (e.g. `sales:secret`) — rejected (400)
  * otherwise. Does not, by itself, make any endpoint enforce it — a

@@ -5,6 +5,71 @@ Append-only session log. Newest entry FIRST.
 This file is the handoff between sessions/agents — write for a reader with zero conversation context.
 -->
 
+## 2026-08-21 — Assign inherited and additional permissions while creating employees
+
+**Context:** The backend change
+`../BE-kt-xnk/openspec/changes/assign-permissions-during-user-creation/`
+made employee creation and direct permission grants atomic, and introduced an
+Admin-only inherited-permission preview by Department.
+
+**What shipped.** The create dialog's Phân quyền tab now loads the selected
+Department's inherited permissions from
+`GET /api/v1/permissions/inherited?departmentId=...` and renders them as
+read-only Astryx checkboxes. Optional catalog permissions are selectable with
+`CheckboxList`; changing company, branch, or department clears stale choices.
+`registerUser` sends `ExtraPermissions` in the same registration request, so a
+validation failure cannot leave a user created without their intended grants.
+The edit flow remains immediate through the existing grant/revoke mutations.
+
+**Tests and evidence:** Added API contract tests for the inherited preview and
+atomic register payload. 81/81 tests green; lint, typecheck, dependency rules,
+production build, and quality thresholds all pass. Full harness:
+`harness/runs/20260821-153657-360/`.
+
+## 2026-08-21 — "Logistics" top nav item + `/logistics` route, gated by `logistics:view`
+
+**Context:** User asked for a new "Logistics" top-nav item and `/logistics`
+route, visible/reachable only to accounts with the `logistics:view`
+permission. `site.js` already had a comment anticipating exactly this
+(`{ label: 'Logistics', href: '/logistics', allowedPermissions:
+['logistics:view'] }`), and `db/sample-data.sql` (BE-kt-xnk) already seeds
+Nguyễn Văn A with that permission specifically for testing this. No
+`openspec/changes/` entry — direct request, small addition.
+
+**What shipped.**
+- `shared/config/site.js` — added the Logistics entry to `navLinks` and
+  `topNavLinks`.
+- `shared/config/route-access.js` — added `{ pathPrefix: '/logistics',
+  allowedPermissions: ['logistics:view'] }` so `src/middleware.js` blocks
+  direct navigation, not just hides the nav link (same pattern as
+  `/admin`'s `users:manage` rule).
+- `features/logistics/components/logistics-overview.jsx` + `index.js` — a
+  placeholder page ("Đang xây dựng" banner); no logistics data/API exists
+  yet, this only establishes the route and its permission gate.
+- `app/(protected)/logistics/page.jsx` — wired into the existing
+  `(protected)` route group, so it inherits the app shell and the
+  session-cookie auth check for free.
+- `shared/config/site.test.js` — updated the `topNavLinks` snapshot test and
+  added a gating assertion for the new link.
+
+**Verification:** `pnpm lint` / `pnpm typecheck` / `pnpm structure` /
+`pnpm test` (79/79) all clean. Full browser verification against the local
+Docker BE, three accounts:
+- Nguyễn Văn A (Logistics dept, has `logistics:view`) — link visible, page
+  renders.
+- System Admin — link also visible. Not a bug: `RolePermissions.Map`
+  (BE-kt-xnk) deliberately grants Admin `logistics:view` too.
+- Trần Thị B (Kế toán dept, no `logistics:view`) — link absent from nav,
+  and direct navigation to `/logistics` redirects to `/` via middleware
+  (confirms the route is actually enforced, not just hidden from the nav).
+
+**Next step:** none planned — real Logistics functionality is a separate,
+unscoped future task.
+
+**Blockers:** none
+
+---
+
 ## 2026-08-21 — Admin concurrent-session control + revoked-session notice
 
 **Context:** Follow-up to the backend single-session hardening. The wire

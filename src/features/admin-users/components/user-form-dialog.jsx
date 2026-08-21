@@ -14,6 +14,7 @@ import { VStack } from '@astryxdesign/core/VStack';
 import { useCreateUserFormV2 } from '../hooks/use-create-user-form-v2.js';
 import { useEditUserFormV2 } from '../hooks/use-edit-user-form-v2.js';
 import { BankAccountsFields } from './bank-accounts-fields.jsx';
+import { CreateUserPermissionsFields } from './create-user-permissions-fields.jsx';
 import { UserEmployeeFields } from './user-employee-fields.jsx';
 import { UserIdentityFields } from './user-identity-fields.jsx';
 import { UserOrgFields } from './user-org-fields.jsx';
@@ -95,6 +96,7 @@ function UserFormDialogShell({ isOpen, onOpenChange, controller }) {
     updateBankAccountRowField,
     setPrimaryBankAccountRow,
     permissionsFieldsProps,
+    createPermissionsFieldsProps,
     concurrentSessionsProps,
     handleSubmit,
   } = controller;
@@ -219,6 +221,14 @@ function UserFormDialogShell({ isOpen, onOpenChange, controller }) {
                           <FormSection value="permissions" title="Phân quyền">
                             <UserPermissionsFields
                               {...permissionsFieldsProps}
+                            />
+                          </FormSection>
+                        ) : null}
+
+                        {createPermissionsFieldsProps ? (
+                          <FormSection value="permissions" title="Phân quyền">
+                            <CreateUserPermissionsFields
+                              {...createPermissionsFieldsProps}
                             />
                           </FormSection>
                         ) : null}
