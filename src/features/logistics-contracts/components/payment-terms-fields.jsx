@@ -13,16 +13,21 @@ import { TextInput } from '@astryxdesign/core/TextInput';
 import { VStack } from '@astryxdesign/core/VStack';
 
 import { IconTrash } from '../../../shared/components/icon/icon-trash.jsx';
+import { formatMoney } from '../config/currencies.js';
 
 /**
  * "Đợt thanh toán" grid — tỷ lệ % + điều kiện thanh toán per row, with a
  * running total that turns red once it drifts from 100 (the backend
  * rejects anything else, see `CreateContractCommandValidator`, BE-kt-xnk).
+ * "Thành tiền" per row is a derived, read-only display (contractValue ×
+ * paymentRatioPercent / 100) — not part of the submitted payload.
  * Purely a controlled view over `usePaymentTermRows`'s state.
  * @param {{
  *   rows: import('../types/index.js').PaymentTermRow[],
  *   totalPercent: number,
  *   status?: { type: 'error', message: string },
+ *   contractValue?: number,
+ *   currency?: string,
  *   onAddRow: () => void,
  *   onRemoveRow: (rowKey: string) => void,
  *   onUpdateRowField: (rowKey: string, field: 'paymentRatioPercent' | 'paymentCondition', value: number | string) => void,
@@ -32,6 +37,8 @@ export function PaymentTermsFields({
   rows,
   totalPercent,
   status,
+  contractValue,
+  currency,
   onAddRow,
   onRemoveRow,
   onUpdateRowField,
@@ -49,7 +56,9 @@ export function PaymentTermsFields({
           label="Tỷ lệ (%)"
           isLabelHidden
           value={row.paymentRatioPercent}
-          onChange={(value) => onUpdateRowField(row.rowKey, 'paymentRatioPercent', value)}
+          onChange={(value) =>
+            onUpdateRowField(row.rowKey, 'paymentRatioPercent', value)
+          }
           min={0}
           max={100}
           step={0.01}
@@ -65,10 +74,33 @@ export function PaymentTermsFields({
           label="Điều kiện thanh toán"
           isLabelHidden
           value={row.paymentCondition}
-          onChange={(value) => onUpdateRowField(row.rowKey, 'paymentCondition', value)}
+          onChange={(value) =>
+            onUpdateRowField(row.rowKey, 'paymentCondition', value)
+          }
           placeholder="Ví dụ: L/C at sight, T/T..."
         />
       ),
+    },
+    {
+      key: 'amount',
+      header: 'Thành tiền',
+      width: pixel(160),
+      align: 'end',
+      renderCell: (row) => {
+        const amount =
+          typeof contractValue === 'number' && !Number.isNaN(contractValue)
+            ? (contractValue * (row.paymentRatioPercent || 0)) / 100
+            : undefined;
+        return (
+          <Text
+            type="body"
+            color={amount === undefined ? 'secondary' : undefined}
+            hasTabularNumbers
+          >
+            {amount === undefined ? '—' : formatMoney(amount, currency ?? '')}
+          </Text>
+        );
+      },
     },
     {
       key: 'actions',
@@ -94,15 +126,26 @@ export function PaymentTermsFields({
       <Table data={rows} columns={columns} idKey="rowKey" dividers="grid" />
 
       <HStack hAlign="between" vAlign="center">
-        <Button label="Thêm đợt thanh toán" type="button" variant="secondary" size="sm" onClick={onAddRow} />
+        <Button
+          label="Thêm đợt thanh toán"
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={onAddRow}
+        />
         {isTotalValid ? (
           <Text weight="semibold">Tổng: {totalPercent}%</Text>
         ) : (
-          <Badge variant="error" label={`Tổng: ${totalPercent}% (phải bằng 100%)`} />
+          <Badge
+            variant="error"
+            label={`Tổng: ${totalPercent}% (phải bằng 100%)`}
+          />
         )}
       </HStack>
 
-      {status ? <Banner status="error" title={status.message} container="card" /> : null}
+      {status ? (
+        <Banner status="error" title={status.message} container="card" />
+      ) : null}
     </VStack>
   );
 }

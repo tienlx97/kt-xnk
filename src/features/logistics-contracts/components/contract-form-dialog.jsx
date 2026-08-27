@@ -16,7 +16,7 @@ import { TextInput } from '@astryxdesign/core/TextInput';
 import { VStack } from '@astryxdesign/core/VStack';
 
 import { CommonDialog } from '../../../shared/components/common-dialog.jsx';
-import { currencyOptions, formatMoney } from '../config/currencies.js';
+import { currencyOptions } from '../config/currencies.js';
 import { incotermOptions } from '../config/incoterms.js';
 import { useContractForm } from '../hooks/use-contract-form.js';
 import { ContractBanksFields } from './contract-banks-fields.jsx';
@@ -55,7 +55,12 @@ function FormSection({ value, title, children }) {
  *   onSuccess?: () => void,
  * }} props
  */
-export function ContractFormDialog({ isOpen, onOpenChange, contract = null, onSuccess }) {
+export function ContractFormDialog({
+  isOpen,
+  onOpenChange,
+  contract = null,
+  onSuccess,
+}) {
   const form = useContractForm({ contract, onSuccess });
   const {
     title,
@@ -75,17 +80,15 @@ export function ContractFormDialog({ isOpen, onOpenChange, contract = null, onSu
     banks,
     paymentTermRows,
     partyAExtraFieldRows,
+    isCheckingContractNumber,
     submitError,
     submitSuccess,
     isSubmitting,
     handleSubmit,
   } = form;
 
-  const partyAFieldStatuses = {
-    companyName: fieldStatuses['partyAInline.companyName'],
-  };
-
-  const formattedContractValue = formatMoney(values.contractValue, values.currency);
+  /** @type {Record<string, { type: 'error', message: string } | undefined>} */
+  const partyAFieldStatuses = {};
 
   return (
     <CommonDialog
@@ -99,187 +102,236 @@ export function ContractFormDialog({ isOpen, onOpenChange, contract = null, onSu
           header={<DialogHeader title={title} onOpenChange={onOpenChange} />}
           content={
             <LayoutContent padding={6}>
-              <VStack gap={4} hAlign="stretch" height={CONTRACT_FORM_DIALOG_CONTENT_HEIGHT} isScrollable>
+              <VStack
+                gap={4}
+                hAlign="stretch"
+                height={CONTRACT_FORM_DIALOG_CONTENT_HEIGHT}
+                isScrollable
+              >
                 {submitError ? (
                   <Banner status="error" title={submitError} container="card" />
                 ) : null}
                 {submitSuccess ? (
-                  <Banner status="success" title={submitSuccess} container="card" />
+                  <Banner
+                    status="success"
+                    title={submitSuccess}
+                    container="card"
+                  />
                 ) : null}
 
-                <Card>
+                <CollapsibleGroup
+                  type="multiple"
+                  defaultValue={['general', 'partyA']}
+                >
                   <VStack gap={3} hAlign="stretch">
-                    <Text type="large" weight="semibold">
-                      Thông tin chung
-                    </Text>
+                    <FormSection value="general" title="Thông tin chung">
+                      <HStack gap={3}>
+                        <StackItem size="fill">
+                          <TextInput
+                            label="Số hợp đồng"
+                            value={values.contractNumber}
+                            onChange={(value) =>
+                              setField('contractNumber', value)
+                            }
+                            isRequired
+                            isLoading={isCheckingContractNumber}
+                            status={fieldStatuses.contractNumber}
+                            statusVariant="tooltip"
+                          />
+                        </StackItem>
+                        <StackItem size="fill">
+                          <TextInput
+                            label="Tên dự án"
+                            value={values.projectName}
+                            onChange={(value) => setField('projectName', value)}
+                            isRequired
+                            status={fieldStatuses.projectName}
+                            statusVariant="tooltip"
+                          />
+                        </StackItem>
+                      </HStack>
 
-                    <HStack gap={3}>
-                      <StackItem size="fill">
-                        <TextInput
-                          label="Số hợp đồng"
-                          value={values.contractNumber}
-                          onChange={(value) => setField('contractNumber', value)}
-                          isRequired
-                          status={fieldStatuses.contractNumber}
-                          statusVariant="tooltip"
-                        />
-                      </StackItem>
-                      <StackItem size="fill">
-                        <TextInput
-                          label="Tên dự án"
-                          value={values.projectName}
-                          onChange={(value) => setField('projectName', value)}
-                          isRequired
-                          status={fieldStatuses.projectName}
-                          statusVariant="tooltip"
-                        />
-                      </StackItem>
-                    </HStack>
+                      <HStack gap={3}>
+                        <StackItem size="fill">
+                          <DateInput
+                            label="Ngày tạo hợp đồng"
+                            value={
+                              /** @type {import('@astryxdesign/core/Calendar').ISODateString} */ (
+                                values.createdDate
+                              )
+                            }
+                            onChange={(value) =>
+                              setField('createdDate', value ?? '')
+                            }
+                            format="system_date"
+                            isRequired
+                            status={fieldStatuses.createdDate}
+                            statusVariant="tooltip"
+                          />
+                        </StackItem>
+                        <StackItem size="fill">
+                          <DateInput
+                            label="Ngày báo giá"
+                            value={
+                              /** @type {import('@astryxdesign/core/Calendar').ISODateString} */ (
+                                values.quotationDate
+                              )
+                            }
+                            onChange={(value) =>
+                              setField('quotationDate', value ?? '')
+                            }
+                            format="system_date"
+                            isRequired
+                            status={fieldStatuses.quotationDate}
+                            statusVariant="tooltip"
+                          />
+                        </StackItem>
+                      </HStack>
 
-                    <HStack gap={3}>
-                      <StackItem size="fill">
-                        <DateInput
-                          label="Ngày tạo hợp đồng"
-                          value={
-                            /** @type {import('@astryxdesign/core/Calendar').ISODateString} */ (
-                              values.createdDate
-                            )
-                          }
-                          onChange={(value) => setField('createdDate', value ?? '')}
-                          format="system_date"
-                          isRequired
-                          status={fieldStatuses.createdDate}
-                          statusVariant="tooltip"
-                        />
-                      </StackItem>
-                      <StackItem size="fill">
-                        <DateInput
-                          label="Ngày báo giá"
-                          value={
-                            /** @type {import('@astryxdesign/core/Calendar').ISODateString} */ (
-                              values.quotationDate
-                            )
-                          }
-                          onChange={(value) => setField('quotationDate', value ?? '')}
-                          format="system_date"
-                          isRequired
-                          status={fieldStatuses.quotationDate}
-                          statusVariant="tooltip"
-                        />
-                      </StackItem>
-                    </HStack>
+                      <HStack gap={3}>
+                        <StackItem size="fill">
+                          <TextInput
+                            label="Hạng mục"
+                            value={values.category}
+                            onChange={(value) => setField('category', value)}
+                            isRequired
+                            status={fieldStatuses.category}
+                            statusVariant="tooltip"
+                          />
+                        </StackItem>
+                        <StackItem size="fill">
+                          <TextInput
+                            label="Nước xuất khẩu"
+                            value={values.exportCountry}
+                            onChange={(value) =>
+                              setField('exportCountry', value)
+                            }
+                            isRequired
+                            status={fieldStatuses.exportCountry}
+                            statusVariant="tooltip"
+                          />
+                        </StackItem>
+                      </HStack>
 
-                    <HStack gap={3}>
-                      <StackItem size="fill">
-                        <TextInput
-                          label="Hạng mục"
-                          value={values.category}
-                          onChange={(value) => setField('category', value)}
-                          isRequired
-                          status={fieldStatuses.category}
-                          statusVariant="tooltip"
-                        />
-                      </StackItem>
-                      <StackItem size="fill">
-                        <TextInput
-                          label="Nước xuất khẩu"
-                          value={values.exportCountry}
-                          onChange={(value) => setField('exportCountry', value)}
-                          isRequired
-                          status={fieldStatuses.exportCountry}
-                          statusVariant="tooltip"
-                        />
-                      </StackItem>
-                    </HStack>
+                      <HStack gap={3}>
+                        <StackItem size="fill">
+                          <TextInput
+                            label="Cảng xếp hàng"
+                            value={values.portOfLoading}
+                            onChange={(value) =>
+                              setField('portOfLoading', value)
+                            }
+                            isRequired
+                            status={fieldStatuses.portOfLoading}
+                            statusVariant="tooltip"
+                          />
+                        </StackItem>
+                        <StackItem size="fill">
+                          <TextInput
+                            label="Cảng/nơi đến"
+                            value={values.portOrPlaceOfDestination}
+                            onChange={(value) =>
+                              setField('portOrPlaceOfDestination', value)
+                            }
+                            isRequired
+                            status={fieldStatuses.portOrPlaceOfDestination}
+                            statusVariant="tooltip"
+                          />
+                        </StackItem>
+                      </HStack>
 
-                    <HStack gap={3} vAlign="end">
-                      <StackItem size="fill">
-                        <NumberInput
-                          label="Giá trị hợp đồng"
-                          value={values.contractValue}
-                          onChange={(value) => setField('contractValue', value)}
-                          min={0}
-                          step={0.01}
-                          isRequired
-                          status={fieldStatuses.contractValue}
-                          statusVariant="tooltip"
-                        />
-                      </StackItem>
-                      <StackItem size="fill">
-                        <Selector
-                          label="Đơn vị tiền tệ"
-                          placeholder="Chọn đơn vị tiền tệ"
-                          value={values.currency}
-                          onChange={(value) => setField('currency', value ?? '')}
-                          options={currencyOptions}
-                          isRequired
-                          status={fieldStatuses.currency}
-                          statusVariant="tooltip"
-                        />
-                      </StackItem>
-                    </HStack>
+                      <HStack gap={3} vAlign="end">
+                        <StackItem size="fill">
+                          <NumberInput
+                            label="Giá trị hợp đồng"
+                            value={values.contractValue}
+                            onChange={(value) =>
+                              setField('contractValue', value)
+                            }
+                            min={0}
+                            step={0.01}
+                            units={values.currency || undefined}
+                            isRequired
+                            status={fieldStatuses.contractValue}
+                            statusVariant="tooltip"
+                          />
+                        </StackItem>
+                        <StackItem size="static">
+                          <Selector
+                            label="Tiền tệ"
+                            placeholder="Đơn vị"
+                            value={values.currency}
+                            onChange={(value) =>
+                              setField('currency', value ?? '')
+                            }
+                            options={currencyOptions}
+                            width={120}
+                            isRequired
+                            status={fieldStatuses.currency}
+                            statusVariant="tooltip"
+                          />
+                        </StackItem>
+                      </HStack>
 
-                    {formattedContractValue ? (
-                      <Text type="supporting" color="secondary">
-                        {formattedContractValue}
-                      </Text>
-                    ) : null}
-
-                    <HStack gap={3}>
-                      <StackItem size="fill">
-                        <Selector
-                          label="Incoterm"
-                          placeholder="Chọn Incoterm"
-                          value={values.incoterm}
-                          onChange={(value) => setField('incoterm', value ?? '')}
-                          options={incotermOptions}
-                          isRequired
-                          status={fieldStatuses.incoterm}
-                          statusVariant="tooltip"
-                        />
-                      </StackItem>
-                      <StackItem size="fill">
-                        <NumberInput
-                          label="Năm Incoterm"
-                          value={values.incotermYear}
-                          onChange={(value) => setField('incotermYear', value)}
-                          isIntegerOnly
-                          isRequired
-                          status={fieldStatuses.incotermYear}
-                          statusVariant="tooltip"
-                        />
-                      </StackItem>
-                    </HStack>
-
-                    {isBranchFixed ? (
-                      <Text type="supporting" color="secondary">
-                        Chi nhánh: {fixedBranchId ?? '— (không gắn chi nhánh)'}{' '}
-                        (không thể thay đổi sau khi tạo)
-                      </Text>
-                    ) : (
                       <HStack gap={3}>
                         <StackItem size="fill">
                           <Selector
+                            label="Incoterm"
+                            placeholder="Chọn Incoterm"
+                            value={values.incoterm}
+                            onChange={(value) =>
+                              setField('incoterm', value ?? '')
+                            }
+                            options={incotermOptions}
+                            isRequired
+                            status={fieldStatuses.incoterm}
+                            statusVariant="tooltip"
+                          />
+                        </StackItem>
+                        <StackItem size="fill">
+                          <NumberInput
+                            label="Năm Incoterm"
+                            value={values.incotermYear}
+                            onChange={(value) =>
+                              setField('incotermYear', value)
+                            }
+                            isIntegerOnly
+                            isRequired
+                            status={fieldStatuses.incotermYear}
+                            statusVariant="tooltip"
+                          />
+                        </StackItem>
+                      </HStack>
+
+                      {isBranchFixed ? (
+                        <Text type="supporting" color="secondary">
+                          Chi nhánh:{' '}
+                          {fixedBranchId ?? '— (không gắn chi nhánh)'} (không
+                          thể thay đổi sau khi tạo)
+                        </Text>
+                      ) : (
+                        <VStack gap={3} hAlign="stretch">
+                          <Selector
                             label="Công ty"
-                            description="Chỉ để lọc danh sách chi nhánh bên dưới, không được lưu vào hợp đồng"
                             hasSearch
                             placeholder="Chọn công ty"
                             value={values.companyId}
-                            onChange={(value) => setField('companyId', value ?? '')}
+                            onChange={(value) =>
+                              setField('companyId', value ?? '')
+                            }
                             options={companies.map((company) => ({
                               value: company.id,
                               label: company.name,
                             }))}
                             width="100%"
                           />
-                        </StackItem>
-                        <StackItem size="fill">
                           <Selector
                             label="Chi nhánh"
-                            description="Không bắt buộc"
                             placeholder="Chọn chi nhánh (không bắt buộc)"
                             value={values.branchId}
-                            onChange={(value) => setField('branchId', value ?? '')}
+                            onChange={(value) =>
+                              setField('branchId', value ?? '')
+                            }
                             options={branches.map((branch) => ({
                               value: branch.id,
                               label: branch.name,
@@ -291,19 +343,16 @@ export function ContractFormDialog({ isOpen, onOpenChange, contract = null, onSu
                             statusVariant="tooltip"
                             width="100%"
                           />
-                        </StackItem>
-                      </HStack>
-                    )}
-                  </VStack>
-                </Card>
+                        </VStack>
+                      )}
+                    </FormSection>
 
-                <CollapsibleGroup type="multiple" defaultValue={['partyA']}>
-                  <VStack gap={3} hAlign="stretch">
                     <FormSection value="partyA" title="Party A (Khách hàng)">
                       <PartyAFields
                         customers={customers}
                         sourceCustomerId={values.sourceCustomerId}
                         inlineValues={values.partyAInline}
+                        sourceCustomerIdStatus={fieldStatuses.sourceCustomerId}
                         fieldStatuses={partyAFieldStatuses}
                         onSelectExisting={selectExistingCustomer}
                         onSwitchToInline={switchToInlinePartyA}
@@ -317,6 +366,8 @@ export function ContractFormDialog({ isOpen, onOpenChange, contract = null, onSu
                         rows={paymentTermRows.rows}
                         totalPercent={paymentTermRows.totalPercent}
                         status={fieldStatuses.paymentTerms}
+                        contractValue={values.contractValue}
+                        currency={values.currency}
                         onAddRow={paymentTermRows.addRow}
                         onRemoveRow={paymentTermRows.removeRow}
                         onUpdateRowField={paymentTermRows.updateRowField}

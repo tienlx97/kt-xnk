@@ -32,6 +32,8 @@ const skeletonRows = Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => ({
   projectName: '',
   category: '',
   exportCountry: '',
+  portOfLoading: '',
+  portOrPlaceOfDestination: '',
   contractValue: 0,
   currency: '',
   incoterm: 'EXW',

@@ -1,11 +1,27 @@
 'use client';
 
+import { Button } from '@astryxdesign/core/Button';
+import { useCollapsible } from '@astryxdesign/core/Collapsible';
 import { HStack } from '@astryxdesign/core/HStack';
+import { Icon } from '@astryxdesign/core/Icon';
 import { StackItem } from '@astryxdesign/core/Stack';
 import { TextInput } from '@astryxdesign/core/TextInput';
 import { VStack } from '@astryxdesign/core/VStack';
+import * as stylex from '@stylexjs/stylex';
+import { useId } from 'react';
 
 import { ExtraFieldsEditor } from './extra-fields-editor.jsx';
+
+const styles = stylex.create({
+  chevron: {
+    transitionDuration: '150ms',
+    transitionProperty: 'transform',
+    transitionTimingFunction: 'ease-in',
+  },
+  chevronOpen: {
+    transform: 'rotate(180deg)',
+  },
+});
 
 /**
  * Shared Customer (Party A catalog) field-set — used both by the
@@ -16,20 +32,26 @@ import { ExtraFieldsEditor } from './extra-fields-editor.jsx';
  *   setField: (field: keyof import('../types/index.js').CustomerFormValues, value: string) => void,
  *   fieldStatuses: Record<string, { type: 'error', message: string } | undefined>,
  *   extraFieldRows: ReturnType<typeof import('../hooks/use-extra-field-rows.js').useExtraFieldRows>,
+ *   showCompanyName?: boolean,
+ *   isCollapsible?: boolean,
  * }} props
  */
-export function CustomerFields({ values, setField, fieldStatuses, extraFieldRows }) {
-  return (
-    <VStack gap={3} hAlign="stretch">
-      <TextInput
-        label="Tên công ty"
-        value={values.companyName}
-        onChange={(value) => setField('companyName', value)}
-        isRequired
-        status={fieldStatuses.companyName}
-        statusVariant="tooltip"
-      />
+export function CustomerFields({
+  values,
+  setField,
+  fieldStatuses,
+  extraFieldRows,
+  showCompanyName = true,
+  isCollapsible = false,
+}) {
+  const detailsId = useId();
+  const disclosure = useCollapsible({
+    isCollapsible: isCollapsible ? { defaultIsOpen: false } : false,
+  });
+  const areDetailsShown = !isCollapsible || disclosure.isOpen;
 
+  const detailFields = (
+    <VStack gap={3} hAlign="stretch" id={isCollapsible ? detailsId : undefined}>
       <HStack gap={3}>
         <StackItem size="fill">
           <TextInput
@@ -59,6 +81,46 @@ export function CustomerFields({ values, setField, fieldStatuses, extraFieldRows
         onRemoveRow={extraFieldRows.removeRow}
         onUpdateRowField={extraFieldRows.updateRowField}
       />
+    </VStack>
+  );
+
+  return (
+    <VStack gap={3} hAlign="stretch">
+      {showCompanyName ? (
+        <TextInput
+          label="Tên công ty"
+          value={values.companyName}
+          onChange={(value) => setField('companyName', value)}
+          isRequired
+          status={fieldStatuses.companyName}
+          statusVariant="tooltip"
+        />
+      ) : null}
+
+      {isCollapsible ? (
+        <Button
+          label={
+            disclosure.isOpen
+              ? 'Ẩn bớt thông tin chi tiết'
+              : 'Xem thêm thông tin chi tiết'
+          }
+          type="button"
+          variant="ghost"
+          size="sm"
+          aria-controls={detailsId}
+          aria-expanded={disclosure.isOpen}
+          onClick={disclosure.toggle}
+          endContent={
+            <Icon
+              icon="chevronDown"
+              size="sm"
+              xstyle={[styles.chevron, disclosure.isOpen && styles.chevronOpen]}
+            />
+          }
+        />
+      ) : null}
+
+      {areDetailsShown ? detailFields : null}
     </VStack>
   );
 }

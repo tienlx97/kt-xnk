@@ -56,6 +56,8 @@ export {};
  * @property {string} projectName
  * @property {string} category
  * @property {string} exportCountry
+ * @property {string} portOfLoading
+ * @property {string} portOrPlaceOfDestination
  * @property {number} contractValue
  * @property {string} currency - 3-letter uppercase ISO 4217 code, e.g. "USD"
  * @property {Incoterm} incoterm
@@ -119,6 +121,8 @@ export {};
  * @property {string} projectName
  * @property {string} category
  * @property {string} exportCountry
+ * @property {string} portOfLoading
+ * @property {string} portOrPlaceOfDestination
  * @property {number | undefined} contractValue
  * @property {string} currency - 3-letter uppercase ISO 4217 code
  * @property {Incoterm | ''} incoterm

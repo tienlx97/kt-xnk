@@ -47,3 +47,41 @@
       re-verification (dialog position/size, formatted money preview,
       branch-less contract creation with a decimal value) — see
       `harness/PROGRESS.md`'s second 2026-08-27 entry
+
+## Amendment (same day): dialog UI polish + real-time duplicate contract-number check
+
+- [x] 1.14 `ContractFormDialog`: "Giá trị hợp đồng" formats inline via
+      `NumberInput`'s `units` prop instead of a separate `Text` preview;
+      "Đơn vị tiền tệ" `Selector` shrunk to a fixed 120px; "Thông tin chung"
+      turned into a `FormSection` inside the same `CollapsibleGroup` as the
+      other three sections (was a fixed, non-collapsible `Card`)
+- [x] 1.15 `PaymentTermsFields` gained a "Thành tiền" column per row
+      (`contractValue × paymentRatioPercent / 100`, `formatMoney`) —
+      derived/read-only, not sent in the payload
+- [x] 1.16 Backend (`BE-kt-xnk`, sibling repo): new
+      `GET /api/v1/contracts/exists?contractNumber=&excludeContractId=` →
+      `{ exists }`, gated `logistics:contracts:view` (any scope — not
+      branch-scoped, `ContractNumber` uniqueness is system-wide). See that
+      repo's `openspec/changes/add-contract-number-exists-endpoint/` and its
+      own `PROGRESS.md` entry.
+- [x] 1.17 `api/contracts.js`: `checkContractNumberExists`; new
+      `hooks/use-contract-number-exists-query.js` (400ms debounce +
+      `useQuery`); `use-contract-form.js` wires it into
+      `fieldStatuses.contractNumber` (schema errors win) and exposes
+      `isCheckingContractNumber` for the field's `isLoading` spinner
+- [x] 1.19 `customer-fields.jsx`: new `isCollapsible` prop (default `false`)
+      gates Người đại diện/Chức vụ/Địa chỉ/`ExtraFieldsEditor` behind a
+      `useCollapsible`-driven toggle button; enabled from
+      `party-a-fields.jsx`'s two `CustomerFields` call sites only — the
+      standalone Customers-page dialog and quick-create dialog keep the
+      full flat form
+- [x] 1.20 `party-a-fields.jsx`/`contract-schema.js`: dropped the
+      free-typed "no customer selected → type a company name inline"
+      fallback — Party A must now reference a catalog `Customer` (pick or
+      "Thêm khách hàng"), since it duplicated the quick-create button.
+      Schema's Party-A `.refine` simplified to `Boolean(sourceCustomerId)`;
+      added an edit-mode hint for a pre-existing catalog-less Party A
+      (backend still accepts one, just not offered here anymore)
+- [x] 1.21 `pnpm lint`/`typecheck`/`structure`/`test` (83/83) green.
+      **Not** live-tested against a running dev server + BE-kt-xnk API this
+      session — static verification only, see `harness/PROGRESS.md`

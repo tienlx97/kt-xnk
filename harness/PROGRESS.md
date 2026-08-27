@@ -5,6 +5,145 @@ Append-only session log. Newest entry FIRST.
 This file is the handoff between sessions/agents — write for a reader with zero conversation context.
 -->
 
+## 2026-08-27 — Contract dialog: Party A now always catalog-linked; details field collapsed
+
+**Context:** Same-day follow-up. Two user requests: (1) the customer card's
+detail fields (Người đại diện/Chức vụ/Địa chỉ/trường tùy ý) were always
+visible, cluttering the card — collapse them behind a toggle; (2) the form
+let a user type a Party A company name inline with no catalog link at all,
+which duplicated the existing "Thêm khách hàng" quick-create button and was
+flagged as bad UX — confirmed with the user: drop the free-typed path
+entirely, Party A must always reference a catalog `Customer`.
+
+**Collapsible details (`customer-fields.jsx`).** New optional prop
+`isCollapsible` (default `false`, so `customer-form-dialog.jsx`'s and
+`quick-create-customer-dialog.jsx`'s full-form usages are unaffected).
+When true, `useCollapsible({ isCollapsible: { defaultIsOpen: false } })`
+gates Người đại diện/Chức vụ/Địa chỉ/`ExtraFieldsEditor` behind a "Xem thêm
+thông tin chi tiết" `Button` (chevron rotates on toggle via local stylex,
+ported from `IconChevron`'s own rotate styles). "Tên công ty" (when shown)
+stays outside, always visible. `party-a-fields.jsx` (the Contract form's
+Party A card — the one context this was asked for) passes `isCollapsible`
+on both its `CustomerFields` call sites.
+
+**Party A: catalog-only (`party-a-fields.jsx`, `contract-schema.js`).**
+Removed the "no customer selected → type one inline" fallback entirely —
+Party A is now always either an existing `Customer` (Selector) or a
+brand-new one via "Thêm khách hàng" (auto-selected once created via
+`QuickCreateCustomerDialog`'s existing `onCreated` callback — no wiring
+change needed there). `contract-schema.js`'s duplicate-satisfying-either
+`.refine` collapsed to just `Boolean(sourceCustomerId)`, error path now
+`sourceCustomerId` (was `partyAInline.companyName`) — wired to the Selector
+via a new `sourceCustomerIdStatus` prop instead of `CustomerFields`'
+`companyName` status. The API layer (`api/contracts.js`'s
+`buildPartyAPayload`) is untouched — the backend still accepts a typed
+`CompanyName` with no `SourceCustomerId`, this is a UI-only restriction, so
+an *existing* contract created before this change (or via direct API use)
+can still have a catalog-less Party A. Handled that edit-mode edge case: if
+`sourceCustomerId` doesn't resolve to a known customer but
+`partyAInline.companyName` is non-empty, show a supporting-text hint with
+the old value instead of a silently-empty required Selector.
+
+**Non-obvious TS fix (repeat of an earlier one this session).** The new
+`partyAFieldStatuses = {}` empty-object literal, spread later into
+`CustomerFields`' `fieldStatuses` prop, tripped the exact same "loses its
+index signature when spread inline" `tsc` issue as `use-contract-form.js`'s
+`fieldStatuses` earlier today — same fix, an explicit `/** @type {Record<string,
+...>} */` annotation on the `const`.
+
+**Verification:** `pnpm lint`/`typecheck`/`structure`/`test` (83/83) green.
+**Not** live-tested in a browser this pass (no dev server + BE-kt-xnk Docker
+API running in this session) — recommend a manual smoke test (pick an
+existing customer, quick-create a new one mid-contract, and — if any
+pre-existing contracts have a catalog-less Party A — open one in edit mode)
+before considering this fully verified.
+
+## 2026-08-27 — Contract dialog: Công ty/Chi nhánh row width bug (recurring)
+
+**Context:** Same-day follow-up. User reported the "Công ty"/"Chi nhánh" row
+in `ContractFormDialog` still had the old "input expands, not fixed width"
+bug — this is the same failure mode already root-caused and fixed once in
+`admin-users` (see the 2026-08-19 `.memsearch` history): `StackItem`'s
+`size="fill"` is `flexGrow: 1` only (`stackItem.stylex.ts`), **no**
+`flex-basis: 0` — so two Selectors sharing an `HStack` split space starting
+from each one's own content-driven `flex-basis: auto`, not evenly. A
+`Selector` with `hasSearch` (Công ty) or a long selected label renders wider
+than its neighbor, since nothing forces a fixed 50/50 split. Confirmed by
+reading `node_modules/@astryxdesign/core/src/Stack/stackItem.stylex.ts`
+directly, not by browser reproduction this pass.
+
+**Fix.** Never independently invented — `user-org-fields.jsx` (admin-users'
+Công ty/Chi nhánh/Phòng ban/Chức vụ) already landed on the durable fix after
+multiple failed attempts (adding `width="100%"`, removing `wrap="wrap"`):
+stop putting `Selector`s side-by-side in an `HStack` at all. Applied the same
+pattern here — `contract-form-dialog.jsx`'s Công ty/Chi nhánh `HStack` (two
+`StackItem size="fill"`) is now a `VStack gap={3}`, one `Selector` per row,
+each still `width="100%"`.
+
+**Verification:** `pnpm lint`/`typecheck`/`test` (83/83) green. **Not**
+re-verified live in a browser this pass (no dev server + BE-kt-xnk Docker
+API running in this session) — the fix is applied by well-evidenced analogy
+to the confirmed admin-users root cause, not by reproducing this exact
+instance first. Recommend a live check (long company name, resize) before
+calling this fully closed.
+
+## 2026-08-27 — Contract dialog UI polish + real-time duplicate contract-number check
+
+**Context:** User asked to (1) tighten up `/logistics/contracts`'s create/edit
+dialog and (2) flag a duplicate "Số hợp đồng" live as the user types instead
+of only on submit.
+
+**UI polish (`ContractFormDialog`, `PaymentTermsFields`).** "Giá trị hợp
+đồng" no longer shows a separate formatted-value `Text` underneath — the
+currency code now renders inline via `NumberInput`'s `units` prop. "Đơn vị
+tiền tệ" `Selector` shrunk to a fixed 120px (`StackItem size="static"`)
+instead of splitting the row evenly with the value field. The previously
+non-collapsible "Thông tin chung" `Card` is now a `FormSection` inside the
+same `CollapsibleGroup` as Party A/Đợt thanh toán/Ngân hàng, default-open
+alongside Party A — one consistent expand/collapse idiom for all four
+sections instead of one fixed block plus three collapsible ones.
+`PaymentTermsFields` gained a "Thành tiền" column per payment-term row
+(`contractValue × paymentRatioPercent / 100`, via `formatMoney`), a
+read-only derived display — not part of the submitted payload.
+
+**Real-time duplicate check.** The backend (`BE-kt-xnk`, sibling repo) had
+no endpoint for this — `IContractsRepository.ExistsByContractNumberAsync`
+only backed the `409` on submit. Added
+`GET /api/v1/contracts/exists?contractNumber=&excludeContractId=` there
+first (`openspec/changes/add-contract-number-exists-endpoint/` in that repo;
+`./harness/verify.sh` 8/8, +3 tests, 162/162 total — needed
+`DOTNET_ROOT="/c/Program Files/dotnet"` exported first, the same
+pre-existing Windows/git-bash `hostfxr.dll` issue that repo's own
+`PROGRESS.md` has logged repeatedly). On this side: `checkContractNumberExists`
+in `api/contracts.js`; new `useContractNumberExistsQuery` (`hooks/
+use-contract-number-exists-query.js`) debounces `contractNumber` 400ms then
+`useQuery`s the endpoint keyed on the debounced value + `excludeContractId`;
+`useContractForm` wires it in, merging its result into `fieldStatuses.
+contractNumber` (schema errors like "required" still win over the
+duplicate flag — same slot, schema checked first) and exposing
+`isCheckingContractNumber` for the `TextInput`'s `isLoading` spinner. Not
+branch-scoped — `ContractNumber` uniqueness is system-wide, and the endpoint
+only needs `logistics:contracts:view` in any scope. This is a UX aid only;
+the backend's `409 Conflict` on submit remains the actual source of truth
+(race between two users typing the same number is still possible and still
+caught there).
+
+**Non-obvious TS fix.** Merging a `Record<string, X>`-typed object (from
+`Object.fromEntries`) with one explicit key via `{ ...base, key: ... }`
+*inline inside a return-statement object literal* made `tsc` drop the index
+signature entirely — every other `fieldStatuses[...]` access in
+`contract-form-dialog.jsx` then failed with "property does not exist".
+Fixed by extracting the merge into its own `/** @type {Record<string, ...>}
+*/`-annotated variable first, then returning that variable — the explicit
+annotation is what keeps the index signature; the same object literal
+without it, even assigned to a `const`, was not enough.
+
+**Verification:** `pnpm lint`/`typecheck`/`structure`/`test` (83/83, +2 new
+for `checkContractNumberExists`) green. Not live-tested against a running
+dev server + BE-kt-xnk Docker API in this session — only static
+verification; recommend a manual smoke test (type a duplicate number, an
+edit-mode-own-number, an unused number) before considering this fully done.
+
 ## 2026-08-27 — CommonDialog, currency display, optional branch (follow-up)
 
 **Context:** Same-day follow-up to "Logistics Contracts + Customers pages"

@@ -5,7 +5,11 @@ import { useState } from 'react';
 import { contractSchema } from '../config/contract-schema.js';
 import { DEFAULT_CURRENCY } from '../config/currencies.js';
 import { useContractBanksQuery } from './use-contract-banks-query.js';
-import { useCreateContractMutation, useUpdateContractMutation } from './use-contracts-query.js';
+import { useContractNumberExistsQuery } from './use-contract-number-exists-query.js';
+import {
+  useCreateContractMutation,
+  useUpdateContractMutation,
+} from './use-contracts-query.js';
 import { useCustomersQuery } from './use-customers-query.js';
 import { useExtraFieldRows } from './use-extra-field-rows.js';
 import { useBranchesQuery, useCompaniesQuery } from './use-org-directory.js';
@@ -23,6 +27,8 @@ function emptyValues() {
     projectName: '',
     category: '',
     exportCountry: '',
+    portOfLoading: '',
+    portOrPlaceOfDestination: '',
     contractValue: undefined,
     currency: DEFAULT_CURRENCY,
     incoterm: '',
@@ -52,6 +58,8 @@ function valuesFromContract(contract) {
     projectName: contract.projectName,
     category: contract.category,
     exportCountry: contract.exportCountry,
+    portOfLoading: contract.portOfLoading,
+    portOrPlaceOfDestination: contract.portOrPlaceOfDestination,
     contractValue: contract.contractValue,
     currency: contract.currency,
     incoterm: contract.incoterm,
@@ -62,15 +70,17 @@ function valuesFromContract(contract) {
     companyId: '',
     branchId: contract.branchId ?? '',
     sourceCustomerId: contract.partyA.sourceCustomerId ?? '',
+    // RepresentativeName/RepresentativeTitle/Address are per-contract even
+    // when linked to a source customer (only CompanyName is pinned to the
+    // catalog) — always load the contract's own stored values, never blank
+    // them out based on sourceCustomerId.
     partyAInline: {
-      companyName: contract.partyA.sourceCustomerId ? '' : contract.partyA.companyName,
-      representativeName: contract.partyA.sourceCustomerId
+      companyName: contract.partyA.sourceCustomerId
         ? ''
-        : (contract.partyA.representativeName ?? ''),
-      representativeTitle: contract.partyA.sourceCustomerId
-        ? ''
-        : (contract.partyA.representativeTitle ?? ''),
-      address: contract.partyA.sourceCustomerId ? '' : (contract.partyA.address ?? ''),
+        : contract.partyA.companyName,
+      representativeName: contract.partyA.representativeName ?? '',
+      representativeTitle: contract.partyA.representativeTitle ?? '',
+      address: contract.partyA.address ?? '',
     },
     bankIds: contract.bankIds,
   };
@@ -114,17 +124,20 @@ export function useContractForm({ contract = null, onSuccess } = {}) {
       : undefined,
   );
   const partyAExtraFieldRows = useExtraFieldRows(
-    contract?.partyA.sourceCustomerId
-      ? []
-      : (contract?.partyA.extraFields ?? []).map((field) => ({
-          rowKey: crypto.randomUUID(),
-          key: field.key,
-          value: field.value,
-        })),
+    (contract?.partyA.extraFields ?? []).map((field) => ({
+      rowKey: crypto.randomUUID(),
+      key: field.key,
+      value: field.value,
+    })),
   );
 
   const createMutation = useCreateContractMutation();
   const updateMutation = useUpdateContractMutation();
+
+  const contractNumberExistsQuery = useContractNumberExistsQuery({
+    contractNumber: values.contractNumber,
+    excludeContractId: contract?.id,
+  });
 
   /**
    * @param {string} field
@@ -149,15 +162,42 @@ export function useContractForm({ contract = null, onSuccess } = {}) {
     }));
   }
 
-  /** Selecting an existing customer clears any inline Party A already typed.
-   * @param {string} customerId */
-  function selectExistingCustomer(customerId) {
+  /**
+   * Selecting an existing customer prefills representative/title/address/
+   * extra fields from its current catalog record — a starting point the
+   * user can still edit per contract, since only CompanyName stays pinned
+   * to the catalog (see `docs/api/Contracts.md`, BE-kt-xnk). `knownCustomer`
+   * lets a caller that already has the full record (the quick-create dialog,
+   * whose freshly-created customer may not be in `customersQuery`'s cache
+   * yet) skip the lookup.
+   * @param {string} customerId
+   * @param {import('../types/index.js').Customer} [knownCustomer]
+   */
+  function selectExistingCustomer(customerId, knownCustomer) {
+    const customers = customersQuery.data?.success
+      ? customersQuery.data.customers
+      : [];
+    const customer =
+      knownCustomer ??
+      customers.find((candidate) => candidate.id === customerId);
+
     setValues((current) => ({
       ...current,
       sourceCustomerId: customerId,
-      partyAInline: emptyValues().partyAInline,
+      partyAInline: {
+        companyName: '',
+        representativeName: customer?.representativeName ?? '',
+        representativeTitle: customer?.representativeTitle ?? '',
+        address: customer?.address ?? '',
+      },
     }));
-    partyAExtraFieldRows.clearRows();
+    partyAExtraFieldRows.setRows(
+      (customer?.extraFields ?? []).map((field) => ({
+        rowKey: crypto.randomUUID(),
+        key: field.key,
+        value: field.value,
+      })),
+    );
   }
 
   function switchToInlinePartyA() {
@@ -205,7 +245,11 @@ export function useContractForm({ contract = null, onSuccess } = {}) {
     };
 
     const mutationResult = contract
-      ? await updateMutation.mutateAsync({ contractId: contract.id, values: result.data, extra })
+      ? await updateMutation.mutateAsync({
+          contractId: contract.id,
+          values: result.data,
+          extra,
+        })
       : await createMutation.mutateAsync({ values: result.data, extra });
 
     if (!mutationResult.success) {
@@ -217,6 +261,30 @@ export function useContractForm({ contract = null, onSuccess } = {}) {
     onSuccess?.();
   }
 
+  /** @type {Record<string, { type: 'error', message: string } | undefined>} */
+  const baseFieldStatuses = Object.fromEntries(
+    Object.entries(fieldErrors).map(([key, message]) => [
+      key,
+      fieldStatus(message),
+    ]),
+  );
+
+  // Schema errors (e.g. "required") win over the duplicate-number check —
+  // both would otherwise fight for the same status slot.
+  /** @type {{ type: 'error', message: string } | undefined} */
+  const contractNumberDuplicateStatus =
+    contractNumberExistsQuery.result?.success &&
+    contractNumberExistsQuery.result.exists
+      ? { type: 'error', message: 'Số hợp đồng này đã được sử dụng' }
+      : undefined;
+
+  /** @type {Record<string, { type: 'error', message: string } | undefined>} */
+  const fieldStatuses = {
+    ...baseFieldStatuses,
+    contractNumber:
+      baseFieldStatuses.contractNumber ?? contractNumberDuplicateStatus,
+  };
+
   return {
     mode: isEdit ? 'edit' : 'create',
     title: isEdit ? 'CẬP NHẬT HỢP ĐỒNG' : 'TẠO HỢP ĐỒNG',
@@ -227,14 +295,15 @@ export function useContractForm({ contract = null, onSuccess } = {}) {
     selectExistingCustomer,
     switchToInlinePartyA,
     setBankIds,
-    fieldStatuses: Object.fromEntries(
-      Object.entries(fieldErrors).map(([key, message]) => [key, fieldStatus(message)]),
-    ),
+    fieldStatuses,
+    isCheckingContractNumber: contractNumberExistsQuery.isChecking,
     companies: companiesQuery.data ?? [],
     branches: branchesQuery.data ?? [],
     isBranchFixed: isEdit,
     fixedBranchId: contract?.branchId ?? null,
-    customers: customersQuery.data?.success ? customersQuery.data.customers : [],
+    customers: customersQuery.data?.success
+      ? customersQuery.data.customers
+      : [],
     banks: banksQuery.data?.success ? banksQuery.data.banks : [],
     paymentTermRows,
     partyAExtraFieldRows,

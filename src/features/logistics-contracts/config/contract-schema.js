@@ -9,14 +9,21 @@ const paymentTermSchema = z.object({
   paymentRatioPercent: z
     .number({ error: 'Vui lòng nhập tỷ lệ' })
     .positive('Tỷ lệ phải lớn hơn 0'),
-  paymentCondition: z.string().trim().min(1, 'Vui lòng nhập điều kiện thanh toán'),
+  paymentCondition: z
+    .string()
+    .trim()
+    .min(1, 'Vui lòng nhập điều kiện thanh toán'),
 });
 
 /**
  * Mirrors the backend's `CreateContractCommandValidator`/
  * `UpdateContractCommandValidator` (BE-kt-xnk): required header fields,
- * `contractValue > 0`, payment terms non-empty and summing to 100, and
- * Party A needing either a source customer or a typed-in company name.
+ * `contractValue > 0`, payment terms non-empty and summing to 100. Party A
+ * must reference a catalog `Customer` (`sourceCustomerId`) — the backend
+ * also accepts a typed-in `CompanyName` with no `SourceCustomerId`, but this
+ * form doesn't offer that path: "Thêm khách hàng" (quick-create) is the only
+ * way to add a customer not already in the catalog, so every Party A on a
+ * contract created here ends up catalog-linked.
  * `companyId` is intentionally not in this schema — it only narrows the
  * Branch selector client-side, the backend never sees it. `branchId` is
  * deliberately unvalidated (may be `''`) — the backend accepts a `null`
@@ -31,6 +38,16 @@ export const contractSchema = z
     projectName: z.string().trim().min(1, 'Vui lòng nhập tên dự án'),
     category: z.string().trim().min(1, 'Vui lòng nhập hạng mục'),
     exportCountry: z.string().trim().min(1, 'Vui lòng nhập nước xuất khẩu'),
+    portOfLoading: z
+      .string()
+      .trim()
+      .min(1, 'Vui lòng nhập cảng xếp hàng')
+      .max(200, 'Tối đa 200 ký tự'),
+    portOrPlaceOfDestination: z
+      .string()
+      .trim()
+      .min(1, 'Vui lòng nhập cảng/nơi đến')
+      .max(200, 'Tối đa 200 ký tự'),
     contractValue: z
       .number({ error: 'Vui lòng nhập giá trị hợp đồng' })
       .positive('Giá trị hợp đồng phải lớn hơn 0'),
@@ -54,15 +71,10 @@ export const contractSchema = z
       .min(1, 'Cần ít nhất 1 đợt thanh toán'),
     bankIds: z.array(z.string()),
   })
-  .refine(
-    (values) =>
-      Boolean(values.sourceCustomerId) ||
-      values.partyAInline.companyName.trim().length > 0,
-    {
-      message: 'Chọn khách hàng có sẵn hoặc nhập tên công ty',
-      path: ['partyAInline', 'companyName'],
-    },
-  )
+  .refine((values) => Boolean(values.sourceCustomerId), {
+    message: 'Vui lòng chọn khách hàng, hoặc bấm "Thêm khách hàng" để tạo mới',
+    path: ['sourceCustomerId'],
+  })
   .refine(
     (values) => {
       const total = values.paymentTerms.reduce(

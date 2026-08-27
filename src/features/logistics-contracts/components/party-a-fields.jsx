@@ -14,16 +14,23 @@ import { CustomerFields } from './customer-fields.jsx';
 import { QuickCreateCustomerDialog } from './quick-create-customer-dialog.jsx';
 
 /**
- * Party A: pick an existing `Customer` from the catalog (snapshotted into
- * the contract on save — see `docs/api/Contracts.md`, BE-kt-xnk) or type one
- * in inline. Picking one clears whatever was typed inline and vice versa —
- * the backend `PartyARequest` accepts exactly one of the two, never both.
+ * Party A must reference an existing `Customer` from the catalog
+ * (snapshotted into the contract on save — see `docs/api/Contracts.md`,
+ * BE-kt-xnk): pick one from the Selector, or "Thêm khách hàng" to create one
+ * on the spot (auto-selected once created) — there's no separate free-typed
+ * path, so every Party A stays catalog-linked. Picking a customer prefills
+ * representative/title/address/extra fields from its current catalog
+ * record, but those stay **editable** — the backend only pins `CompanyName`
+ * to the catalog when `SourceCustomerId` is set; every other field is
+ * independent per contract, so the same customer can be Party A on two
+ * contracts with a different representative on each.
  * @param {{
  *   customers: import('../types/index.js').Customer[],
  *   sourceCustomerId: string,
  *   inlineValues: import('../types/index.js').CustomerFormValues,
+ *   sourceCustomerIdStatus?: { type: 'error', message: string },
  *   fieldStatuses: Record<string, { type: 'error', message: string } | undefined>,
- *   onSelectExisting: (customerId: string) => void,
+ *   onSelectExisting: (customerId: string, knownCustomer?: import('../types/index.js').Customer) => void,
  *   onSwitchToInline: () => void,
  *   onInlineFieldChange: (field: keyof import('../types/index.js').CustomerFormValues, value: string) => void,
  *   extraFieldRows: ReturnType<typeof import('../hooks/use-extra-field-rows.js').useExtraFieldRows>,
@@ -33,6 +40,7 @@ export function PartyAFields({
   customers,
   sourceCustomerId,
   inlineValues,
+  sourceCustomerIdStatus,
   fieldStatuses,
   onSelectExisting,
   onSwitchToInline,
@@ -50,15 +58,20 @@ export function PartyAFields({
       <HStack gap={2} vAlign="end">
         <StackItem size="fill">
           <Selector
-            label="Khách hàng có sẵn"
+            label="Khách hàng"
             hasSearch
-            placeholder="Chọn khách hàng, hoặc bỏ trống để nhập mới bên dưới"
+            placeholder="Chọn khách hàng"
             value={sourceCustomerId}
-            onChange={(value) => (value ? onSelectExisting(value) : onSwitchToInline())}
+            onChange={(value) =>
+              value ? onSelectExisting(value) : onSwitchToInline()
+            }
             options={customers.map((customer) => ({
               value: customer.id,
               label: customer.companyName,
             }))}
+            isRequired
+            status={sourceCustomerIdStatus}
+            statusVariant="tooltip"
             width="100%"
           />
         </StackItem>
@@ -73,29 +86,38 @@ export function PartyAFields({
       </HStack>
 
       {selectedCustomer ? (
-        <VStack gap={1}>
+        <VStack gap={3} hAlign="stretch">
           <Text type="supporting" color="secondary">
-            Người đại diện: {selectedCustomer.representativeName || '—'} ·
-            {' '}
-            {selectedCustomer.representativeTitle || '—'}
+            Tên công ty: {selectedCustomer.companyName} (theo danh mục, không
+            sửa được ở đây)
           </Text>
-          <Text type="supporting" color="secondary">
-            Địa chỉ: {selectedCustomer.address || '—'}
-          </Text>
+          <CustomerFields
+            values={inlineValues}
+            setField={onInlineFieldChange}
+            fieldStatuses={fieldStatuses}
+            extraFieldRows={extraFieldRows}
+            showCompanyName={false}
+            isCollapsible
+          />
         </VStack>
-      ) : (
-        <CustomerFields
-          values={inlineValues}
-          setField={onInlineFieldChange}
-          fieldStatuses={fieldStatuses}
-          extraFieldRows={extraFieldRows}
-        />
-      )}
+      ) : inlineValues.companyName ? (
+        // Editing a contract whose Party A was saved without a catalog
+        // link (a typed CompanyName, no SourceCustomerId — the backend
+        // still allows that, this form just no longer offers it going
+        // forward). Surface the old value so the user isn't staring at an
+        // empty required Selector with no explanation, and point them at
+        // the fix: pick or create the matching catalog customer.
+        <Text type="supporting" color="secondary">
+          Tên công ty hiện tại (chưa gắn danh mục): {inlineValues.companyName}.
+          Chọn khách hàng tương ứng ở trên, hoặc &quot;Thêm khách hàng&quot; nếu
+          chưa có trong danh mục.
+        </Text>
+      ) : null}
 
       <QuickCreateCustomerDialog
         isOpen={isQuickCreateOpen}
         onOpenChange={setIsQuickCreateOpen}
-        onCreated={(customer) => onSelectExisting(customer.id)}
+        onCreated={(customer) => onSelectExisting(customer.id, customer)}
       />
     </VStack>
   );
