@@ -7,10 +7,22 @@
  * department there never requires an FE change here.
  *
  * `pathPrefix` matches the route itself and every sub-route under it, same
- * semantics as `isNavLinkActive` in `src/shared/api/nav.js`.
+ * semantics as `isNavLinkActive` in `src/shared/api/nav.js`. Order matters:
+ * `middleware.js` takes the *first* matching rule, so a more specific
+ * prefix (e.g. `/logistics/contracts`) must be listed before a broader one
+ * it is nested under (`/logistics`) — otherwise the broader rule always
+ * wins and the specific permission never gets checked.
  * @type {Array<{ pathPrefix: string, allowedPermissions: string[] }>}
  */
 export const routeAccessRules = [
   { pathPrefix: '/admin', allowedPermissions: ['users:manage'] },
+  {
+    pathPrefix: '/logistics/contracts',
+    allowedPermissions: ['logistics:contracts:view'],
+  },
+  {
+    pathPrefix: '/logistics/customers',
+    allowedPermissions: ['logistics:contracts:view'],
+  },
   { pathPrefix: '/logistics', allowedPermissions: ['logistics:view'] },
 ];

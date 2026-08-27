@@ -5,6 +5,131 @@ Append-only session log. Newest entry FIRST.
 This file is the handoff between sessions/agents — write for a reader with zero conversation context.
 -->
 
+## 2026-08-27 — CommonDialog, currency display, optional branch (follow-up)
+
+**Context:** Same-day follow-up to "Logistics Contracts + Customers pages"
+after BE-kt-xnk added `Contract.Currency` and made `BranchId` nullable/
+optional (see that repo's own PROGRESS.md entry). User asked for: (1) every
+dialog to open at a fixed distance from the top instead of Astryx's default
+vertical centering, wider/taller, via a reusable component; (2) money
+values formatted like `50,000.00 USD`; (3) the Contract form's internal
+Company/Branch selection to make Branch optional (Company narrows the
+Branch list only, never persisted). Change:
+`openspec/changes/logistics-contracts-customers-ui/` (amended).
+
+**What shipped.** `shared/components/common-dialog.jsx` (new): a thin
+wrapper over Astryx `Dialog` that fixes `position={{ top, start: 0, end:
+0 }}` + `style={{ marginInline: 'auto' }}`, `width=720`, `maxHeight='85vh'`
+by default. All 4 dialogs in `logistics-contracts` now use it
+(`ContractFormDialog` at 1100×88vh, the other 3 at 600px). `config/
+currencies.js` adds a curated `CURRENCY_CODES` Selector list + `formatMoney`
+(`Intl.NumberFormat` 2-decimals + thousands separators + currency code
+suffix), wired into the Contract form (a new "Đơn vị tiền tệ" Selector next
+to "Giá trị hợp đồng", with the formatted string shown live underneath) and
+the Contracts list's Giá trị column. "Chi nhánh" Selector is now
+`isOptional` (was `isRequired`), sent as `BranchId: null` when left blank;
+"Công ty" gained a description clarifying it's UI-only, narrowing the
+Branch options, never persisted.
+
+**Non-obvious fix required to center a top-anchored Dialog.** Astryx's
+`Dialog` replaces its default `margin: auto` centering with `margin: 0`
+the instant *any* `position` prop is supplied (see its `dynamicStyles.
+position`) — so `position={{ top: 72 }}` alone left the dialog pinned to
+the viewport's left edge, not centered. Fixed by also setting `start: 0,
+end: 0` (both logical insets, not just top) and overriding the margin back
+to `auto` via the `style` prop (inline styles win over the component's own
+stylex class) — deliberately *not* touching `transform`, which the open/
+close animation keyframes already own.
+
+**Real bug found while testing a non-integer contract value.** Submitting
+the Contract form with a decimal `ContractValue` (e.g. `12345.61`) silently
+did nothing — no fetch, no console error, no visible validation message.
+Root cause: Astryx `NumberInput` defaults `step` to `1`, so the underlying
+native `<input type="number">` fails the browser's own HTML5 constraint
+validation for any non-integer value, which cancels the `<form>`'s submit
+event *before* React's `onSubmit` ever runs — invisible because the
+constraint-validation popup only appears if the browser decides the field
+is visible/reachable, and here it silently no-ops instead. Confirmed via
+`form.checkValidity()` in the page console (`validationMessage: "Please
+enter a valid value. The two nearest valid values are 12345 and 12346."`).
+Fixed by adding `step={0.01}` to both `NumberInput`s that legitimately take
+a fraction: Contract's "Giá trị hợp đồng" and each payment term's "Tỷ lệ
+(%)" (percentages like `33.33` need it too). **Any future money/percentage
+`NumberInput` in this app needs `step={0.01}` explicitly — the Astryx
+default silently rejects decimals with no visible error.**
+
+**Verification:** `pnpm lint`/`typecheck`/`structure`/`test` (84, +1)/
+`build`/`quality-thresholds` all green — `./harness/verify.sh` 10/10.
+Live-tested against the local BE-kt-xnk Docker API: confirmed the dialog is
+now top-anchored and horizontally centered (screenshot before/after), the
+money preview renders `"12,345.61 USD"` live as typed, and — after the
+`step` fix — successfully created a contract with `BranchId: null` and a
+decimal `ContractValue`, verified via a direct `GET /contracts` fetch from
+the page console.
+
+## 2026-08-27 — Logistics Contracts + Customers pages
+
+**Context:** BE-kt-xnk's contract-management backend (5 endpoints:
+`Contracts`, `Customers`, `NotifyPartyContacts`, `ConsigneeContacts`,
+`ContractBanks`) shipped with nothing consuming it. User asked for a
+Logistics side nav with `/logistics/contracts` and `/logistics/customers`:
+a Contracts list with a create modal (quick-add bank/customer from inside
+it), and a Customers list + add.
+
+**What shipped.** `sidebarLogistics.json` (new) registered in
+`protected-app-shell.jsx`'s `SIDE_NAV_ROUTES`/`hasSelfManagedPadding` and
+`(protected)/layout.jsx`'s `sideNavRouteTrees`, giving `/logistics/*` the
+same 2-column side-nav layout `/admin/*` already has.
+`route-access.js` gained `/logistics/contracts`/`/logistics/customers`
+rules requiring `logistics:contracts:view`, listed **before** the existing
+broader `/logistics` rule — `middleware.js` takes the first match, so order
+matters.
+
+New feature `src/features/logistics-contracts/` (isolated per
+`harness/structure.rules.cjs` — its own `api/org-directory.js` duplicates
+`admin-users`' company/branch list calls rather than importing them,
+since features can't import each other). `ContractsList`/`CustomersList`
+follow `admin-users/components/user-list.jsx`'s Toolbar+Table+pagination
+shape exactly; `ContractFormDialog` follows `user-form-dialog.jsx`'s
+sectioned-Card dialog shape. Party A supports both picking an existing
+`Customer` (snapshotted server-side on save) and typing one inline, each
+with a quick-add dialog (`quick-create-customer-dialog.jsx`,
+`quick-create-bank-dialog.jsx`) that mirrors `create-org-item-dialog.jsx`'s
+plain-button-not-`<form>` trick — both are nested inside
+`ContractFormDialog`'s own `<form>`, and Astryx's `Dialog` is a non-portal
+native `<dialog>`, so a second real `<form>` there would be
+invalid-HTML-nested-in-a-form (the exact bug `create-org-item-dialog.jsx`
+already hit and fixed). Payment terms and Key/Value "trường tùy ý" rows
+both use the same `rowKey`-based repeatable-grid pattern as
+`use-bank-account-rows.js`; a `Badge variant="error"` flags the payment-term
+total whenever it drifts from 100 (client-side echo of the backend's
+`CreateContractCommandValidator` — mirrored in `config/contract-schema.js`,
+a `zod` schema, same hand-rolled-form convention as `create-user-schema.js`,
+no `react-hook-form` anywhere in this repo).
+
+**Deliberately out of scope this pass:** Notify Party/Consignee are not in
+the form (sent as `null` — the backend accepts that); no standalone
+NotifyPartyContacts/ConsigneeContacts/ContractBanks list pages (banks get
+create-only via the in-form quick-add, same as Company/Branch/Department/
+Position never got their own admin-users list page either); no
+delete/update on the 4 catalogs (matches the backend's own scope). Edit
+mode shows the contract's `BranchId` as a fixed raw GUID string rather than
+a resolved branch name — resolving it would need fetching every company's
+branches to find a match (no "get branch by id" endpoint exists); a known,
+accepted rough edge.
+
+**Verification:** `pnpm lint`/`typecheck`/`structure`/`test` (83 tests,
++2 new for `api/contracts.js`'s Party A payload branching)/`build`/
+`quality-thresholds` all green — `./harness/verify.sh` 10/10. Live-tested
+against the local BE-kt-xnk Docker API (already running from that repo's
+own session) as Nguyễn Văn A (Logistics dept, has
+`logistics:contracts:view`/`manage` on his branch): created a customer,
+created a contract picking that customer via the Selector, quick-added a
+*second* customer and a bank inline mid-contract-creation, entered payment
+terms summing to 100%, saved successfully, and confirmed the new row plus
+the Company→Branch cascade and Sửa (edit) prefill all work. No console
+errors observed.
+
 ## 2026-08-21 — Assign inherited and additional permissions while creating employees
 
 **Context:** The backend change

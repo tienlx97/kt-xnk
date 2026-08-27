@@ -1,0 +1,14 @@
+{
+  "title": "Logistics",
+  "path": "/logistics",
+  "routes": [
+    {
+      "title": "Hợp đồng",
+      "path": "/logistics/contracts"
+    },
+    {
+      "title": "Khách hàng",
+      "path": "/logistics/customers"
+    }
+  ]
+}

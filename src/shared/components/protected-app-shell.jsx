@@ -16,7 +16,7 @@ import { AppSideNav } from './side-nav.jsx';
 
 /** @typedef {import('../types/index.js').NavLink} NavLink */
 
-const SIDE_NAV_ROUTES = ['/tutorial', '/docs', '/admin'];
+const SIDE_NAV_ROUTES = ['/tutorial', '/docs', '/admin', '/logistics'];
 
 // react.dev sets its document body to 17px (text-lg) and sidebar links to
 // 15px (text-base) — noticeably larger than Astryx's neutral default
@@ -165,7 +165,11 @@ export function ProtectedAppShell({
   // padding/max-width contract, so it also opts out of `paddedMain` below
   // — the page itself wraps its content in `PageContentShell` instead.
   const hasSelfManagedPadding =
-    hasMdxLayout || pathname === '/admin' || pathname.startsWith('/admin/');
+    hasMdxLayout ||
+    pathname === '/admin' ||
+    pathname.startsWith('/admin/') ||
+    pathname === '/logistics' ||
+    pathname.startsWith('/logistics/');
   // Grid columns follow side-nav presence in general (any side-nav'd
   // section gets the 2-column layout); self-managed-padding content
   // additionally opts out of `main`'s own padding below since it applies

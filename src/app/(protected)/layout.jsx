@@ -11,6 +11,7 @@ import {
 } from '../../shared/config/session-keys.js';
 import { site, topNavLinks } from '../../shared/config/site.js';
 import sidebarAdmin from '../../sidebarAdmin.json';
+import sidebarLogistics from '../../sidebarLogistics.json';
 import sidebarPost from '../../sidebarPost.json';
 import sidebarTutorial from '../../sidebarTutorial.json';
 
@@ -41,7 +42,7 @@ export default async function ProtectedLayout({ children }) {
     <ProtectedAppShell
       endContent={<UserMenu />}
       navLinks={filterNavLinksByPermissions(topNavLinks, permissions)}
-      sideNavRouteTrees={[sidebarTutorial, sidebarPost, sidebarAdmin]}
+      sideNavRouteTrees={[sidebarTutorial, sidebarPost, sidebarAdmin, sidebarLogistics]}
       site={site}
       year={new Date().getFullYear()}
     >
