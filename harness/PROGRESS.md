@@ -5,6 +5,42 @@ Append-only session log. Newest entry FIRST.
 This file is the handoff between sessions/agents — write for a reader with zero conversation context.
 -->
 
+## 2026-08-29 — Expandable contract rows with inline details
+
+**Request:** Preserve the current working tree in a commit, then make each row
+in the Contracts table expandable in-place, following the supplied inventory
+table reference and reusing the contract fields already available in the list.
+
+**Implementation:** Committed the pre-existing table/search/Astryx migration as
+`4c2dbd1` before starting this task. `ContractsList` now composes Astryx
+`useTableRowExpansion` with the existing column-settings, sticky-column, and
+filter plugins. One `expandedContractId` owns the accordion state, so expanding
+a second contract closes the first. The whole data row toggles on click,
+Enter, or Space and exposes `aria-expanded`; the built-in chevron and context
+menu remain available. The row's Sửa action stops propagation, while the
+expanded panel offers its own Sửa hợp đồng action. The detail panel uses
+`MetadataList` to show the existing number, project, Party A, value, dates,
+category, Incoterm, country, ports, beneficiary-bank count, and payment terms.
+
+**Harness gap fixed:** The earlier Astryx migration changed source imports to
+the `@/* -> ./src/*` alias, but plain `node --test` did not resolve it, leaving
+five API/content test files unable to start. Added a narrow Node ESM resolve
+hook (`harness/node-alias-loader.mjs`), registered through
+`harness/register-node-alias.mjs`, and made the `test` script use it. A harness
+test launches Node through that registration and imports a real `@/shared/...`
+module, preventing the mismatch from returning. Full unit suite is now 91/91.
+
+**Visual verification:** Used a local-only browser session with fake permission
+cookies and an intercepted contracts response (no real credentials or backend
+state). Confirmed click expansion, exactly one expanded row after opening a
+second contract, Space-to-collapse, no browser errors, and captured
+`harness/runs/contracts-row-expanded.png`.
+
+**Verification:** `./harness/verify.sh` passed every gate: readiness, memory
+secrets, theme build, lint, typecheck, structure, harness tests, unit tests,
+production build, and quality threshold. Evidence:
+`harness/runs/20260829-142530-2340/`.
+
 ## 2026-08-28 — Advanced search + column visibility for all list tables
 
 **Request:** Add (1) advanced/multi-field search and (2) show/hide table

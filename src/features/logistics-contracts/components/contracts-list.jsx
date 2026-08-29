@@ -6,6 +6,10 @@ import { HStack } from '@astryxdesign/core/HStack';
 import { Icon } from '@astryxdesign/core/Icon';
 import { IconButton } from '@astryxdesign/core/IconButton';
 import {
+  MetadataList,
+  MetadataListItem,
+} from '@astryxdesign/core/MetadataList';
+import {
   PowerSearch,
   usePowerSearchConfig,
 } from '@astryxdesign/core/PowerSearch';
@@ -21,6 +25,7 @@ import {
   useTableColumnSettingsState,
   useTableFiltering,
   useTableFilterState,
+  useTableRowExpansion,
   useTableStickyColumns,
 } from '@astryxdesign/core/Table';
 import { Heading, Text } from '@astryxdesign/core/Text';
@@ -129,6 +134,12 @@ const stickyBackgroundStyle = /** @type {import('react').CSSProperties} */ ({
 });
 
 const styles = stylex.create({
+  clickableRow: {
+    cursor: 'pointer',
+  },
+  expandedRow: {
+    backgroundColor: colorVars['--color-background-muted'],
+  },
   // Fills the StackItem it sits in rather than a fixed/expand-on-focus
   // width — the search bar claims the toolbar's full remaining width, same
   // as the reference table template.
@@ -193,6 +204,92 @@ const skeletonRows = Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => ({
   bankIds: [],
 }));
 
+/** @param {import('../types/index.js').PaymentTerm[]} terms */
+function formatPaymentTermDetails(terms) {
+  return terms.length === 0
+    ? '—'
+    : terms
+        .map(
+          (term) =>
+            `${term.paymentRatioPercent}% — ${orDash(term.paymentCondition)}`,
+        )
+        .join(' · ');
+}
+
+/**
+ * @param {object} props
+ * @param {import('../types/index.js').Contract} props.contract
+ * @param {(contract: import('../types/index.js').Contract) => void} props.onEdit
+ */
+function ContractExpandedDetails({ contract, onEdit }) {
+  return (
+    <VStack gap={4} hAlign="stretch">
+      <HStack hAlign="between" vAlign="start" gap={4} wrap="wrap">
+        <VStack gap={1}>
+          <Heading level={3}>{contract.projectName}</Heading>
+          <Text color="secondary">
+            {contract.contractNumber} · {contract.partyA.companyName}
+          </Text>
+        </VStack>
+        <Button
+          label="Sửa hợp đồng"
+          variant="primary"
+          size="sm"
+          onClick={() => onEdit(contract)}
+        />
+      </HStack>
+
+      <MetadataList
+        title="Thông số hợp đồng"
+        columns={4}
+        label={{ position: 'top' }}
+      >
+        <MetadataListItem label="Số hợp đồng">
+          {contract.contractNumber}
+        </MetadataListItem>
+        <MetadataListItem label="Dự án">
+          {contract.projectName}
+        </MetadataListItem>
+        <MetadataListItem label="Khách hàng">
+          {contract.partyA.companyName}
+        </MetadataListItem>
+        <MetadataListItem label="Giá trị">
+          {formatMoney(contract.contractValue, contract.currency)}
+        </MetadataListItem>
+        <MetadataListItem label="Ngày tạo">
+          {orDash(contract.createdDate)}
+        </MetadataListItem>
+        <MetadataListItem label="Ngày báo giá">
+          {orDash(contract.quotationDate)}
+        </MetadataListItem>
+        <MetadataListItem label="Hạng mục">
+          {orDash(contract.category)}
+        </MetadataListItem>
+        <MetadataListItem label="Incoterm">
+          {contract.incoterm} {contract.incotermYear}
+        </MetadataListItem>
+        <MetadataListItem label="Nước xuất khẩu">
+          {orDash(contract.exportCountry)}
+        </MetadataListItem>
+        <MetadataListItem label="Cảng xếp hàng">
+          {orDash(contract.portOfLoading)}
+        </MetadataListItem>
+        <MetadataListItem label="Cảng/nơi đến">
+          {orDash(contract.portOrPlaceOfDestination)}
+        </MetadataListItem>
+        <MetadataListItem label="Ngân hàng thụ hưởng">
+          {contract.bankIds.length === 0
+            ? '—'
+            : `${contract.bankIds.length} ngân hàng`}
+        </MetadataListItem>
+        <MetadataListItem label="Đợt thanh toán">
+          {formatPaymentTermDetails(contract.paymentTerms)}
+        </MetadataListItem>
+      </MetadataList>
+    </VStack>
+  );
+}
+
 export function ContractsList() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [hasOpenedCreate, setHasOpenedCreate] = useState(false);
@@ -204,11 +301,12 @@ export function ContractsList() {
   );
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [pageIndex, setPageIndex] = useState(1);
+  const [expandedContractId, setExpandedContractId] = useState(
+    /** @type {string | null} */ (null),
+  );
   const [activeColumnKeys, setActiveColumnKeys] = useState(DEFAULT_COLUMN_KEYS);
   const [density, setDensity] = useState(
-    /** @type {import('@astryxdesign/core/Table').TableDensity} */ (
-      'balanced'
-    ),
+    /** @type {import('@astryxdesign/core/Table').TableDensity} */ ('balanced'),
   );
   // Defaults mirror the previous hard-coded pin (identity column + actions
   // column); the View options popover now makes both edges adjustable.
@@ -338,7 +436,10 @@ export function ContractsList() {
           label="Sửa"
           variant="ghost"
           size="sm"
-          onClick={() => setEditingContract(contract)}
+          onClick={(event) => {
+            event.stopPropagation();
+            setEditingContract(contract);
+          }}
         />
       ),
     },
@@ -419,6 +520,77 @@ export function ContractsList() {
               : [],
       })
     );
+
+  const expandedKeys = useMemo(
+    () => new Set(expandedContractId ? [expandedContractId] : []),
+    [expandedContractId],
+  );
+  const expansionPlugin =
+    /** @type {import('@astryxdesign/core/Table').TablePlugin<import('../types/index.js').Contract & Record<string, unknown>>} */ (
+      useTableRowExpansion({
+        expandedKeys,
+        onToggle: (contractId) =>
+          setExpandedContractId((current) =>
+            current === contractId ? null : contractId,
+          ),
+        getRowKey: (contract) => contract.id,
+        getIsItemExpandable: (contract) => !contract.id.startsWith('skeleton-'),
+        renderExpanded: (contract) => (
+          <ContractExpandedDetails
+            contract={contract}
+            onEdit={setEditingContract}
+          />
+        ),
+      })
+    );
+  const rowInteractionPlugin = useMemo(
+    /** @returns {import('@astryxdesign/core/Table').TablePlugin<import('../types/index.js').Contract & Record<string, unknown>>} */
+    () => ({
+      transformBodyRow: (props, contract) => {
+        const isExpandable = !contract.id.startsWith('skeleton-');
+        if (!isExpandable) {
+          return props;
+        }
+
+        const toggle = () =>
+          setExpandedContractId((current) =>
+            current === contract.id ? null : contract.id,
+          );
+
+        return {
+          ...props,
+          htmlProps: {
+            ...props.htmlProps,
+            'aria-expanded': expandedContractId === contract.id,
+            tabIndex: 0,
+            onClick: (event) => {
+              props.htmlProps.onClick?.(event);
+              if (!event.defaultPrevented) {
+                toggle();
+              }
+            },
+            onKeyDown: (event) => {
+              props.htmlProps.onKeyDown?.(event);
+              if (
+                !event.defaultPrevented &&
+                event.target === event.currentTarget &&
+                (event.key === 'Enter' || event.key === ' ')
+              ) {
+                event.preventDefault();
+                toggle();
+              }
+            },
+          },
+          xstyle: [
+            ...props.xstyle,
+            styles.clickableRow,
+            expandedContractId === contract.id && styles.expandedRow,
+          ],
+        };
+      },
+    }),
+    [expandedContractId],
+  );
 
   const totalContracts = listResult?.success ? listResult.totalCount : 0;
   const totalPages = Math.max(
@@ -576,7 +748,9 @@ export function ContractsList() {
             renderValue={(option) =>
               `Incoterm là ${option.label ?? option.value}`
             }
-            xstyle={getQuickFilterValue('incoterm') ? styles.filterFill : undefined}
+            xstyle={
+              getQuickFilterValue('incoterm') ? styles.filterFill : undefined
+            }
             onChange={(next) => setQuickFilter('incoterm', next)}
           />
           <Selector
@@ -590,7 +764,9 @@ export function ContractsList() {
             renderValue={(option) =>
               `Tiền tệ là ${option.label ?? option.value}`
             }
-            xstyle={getQuickFilterValue('currency') ? styles.filterFill : undefined}
+            xstyle={
+              getQuickFilterValue('currency') ? styles.filterFill : undefined
+            }
             onChange={(next) => setQuickFilter('currency', next)}
           />
         </HStack>
@@ -604,6 +780,8 @@ export function ContractsList() {
           hasHover
           plugins={{
             columnSettings: columnSettingsPlugin,
+            expansion: expansionPlugin,
+            rowInteraction: rowInteractionPlugin,
             stickyColumns: stickyColumnsPlugin,
             filter: filterPlugin,
           }}
