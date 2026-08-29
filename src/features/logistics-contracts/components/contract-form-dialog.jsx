@@ -23,6 +23,7 @@ import { useContractForm } from '../hooks/use-contract-form.js';
 import { ContractBanksFields } from './contract-banks-fields.jsx';
 import { PartyAFields } from './party-a-fields.jsx';
 import { PaymentTermsFields } from './payment-terms-fields.jsx';
+import { SellerPickerFields } from './seller-picker-fields.jsx';
 
 export const CONTRACT_FORM_DIALOG_WIDTH = 1100;
 const CONTRACT_FORM_DIALOG_MAX_HEIGHT = '88vh';
@@ -68,6 +69,9 @@ export function ContractFormDialog({
     submitLabel,
     values,
     setField,
+    setSellerInlineField,
+    selectExistingSeller,
+    switchToInlineSeller,
     setPartyAInlineField,
     selectExistingCustomer,
     switchToInlinePartyA,
@@ -77,9 +81,11 @@ export function ContractFormDialog({
     branches,
     isBranchFixed,
     fixedBranchId,
+    sellers,
     customers,
     banks,
     paymentTermRows,
+    sellerExtraFieldRows,
     partyAExtraFieldRows,
     isCheckingContractNumber,
     submitError,
@@ -88,6 +94,8 @@ export function ContractFormDialog({
     handleSubmit,
   } = form;
 
+  /** @type {Record<string, { type: 'error', message: string } | undefined>} */
+  const sellerFieldStatuses = {};
   /** @type {Record<string, { type: 'error', message: string } | undefined>} */
   const partyAFieldStatuses = {};
 
@@ -122,7 +130,7 @@ export function ContractFormDialog({
 
                 <CollapsibleGroup
                   type="multiple"
-                  defaultValue={['general', 'partyA']}
+                  defaultValue={['general', 'seller', 'partyA']}
                 >
                   <VStack gap={3} hAlign="stretch">
                     <FormSection value="general" title="Thông tin chung">
@@ -341,6 +349,20 @@ export function ContractFormDialog({
                           />
                         </VStack>
                       )}
+                    </FormSection>
+
+                    <FormSection value="seller" title="Bên bán">
+                      <SellerPickerFields
+                        sellers={sellers}
+                        sourceSellerId={values.sourceSellerId}
+                        inlineValues={values.sellerInline}
+                        sourceSellerIdStatus={fieldStatuses.sourceSellerId}
+                        fieldStatuses={sellerFieldStatuses}
+                        onSelectExisting={selectExistingSeller}
+                        onSwitchToInline={switchToInlineSeller}
+                        onInlineFieldChange={setSellerInlineField}
+                        extraFieldRows={sellerExtraFieldRows}
+                      />
                     </FormSection>
 
                     <FormSection value="partyA" title="Party A (Khách hàng)">

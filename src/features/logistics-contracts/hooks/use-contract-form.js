@@ -14,6 +14,7 @@ import { useCustomersQuery } from './use-customers-query.js';
 import { useExtraFieldRows } from './use-extra-field-rows.js';
 import { useBranchesQuery, useCompaniesQuery } from './use-org-directory.js';
 import { usePaymentTermRows } from './use-payment-term-rows.js';
+import { useSellersQuery } from './use-sellers-query.js';
 
 const TODAY_ISO = new Date().toISOString().slice(0, 10);
 const CURRENT_YEAR = new Date().getFullYear();
@@ -35,6 +36,13 @@ function emptyValues() {
     incotermYear: CURRENT_YEAR,
     companyId: '',
     branchId: '',
+    sourceSellerId: '',
+    sellerInline: {
+      companyName: '',
+      representativeName: '',
+      representativeTitle: '',
+      address: '',
+    },
     sourceCustomerId: '',
     partyAInline: {
       companyName: '',
@@ -69,6 +77,19 @@ function valuesFromContract(contract) {
     // narrow the create-mode Branch selector.
     companyId: '',
     branchId: contract.branchId ?? '',
+    sourceSellerId: contract.seller.sourceSellerId ?? '',
+    // RepresentativeName/RepresentativeTitle/Address are per-contract even
+    // when linked to a source seller (only CompanyName is pinned to the
+    // catalog) — always load the contract's own stored values, never blank
+    // them out based on sourceSellerId.
+    sellerInline: {
+      companyName: contract.seller.sourceSellerId
+        ? ''
+        : contract.seller.companyName,
+      representativeName: contract.seller.representativeName ?? '',
+      representativeTitle: contract.seller.representativeTitle ?? '',
+      address: contract.seller.address ?? '',
+    },
     sourceCustomerId: contract.partyA.sourceCustomerId ?? '',
     // RepresentativeName/RepresentativeTitle/Address are per-contract even
     // when linked to a source customer (only CompanyName is pinned to the
@@ -111,6 +132,7 @@ export function useContractForm({ contract = null, onSuccess } = {}) {
 
   const companiesQuery = useCompaniesQuery();
   const branchesQuery = useBranchesQuery(values.companyId ?? '');
+  const sellersQuery = useSellersQuery();
   const customersQuery = useCustomersQuery();
   const banksQuery = useContractBanksQuery();
 
@@ -122,6 +144,13 @@ export function useContractForm({ contract = null, onSuccess } = {}) {
           paymentCondition: term.paymentCondition,
         }))
       : undefined,
+  );
+  const sellerExtraFieldRows = useExtraFieldRows(
+    (contract?.seller.extraFields ?? []).map((field) => ({
+      rowKey: crypto.randomUUID(),
+      key: field.key,
+      value: field.value,
+    })),
   );
   const partyAExtraFieldRows = useExtraFieldRows(
     (contract?.partyA.extraFields ?? []).map((field) => ({
@@ -149,6 +178,51 @@ export function useContractForm({ contract = null, onSuccess } = {}) {
       if (field === 'companyId') next.branchId = '';
       return next;
     });
+  }
+
+  /**
+   * @param {'companyName' | 'representativeName' | 'representativeTitle' | 'address'} field
+   * @param {string} value
+   */
+  function setSellerInlineField(field, value) {
+    setValues((current) => ({
+      ...current,
+      sellerInline: { ...current.sellerInline, [field]: value },
+    }));
+  }
+
+  /**
+   * Selecting an existing seller prefills representative/title/address/
+   * extra fields from its current catalog record — mirrors
+   * `selectExistingCustomer`.
+   * @param {string} sellerId
+   * @param {import('../types/index.js').Seller} [knownSeller]
+   */
+  function selectExistingSeller(sellerId, knownSeller) {
+    const sellers = sellersQuery.data?.success ? sellersQuery.data.sellers : [];
+    const seller = knownSeller ?? sellers.find((candidate) => candidate.id === sellerId);
+
+    setValues((current) => ({
+      ...current,
+      sourceSellerId: sellerId,
+      sellerInline: {
+        companyName: '',
+        representativeName: seller?.representativeName ?? '',
+        representativeTitle: seller?.representativeTitle ?? '',
+        address: seller?.address ?? '',
+      },
+    }));
+    sellerExtraFieldRows.setRows(
+      (seller?.extraFields ?? []).map((field) => ({
+        rowKey: crypto.randomUUID(),
+        key: field.key,
+        value: field.value,
+      })),
+    );
+  }
+
+  function switchToInlineSeller() {
+    setValues((current) => ({ ...current, sourceSellerId: '' }));
   }
 
   /**
@@ -241,6 +315,7 @@ export function useContractForm({ contract = null, onSuccess } = {}) {
 
     const extra = {
       paymentTerms: result.data.paymentTerms,
+      sellerExtraFieldRows: sellerExtraFieldRows.rows,
       partyAExtraFieldRows: partyAExtraFieldRows.rows,
     };
 
@@ -295,6 +370,9 @@ export function useContractForm({ contract = null, onSuccess } = {}) {
     submitLabel: isEdit ? 'Lưu thay đổi' : 'Tạo hợp đồng',
     values,
     setField,
+    setSellerInlineField,
+    selectExistingSeller,
+    switchToInlineSeller,
     setPartyAInlineField,
     selectExistingCustomer,
     switchToInlinePartyA,
@@ -305,11 +383,13 @@ export function useContractForm({ contract = null, onSuccess } = {}) {
     branches: branchesQuery.data ?? [],
     isBranchFixed: isEdit,
     fixedBranchId: contract?.branchId ?? null,
+    sellers: sellersQuery.data?.success ? sellersQuery.data.sellers : [],
     customers: customersQuery.data?.success
       ? customersQuery.data.customers
       : [],
     banks: banksQuery.data?.success ? banksQuery.data.banks : [],
     paymentTermRows,
+    sellerExtraFieldRows,
     partyAExtraFieldRows,
     submitError,
     submitSuccess,

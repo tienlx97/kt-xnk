@@ -18,12 +18,13 @@ const paymentTermSchema = z.object({
 /**
  * Mirrors the backend's `CreateContractCommandValidator`/
  * `UpdateContractCommandValidator` (BE-kt-xnk): required header fields,
- * `contractValue > 0`, payment terms non-empty and summing to 100. Party A
- * must reference a catalog `Customer` (`sourceCustomerId`) — the backend
- * also accepts a typed-in `CompanyName` with no `SourceCustomerId`, but this
- * form doesn't offer that path: "Thêm khách hàng" (quick-create) is the only
- * way to add a customer not already in the catalog, so every Party A on a
- * contract created here ends up catalog-linked.
+ * `contractValue > 0`, payment terms non-empty and summing to 100. Seller
+ * (bên bán) and Party A must each reference a catalog entry
+ * (`sourceSellerId`/`sourceCustomerId`) — the backend also accepts a
+ * typed-in `CompanyName` with no source id, but this form doesn't offer that
+ * path: "Thêm bên bán"/"Thêm khách hàng" (quick-create) is the only way to
+ * add one not already in the catalog, so every Seller/Party A on a contract
+ * created here ends up catalog-linked.
  * `companyId` is intentionally not in this schema — it only narrows the
  * Branch selector client-side, the backend never sees it. `branchId` is
  * deliberately unvalidated (may be `''`) — the backend accepts a `null`
@@ -59,6 +60,13 @@ export const contractSchema = z
       .min(2000, 'Năm Incoterm không hợp lệ')
       .max(CURRENT_YEAR + 1, 'Năm Incoterm không hợp lệ'),
     branchId: z.string(),
+    sourceSellerId: z.string(),
+    sellerInline: z.object({
+      companyName: z.string().trim(),
+      representativeName: z.string().trim(),
+      representativeTitle: z.string().trim(),
+      address: z.string().trim(),
+    }),
     sourceCustomerId: z.string(),
     partyAInline: z.object({
       companyName: z.string().trim(),
@@ -70,6 +78,10 @@ export const contractSchema = z
       .array(paymentTermSchema)
       .min(1, 'Cần ít nhất 1 đợt thanh toán'),
     bankIds: z.array(z.string()),
+  })
+  .refine((values) => Boolean(values.sourceSellerId), {
+    message: 'Vui lòng chọn bên bán, hoặc bấm "Thêm bên bán" để tạo mới',
+    path: ['sourceSellerId'],
   })
   .refine((values) => Boolean(values.sourceCustomerId), {
     message: 'Vui lòng chọn khách hàng, hoặc bấm "Thêm khách hàng" để tạo mới',

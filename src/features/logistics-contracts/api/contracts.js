@@ -63,6 +63,29 @@ export async function checkContractNumberExists({
 }
 
 /**
+ * Turns the validated form shape into the `Seller` wire object. Same rules
+ * as `buildPartyAPayload`: `CompanyName` is only sent when there's no
+ * `SourceSellerId`, every other field is always sent from the form (see
+ * `docs/api/Contracts.md`, BE-kt-xnk).
+ * @param {import('../types/index.js').ContractFormValues} values
+ * @param {import('../types/index.js').ExtraFieldRow[]} sellerExtraFieldRows
+ */
+function buildSellerPayload(values, sellerExtraFieldRows) {
+  const extraFields = sellerExtraFieldRows
+    .filter((row) => row.key.trim())
+    .map((row) => ({ Key: row.key, Value: row.value }));
+
+  return {
+    SourceSellerId: values.sourceSellerId || null,
+    CompanyName: values.sourceSellerId ? null : values.sellerInline.companyName,
+    RepresentativeName: values.sellerInline.representativeName || null,
+    RepresentativeTitle: values.sellerInline.representativeTitle || null,
+    Address: values.sellerInline.address || null,
+    ExtraFields: extraFields,
+  };
+}
+
+/**
  * Turns the validated form shape into the `PartyA` wire object. `CompanyName`
  * is only sent when there's no `SourceCustomerId` — the backend takes it
  * from the catalog record when linked. Every other field
@@ -93,11 +116,11 @@ function buildPartyAPayload(values, partyAExtraFieldRows) {
 
 /**
  * @param {import('../types/index.js').ContractFormValues} values
- * @param {{ paymentTerms: { paymentRatioPercent: number, paymentCondition: string }[], partyAExtraFieldRows?: import('../types/index.js').ExtraFieldRow[] }} extra
+ * @param {{ paymentTerms: { paymentRatioPercent: number, paymentCondition: string }[], sellerExtraFieldRows?: import('../types/index.js').ExtraFieldRow[], partyAExtraFieldRows?: import('../types/index.js').ExtraFieldRow[] }} extra
  */
 function buildContractBody(
   values,
-  { paymentTerms, partyAExtraFieldRows = [] },
+  { paymentTerms, sellerExtraFieldRows = [], partyAExtraFieldRows = [] },
 ) {
   return {
     ContractNumber: values.contractNumber,
@@ -112,6 +135,7 @@ function buildContractBody(
     Currency: values.currency,
     Incoterm: values.incoterm,
     IncotermYear: values.incotermYear,
+    Seller: buildSellerPayload(values, sellerExtraFieldRows),
     PartyA: buildPartyAPayload(values, partyAExtraFieldRows),
     NotifyParty: null,
     Consignee: null,
@@ -125,7 +149,7 @@ function buildContractBody(
 
 /**
  * @param {import('../types/index.js').ContractFormValues} values
- * @param {{ paymentTerms: { paymentRatioPercent: number, paymentCondition: string }[], partyAExtraFieldRows?: import('../types/index.js').ExtraFieldRow[] }} extra
+ * @param {{ paymentTerms: { paymentRatioPercent: number, paymentCondition: string }[], sellerExtraFieldRows?: import('../types/index.js').ExtraFieldRow[], partyAExtraFieldRows?: import('../types/index.js').ExtraFieldRow[] }} extra
  * @returns {Promise<{ success: true, contract: import('../types/index.js').Contract } | { success: false, message: string }>}
  */
 export async function createContract(values, extra) {
@@ -148,7 +172,7 @@ export async function createContract(values, extra) {
 /**
  * @param {string} contractId
  * @param {import('../types/index.js').ContractFormValues} values
- * @param {{ paymentTerms: { paymentRatioPercent: number, paymentCondition: string }[], partyAExtraFieldRows?: import('../types/index.js').ExtraFieldRow[] }} extra
+ * @param {{ paymentTerms: { paymentRatioPercent: number, paymentCondition: string }[], sellerExtraFieldRows?: import('../types/index.js').ExtraFieldRow[], partyAExtraFieldRows?: import('../types/index.js').ExtraFieldRow[] }} extra
  * @returns {Promise<{ success: true, contract: import('../types/index.js').Contract } | { success: false, message: string }>}
  */
 export async function updateContract(contractId, values, extra) {

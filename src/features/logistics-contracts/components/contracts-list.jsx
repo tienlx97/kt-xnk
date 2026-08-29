@@ -1,48 +1,39 @@
 'use client';
 
-import { Banner } from '@astryxdesign/core/Banner';
 import { Button } from '@astryxdesign/core/Button';
+import { Divider } from '@astryxdesign/core/Divider';
 import { HStack } from '@astryxdesign/core/HStack';
 import { Icon } from '@astryxdesign/core/Icon';
-import { IconButton } from '@astryxdesign/core/IconButton';
+import { List, ListItem } from '@astryxdesign/core/List';
 import {
   MetadataList,
   MetadataListItem,
 } from '@astryxdesign/core/MetadataList';
 import {
-  PowerSearch,
-  usePowerSearchConfig,
-} from '@astryxdesign/core/PowerSearch';
-import { Selector } from '@astryxdesign/core/Selector';
-import { Skeleton } from '@astryxdesign/core/Skeleton';
-import { StackItem } from '@astryxdesign/core/Stack';
-import {
   pixel,
   proportional,
-  Table,
-  toSearchFilters,
-  useTableColumnSettings,
-  useTableColumnSettingsState,
-  useTableFiltering,
-  useTableFilterState,
   useTableRowExpansion,
-  useTableStickyColumns,
 } from '@astryxdesign/core/Table';
+import { Tab, TabList } from '@astryxdesign/core/TabList';
 import { Heading, Text } from '@astryxdesign/core/Text';
-import { colorVars } from '@astryxdesign/core/theme/tokens.stylex';
-import { Toolbar } from '@astryxdesign/core/Toolbar';
+import { Token } from '@astryxdesign/core/Token';
 import { VStack } from '@astryxdesign/core/VStack';
 import * as stylex from '@stylexjs/stylex';
+import { FileText, Pencil, Printer, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
-import { IconRefresh } from '@/shared/components/icon/icon-refresh.jsx';
 import {
-  stickyColumnKeys,
-  TableViewOptionsPopover,
-} from '@/shared/components/table-view-options-popover.jsx';
+  AdvanceTable,
+  AdvanceTableErrorBanner,
+} from '@/shared/components/advance-table.jsx';
+import {
+  createRowExpansionInteractionPlugin,
+  expandableRowStyles,
+} from '@/shared/components/expandable-row-styles.jsx';
 
 import { currencyOptions, formatMoney } from '../config/currencies.js';
 import { incotermOptions } from '../config/incoterms.js';
+import { useContractBanksQuery } from '../hooks/use-contract-banks-query.js';
 import { useContractsQuery } from '../hooks/use-contracts-query.js';
 import { ContractFormDialog } from './contract-form-dialog.jsx';
 
@@ -80,7 +71,6 @@ const COLUMN_OPTIONS = [
   { key: 'portOrPlaceOfDestination', label: 'Cảng/nơi đến' },
   { key: 'paymentTerms', label: 'Đợt thanh toán' },
   { key: 'bankIds', label: 'Ngân hàng thụ hưởng' },
-  { key: 'actions', label: 'Chức năng', isAlwaysVisible: true },
 ];
 // The picker opens on this set rather than every column at once — the API
 // carries more fields than a first glance needs, and starting from the
@@ -93,21 +83,7 @@ const DEFAULT_COLUMN_KEYS = [
   'contractValue',
   'incoterm',
   'createdDate',
-  'actions',
 ];
-/**
- * Actions is `isAlwaysVisible` (can't be removed) but the columns popover
- * still lets it be dragged around — this keeps it pinned as the last key
- * no matter how the column order changes, which is what lets the sticky
- * end pin below always target it.
- * @param {string[]} keys
- * @returns {string[]}
- */
-function withActionsLast(keys) {
-  return keys.includes('actions')
-    ? [...keys.filter((key) => key !== 'actions'), 'actions']
-    : keys;
-}
 
 /** @param {string | null | undefined} value */
 function orDash(value) {
@@ -125,48 +101,9 @@ function formatPaymentTerms(terms) {
   return `${terms.length} đợt`;
 }
 
-// A pinned cell paints an opaque background of its own; without this it
-// defaults to the card surface token, which mismatches the page's own
-// surface token in dark mode (see useTableStickyColumns). Plain `style`,
-// not `xstyle` — `@stylexjs/valid-styles` rejects raw `--*` keys.
-const stickyBackgroundStyle = /** @type {import('react').CSSProperties} */ ({
-  '--table-sticky-background': colorVars['--color-background-surface'],
-});
-
 const styles = stylex.create({
-  clickableRow: {
-    cursor: 'pointer',
-  },
-  expandedRow: {
-    backgroundColor: colorVars['--color-background-muted'],
-  },
-  // Fills the StackItem it sits in rather than a fixed/expand-on-focus
-  // width — the search bar claims the toolbar's full remaining width, same
-  // as the reference table template.
-  search: {
-    width: '100%',
-  },
-  // Toolbar's start slot only stretches its own box to the row's full
-  // width (see `startOnly` — it applies once `endContent` is unset); the
-  // row inside it still defaults to shrink-to-fit like any flex item, so
-  // this is what actually lets the StackItem(fill) search bar claim that
-  // width.
-  toolbarPrimary: {
-    flexGrow: 1,
-    minWidth: 0,
-  },
-  // Keeps the end cluster (view options, refresh, create) from shrinking
-  // when the search bar next to it grows to fill the row.
-  toolbarEnd: {
-    flexShrink: 0,
-  },
-  filterRow: {
-    rowGap: 6,
-  },
-  // Fills the trigger once a quick filter is set, the same wash Selector's
-  // own pressed/active state uses, so a set chip reads as "on" at a glance.
-  filterFill: {
-    backgroundColor: colorVars['--color-overlay-pressed'],
+  projectNameHeading: {
+    textTransform: 'uppercase',
   },
 });
 
@@ -190,6 +127,14 @@ const skeletonRows = Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => ({
   incoterm: 'EXW',
   incotermYear: 0,
   branchId: '',
+  seller: {
+    companyName: '',
+    representativeName: null,
+    representativeTitle: null,
+    address: null,
+    sourceSellerId: null,
+    extraFields: [],
+  },
   partyA: {
     companyName: '',
     representativeName: null,
@@ -204,88 +149,218 @@ const skeletonRows = Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => ({
   bankIds: [],
 }));
 
-/** @param {import('../types/index.js').PaymentTerm[]} terms */
-function formatPaymentTermDetails(terms) {
-  return terms.length === 0
-    ? '—'
-    : terms
-        .map(
-          (term) =>
-            `${term.paymentRatioPercent}% — ${orDash(term.paymentCondition)}`,
-        )
-        .join(' · ');
-}
+/** @typedef {'info' | 'seller' | 'customer' | 'banks'} ExpandedTab */
 
 /**
  * @param {object} props
  * @param {import('../types/index.js').Contract} props.contract
  * @param {(contract: import('../types/index.js').Contract) => void} props.onEdit
+ * @param {Map<string, import('../types/index.js').ContractBank>} props.banksById
  */
-function ContractExpandedDetails({ contract, onEdit }) {
+function ContractExpandedDetails({ contract, onEdit, banksById }) {
+  const [activeTab, setActiveTab] = useState(
+    /** @type {ExpandedTab} */ ('info'),
+  );
+
   return (
-    <VStack gap={4} hAlign="stretch">
+    <VStack gap={4} hAlign="stretch" xstyle={expandableRowStyles.expandedPanel}>
       <HStack hAlign="between" vAlign="start" gap={4} wrap="wrap">
-        <VStack gap={1}>
-          <Heading level={3}>{contract.projectName}</Heading>
-          <Text color="secondary">
-            {contract.contractNumber} · {contract.partyA.companyName}
-          </Text>
-        </VStack>
-        <Button
-          label="Sửa hợp đồng"
-          variant="primary"
-          size="sm"
-          onClick={() => onEdit(contract)}
-        />
+        <HStack gap={3} vAlign="center">
+          <HStack
+            vAlign="center"
+            hAlign="center"
+            xstyle={expandableRowStyles.expandedIcon}
+          >
+            <Icon icon={FileText} size="md" />
+          </HStack>
+          <VStack gap={1}>
+            <Heading level={3} xstyle={styles.projectNameHeading}>
+              {contract.projectName}
+            </Heading>
+            <Text color="secondary">
+              {contract.contractNumber} · {contract.partyA.companyName}
+            </Text>
+          </VStack>
+        </HStack>
+        <HStack gap={2} vAlign="center" wrap="wrap">
+          <Token
+            label={`${contract.incoterm} ${contract.incotermYear}`}
+            color="blue"
+            size="sm"
+          />
+          {contract.currency && (
+            <Token label={contract.currency} color="gray" size="sm" />
+          )}
+        </HStack>
       </HStack>
 
-      <MetadataList
-        title="Thông số hợp đồng"
-        columns={4}
-        label={{ position: 'top' }}
+      <TabList
+        value={activeTab}
+        onChange={(value) => setActiveTab(/** @type {ExpandedTab} */ (value))}
+        hasDivider
+        size="sm"
       >
-        <MetadataListItem label="Số hợp đồng">
-          {contract.contractNumber}
-        </MetadataListItem>
-        <MetadataListItem label="Dự án">
-          {contract.projectName}
-        </MetadataListItem>
-        <MetadataListItem label="Khách hàng">
-          {contract.partyA.companyName}
-        </MetadataListItem>
-        <MetadataListItem label="Giá trị">
-          {formatMoney(contract.contractValue, contract.currency)}
-        </MetadataListItem>
-        <MetadataListItem label="Ngày tạo">
-          {orDash(contract.createdDate)}
-        </MetadataListItem>
-        <MetadataListItem label="Ngày báo giá">
-          {orDash(contract.quotationDate)}
-        </MetadataListItem>
-        <MetadataListItem label="Hạng mục">
-          {orDash(contract.category)}
-        </MetadataListItem>
-        <MetadataListItem label="Incoterm">
-          {contract.incoterm} {contract.incotermYear}
-        </MetadataListItem>
-        <MetadataListItem label="Nước xuất khẩu">
-          {orDash(contract.exportCountry)}
-        </MetadataListItem>
-        <MetadataListItem label="Cảng xếp hàng">
-          {orDash(contract.portOfLoading)}
-        </MetadataListItem>
-        <MetadataListItem label="Cảng/nơi đến">
-          {orDash(contract.portOrPlaceOfDestination)}
-        </MetadataListItem>
-        <MetadataListItem label="Ngân hàng thụ hưởng">
-          {contract.bankIds.length === 0
-            ? '—'
-            : `${contract.bankIds.length} ngân hàng`}
-        </MetadataListItem>
-        <MetadataListItem label="Đợt thanh toán">
-          {formatPaymentTermDetails(contract.paymentTerms)}
-        </MetadataListItem>
-      </MetadataList>
+        <Tab value="info" label="Thông tin" />
+        <Tab value="seller" label="Bên bán" />
+        <Tab value="customer" label="Khách hàng" />
+        <Tab
+          value="banks"
+          label="Ngân hàng"
+          endContent={
+            contract.bankIds.length > 0
+              ? String(contract.bankIds.length)
+              : undefined
+          }
+        />
+      </TabList>
+
+      {activeTab === 'info' && (
+        <VStack gap={4} hAlign="stretch">
+          <MetadataList columns={4} label={{ position: 'top' }}>
+            <MetadataListItem label="Số hợp đồng">
+              {contract.contractNumber}
+            </MetadataListItem>
+            <MetadataListItem label="Dự án">
+              {contract.projectName}
+            </MetadataListItem>
+            <MetadataListItem label="Giá trị">
+              {formatMoney(contract.contractValue, contract.currency)}
+            </MetadataListItem>
+            <MetadataListItem label="Ngày tạo">
+              {orDash(contract.createdDate)}
+            </MetadataListItem>
+            <MetadataListItem label="Ngày báo giá">
+              {orDash(contract.quotationDate)}
+            </MetadataListItem>
+            <MetadataListItem label="Hạng mục">
+              {orDash(contract.category)}
+            </MetadataListItem>
+            <MetadataListItem label="Nước xuất khẩu">
+              {orDash(contract.exportCountry)}
+            </MetadataListItem>
+            <MetadataListItem label="Cảng xếp hàng">
+              {orDash(contract.portOfLoading)}
+            </MetadataListItem>
+            <MetadataListItem label="Cảng/nơi đến">
+              {orDash(contract.portOrPlaceOfDestination)}
+            </MetadataListItem>
+          </MetadataList>
+
+          <MetadataList
+            title="Đợt thanh toán"
+            columns={4}
+            label={{ position: 'top' }}
+          >
+            {contract.paymentTerms.length === 0 ? (
+              <MetadataListItem label="Đợt thanh toán">—</MetadataListItem>
+            ) : (
+              contract.paymentTerms.map((term, index) => (
+                <MetadataListItem key={term.id} label={`Đợt ${index + 1}`}>
+                  {term.paymentRatioPercent}% · {orDash(term.paymentCondition)}
+                </MetadataListItem>
+              ))
+            )}
+          </MetadataList>
+        </VStack>
+      )}
+
+      {activeTab === 'seller' && (
+        <MetadataList columns={4} label={{ position: 'top' }}>
+          <MetadataListItem label="Tên công ty">
+            {contract.seller.companyName}
+          </MetadataListItem>
+          <MetadataListItem label="Người đại diện">
+            {orDash(contract.seller.representativeName)}
+          </MetadataListItem>
+          <MetadataListItem label="Chức vụ">
+            {orDash(contract.seller.representativeTitle)}
+          </MetadataListItem>
+          <MetadataListItem label="Địa chỉ">
+            {orDash(contract.seller.address)}
+          </MetadataListItem>
+          {contract.seller.extraFields.map((field) => (
+            <MetadataListItem key={field.key} label={field.key}>
+              {orDash(field.value)}
+            </MetadataListItem>
+          ))}
+        </MetadataList>
+      )}
+
+      {activeTab === 'customer' && (
+        <MetadataList columns={4} label={{ position: 'top' }}>
+          <MetadataListItem label="Tên công ty">
+            {contract.partyA.companyName}
+          </MetadataListItem>
+          <MetadataListItem label="Người đại diện">
+            {orDash(contract.partyA.representativeName)}
+          </MetadataListItem>
+          <MetadataListItem label="Chức vụ">
+            {orDash(contract.partyA.representativeTitle)}
+          </MetadataListItem>
+          <MetadataListItem label="Địa chỉ">
+            {orDash(contract.partyA.address)}
+          </MetadataListItem>
+          {contract.partyA.extraFields.map((field) => (
+            <MetadataListItem key={field.key} label={field.key}>
+              {orDash(field.value)}
+            </MetadataListItem>
+          ))}
+        </MetadataList>
+      )}
+
+      {activeTab === 'banks' &&
+        (contract.bankIds.length === 0 ? (
+          <Text color="secondary">Chưa có ngân hàng thụ hưởng</Text>
+        ) : (
+          <List hasDividers density="compact">
+            {contract.bankIds.map((bankId) => {
+              const bank = banksById.get(bankId);
+              return (
+                <ListItem
+                  key={bankId}
+                  label={bank?.bankName ?? bankId}
+                  description={
+                    bank
+                      ? [bank.beneficiary, bank.bankAccountNumber]
+                          .filter(Boolean)
+                          .join(' · ') || undefined
+                      : undefined
+                  }
+                />
+              );
+            })}
+          </List>
+        ))}
+
+      <Divider />
+
+      <HStack hAlign="between" vAlign="center">
+        <Button
+          label="Xoá"
+          variant="ghost"
+          size="sm"
+          icon={<Icon icon={Trash2} />}
+          isDisabled
+          tooltip="Chưa hỗ trợ"
+        />
+        <HStack gap={2}>
+          <Button
+            label="In"
+            variant="secondary"
+            size="sm"
+            icon={<Icon icon={Printer} />}
+            isDisabled
+            tooltip="Chưa hỗ trợ"
+          />
+          <Button
+            label="Sửa hợp đồng"
+            variant="primary"
+            size="sm"
+            icon={<Icon icon={Pencil} />}
+            onClick={() => onEdit(contract)}
+          />
+        </HStack>
+      </HStack>
     </VStack>
   );
 }
@@ -296,38 +371,26 @@ export function ContractsList() {
   const [editingContract, setEditingContract] = useState(
     /** @type {import('../types/index.js').Contract | null} */ (null),
   );
-  const [searchFilters, setSearchFilters] = useState(
-    /** @type {import('@astryxdesign/core/PowerSearch').PowerSearchFilter[]} */ ([]),
-  );
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [pageIndex, setPageIndex] = useState(1);
   const [expandedContractId, setExpandedContractId] = useState(
     /** @type {string | null} */ (null),
-  );
-  const [activeColumnKeys, setActiveColumnKeys] = useState(DEFAULT_COLUMN_KEYS);
-  const [density, setDensity] = useState(
-    /** @type {import('@astryxdesign/core/Table').TableDensity} */ ('balanced'),
-  );
-  // Defaults mirror the previous hard-coded pin (identity column + actions
-  // column); the View options popover now makes both edges adjustable.
-  const [stickyStart, setStickyStart] = useState(
-    /** @type {'none' | 'one' | 'two'} */ ('one'),
-  );
-  const [stickyEnd, setStickyEnd] = useState(
-    /** @type {'none' | 'one' | 'two'} */ ('one'),
   );
 
   const contractsQuery = useContractsQuery({ page: pageIndex, pageSize });
   const listResult = contractsQuery.data;
   const contracts = listResult?.success ? listResult.contracts : [];
 
-  const { config: baseSearchConfig, applyFilters } = usePowerSearchConfig(
-    SEARCH_FIELD_DEFS,
-    'Hợp đồng',
-  );
-  const searchConfig = useMemo(
-    () => ({ ...baseSearchConfig, contentSearchFieldKey: 'contractNumber' }),
-    [baseSearchConfig],
+  const banksQuery = useContractBanksQuery();
+  const banksById = useMemo(
+    () =>
+      new Map(
+        (banksQuery.data?.success ? banksQuery.data.banks : []).map((bank) => [
+          bank.id,
+          bank,
+        ]),
+      ),
+    [banksQuery.data],
   );
 
   /** @type {import('@astryxdesign/core/Table').TableColumn<import('../types/index.js').Contract & Record<string, unknown>>[]} */
@@ -426,100 +489,12 @@ export function ContractsList() {
           ? '—'
           : `${contract.bankIds.length} ngân hàng`,
     },
-    {
-      key: 'actions',
-      header: 'Chức năng',
-      width: pixel(110),
-      align: 'end',
-      renderCell: (contract) => (
-        <Button
-          label="Sửa"
-          variant="ghost"
-          size="sm"
-          onClick={(event) => {
-            event.stopPropagation();
-            setEditingContract(contract);
-          }}
-        />
-      ),
-    },
   ];
-
-  // Per-column header filters (popover icon in the header), layered on top
-  // of the search bar and quick-filter chips above — all three write into
-  // the same PowerSearch filter engine, so applyFilters ANDs them together.
-  const { filters: headerFilters, onFilterChange: setHeaderFilter } =
-    useTableFilterState();
-  const filterPlugin =
-    /** @type {import('@astryxdesign/core/Table').TablePlugin<import('../types/index.js').Contract & Record<string, unknown>>} */ (
-      useTableFiltering({
-        filters: headerFilters,
-        onFilterChange: (key, value) => {
-          setHeaderFilter(key, value);
-          setPageIndex(1);
-        },
-        searchConfig,
-      })
-    );
 
   const searchableContracts = contracts.map((contract) => ({
     ...contract,
     partyACompanyName: contract.partyA.companyName,
   }));
-  const filteredContracts =
-    /** @type {import('../types/index.js').Contract[]} */
-    (
-      /** @type {any} */ (
-        applyFilters(
-          [
-            ...searchFilters,
-            .../** @type {any} */ (
-              toSearchFilters(headerFilters, columns, searchConfig)
-            ),
-          ],
-          /** @type {any} */ (searchableContracts),
-        )
-      )
-    );
-
-  const columnSettingsState = useTableColumnSettingsState({
-    columns: COLUMN_OPTIONS,
-    activeColumnKeys,
-    onChangeActiveColumnKeys: (keys) =>
-      setActiveColumnKeys(withActionsLast([...keys])),
-  });
-  const columnSettingsPlugin =
-    /** @type {import('@astryxdesign/core/Table').TablePlugin<import('../types/index.js').Contract & Record<string, unknown>>} */ (
-      useTableColumnSettings(columnSettingsState.columnSettingsConfig)
-    );
-  // Pins whichever edge columns the View options popover currently asks
-  // for, computed from the table's own visible/ordered column keys so the
-  // pin always tracks what "first/last column(s)" actually means on screen.
-  // Actions is pinned to the end regardless of that setting — it's always
-  // the last column (see withActionsLast), and losing the "Sửa" action
-  // off-screen behind a horizontal scroll is worse than a fixed column the
-  // sticky-end radio can't turn off.
-  const requestedEndKeys = stickyColumnKeys(
-    stickyEnd,
-    columnSettingsState.activeColumnKeys,
-    true,
-  );
-  const stickyColumnsPlugin =
-    /** @type {import('@astryxdesign/core/Table').TablePlugin<import('../types/index.js').Contract & Record<string, unknown>>} */ (
-      useTableStickyColumns({
-        startKeys: stickyColumnKeys(
-          stickyStart,
-          columnSettingsState.activeColumnKeys,
-          false,
-        ),
-        endKeys:
-          requestedEndKeys.length > 0
-            ? requestedEndKeys
-            : columnSettingsState.activeColumnKeys.includes('actions')
-              ? ['actions']
-              : [],
-      })
-    );
 
   const expandedKeys = useMemo(
     () => new Set(expandedContractId ? [expandedContractId] : []),
@@ -539,56 +514,22 @@ export function ContractsList() {
           <ContractExpandedDetails
             contract={contract}
             onEdit={setEditingContract}
+            banksById={banksById}
           />
         ),
       })
     );
   const rowInteractionPlugin = useMemo(
     /** @returns {import('@astryxdesign/core/Table').TablePlugin<import('../types/index.js').Contract & Record<string, unknown>>} */
-    () => ({
-      transformBodyRow: (props, contract) => {
-        const isExpandable = !contract.id.startsWith('skeleton-');
-        if (!isExpandable) {
-          return props;
-        }
-
-        const toggle = () =>
+    () =>
+      createRowExpansionInteractionPlugin({
+        expandedId: expandedContractId,
+        onToggle: (contractId) =>
           setExpandedContractId((current) =>
-            current === contract.id ? null : contract.id,
-          );
-
-        return {
-          ...props,
-          htmlProps: {
-            ...props.htmlProps,
-            'aria-expanded': expandedContractId === contract.id,
-            tabIndex: 0,
-            onClick: (event) => {
-              props.htmlProps.onClick?.(event);
-              if (!event.defaultPrevented) {
-                toggle();
-              }
-            },
-            onKeyDown: (event) => {
-              props.htmlProps.onKeyDown?.(event);
-              if (
-                !event.defaultPrevented &&
-                event.target === event.currentTarget &&
-                (event.key === 'Enter' || event.key === ' ')
-              ) {
-                event.preventDefault();
-                toggle();
-              }
-            },
-          },
-          xstyle: [
-            ...props.xstyle,
-            styles.clickableRow,
-            expandedContractId === contract.id && styles.expandedRow,
-          ],
-        };
-      },
-    }),
+            current === contractId ? null : contractId,
+          ),
+        isExpandable: (contract) => !contract.id.startsWith('skeleton-'),
+      }),
     [expandedContractId],
   );
 
@@ -597,258 +538,59 @@ export function ContractsList() {
     1,
     listResult?.success ? listResult.totalPages : 1,
   );
-  const currentPage = Math.min(pageIndex, totalPages);
-  const pageStart = (currentPage - 1) * pageSize;
-  const rangeStart = totalContracts === 0 ? 0 : pageStart + 1;
-  const rangeEnd = Math.min(
-    pageStart + filteredContracts.length,
-    totalContracts,
-  );
-
-  /** @param {ReadonlyArray<import('@astryxdesign/core/PowerSearch').PowerSearchFilter>} filters */
-  function handleSearchFiltersChange(filters) {
-    setSearchFilters([...filters]);
-    setPageIndex(1);
-  }
-
-  /**
-   * Quick filter chip: the closed Selector trigger doubles as the chip, so
-   * setting or clearing it just writes/removes an "is" clause in the same
-   * filter array PowerSearch itself edits.
-   * @param {string} field
-   * @param {string | null} value
-   */
-  function setQuickFilter(field, value) {
-    setSearchFilters((current) => {
-      const rest = current.filter((filter) => filter.field !== field);
-      return value == null
-        ? rest
-        : [...rest, { field, operator: 'is', value: { type: 'enum', value } }];
-    });
-    setPageIndex(1);
-  }
-
-  /** @param {string} field */
-  function getQuickFilterValue(field) {
-    const active = searchFilters.find((filter) => filter.field === field);
-    return active ? String(/** @type {any} */ (active.value).value) : null;
-  }
-
-  /** @param {string} value */
-  function handlePageSizeChange(value) {
-    setPageSize(Number(value));
-    setPageIndex(1);
-  }
 
   const isLoadingContracts = contractsQuery.isLoading;
-  const skeletonColumns = columns.map((column, columnIndex) => ({
-    ...column,
-    renderCell:
-      column.key === 'actions'
-        ? () => null
-        : () => <Skeleton height={16} width="70%" index={columnIndex} />,
-  }));
 
   return (
     <VStack gap={4} hAlign="stretch">
-      <VStack gap={1}>
-        <Heading level={1}>Hợp đồng</Heading>
-        <Text color="secondary">Danh sách hợp đồng của phòng Logistics.</Text>
-      </VStack>
-
-      {listResult && !listResult.success ? (
-        <Banner status="error" title={listResult.message} container="card" />
-      ) : null}
-
-      <VStack gap={0} hAlign="stretch" style={stickyBackgroundStyle}>
-        <Toolbar
-          label="Thao tác danh sách hợp đồng"
-          size="sm"
-          startContent={
-            // Everything lives in the one slot: Toolbar only stretches a
-            // slot to fill the row when it's the sole slot present, so the
-            // search bar's "fill the row" behavior depends on `endContent`
-            // being unset and this StackItem doing the actual growing.
-            <HStack
-              gap={3}
-              vAlign="center"
-              wrap="wrap"
-              xstyle={styles.toolbarPrimary}
-            >
-              <StackItem size="fill">
-                <PowerSearch
-                  config={searchConfig}
-                  filters={searchFilters}
-                  onChange={handleSearchFiltersChange}
-                  placeholder="Tìm số HĐ, dự án..."
-                  resultCount={filteredContracts.length}
-                  size="sm"
-                  startIcon="search"
-                  xstyle={styles.search}
-                />
-              </StackItem>
-              <HStack gap={2} vAlign="center" xstyle={styles.toolbarEnd}>
-                <TableViewOptionsPopover
-                  columns={COLUMN_OPTIONS}
-                  activeColumnKeys={[...columnSettingsState.activeColumnKeys]}
-                  onChangeActiveColumnKeys={
-                    columnSettingsState.setActiveColumnKeys
-                  }
-                  defaultColumnKeys={DEFAULT_COLUMN_KEYS}
-                  density={density}
-                  onChangeDensity={(value) =>
-                    setDensity(
-                      /** @type {import('@astryxdesign/core/Table').TableDensity} */ (
-                        value
-                      ),
-                    )
-                  }
-                  stickyStart={stickyStart}
-                  onChangeStickyStart={(value) =>
-                    setStickyStart(
-                      /** @type {'none' | 'one' | 'two'} */ (value),
-                    )
-                  }
-                  stickyEnd={stickyEnd}
-                  onChangeStickyEnd={(value) =>
-                    setStickyEnd(/** @type {'none' | 'one' | 'two'} */ (value))
-                  }
-                />
-                <IconButton
-                  label="Tải lại danh sách"
-                  tooltip="Tải lại"
-                  icon={<Icon icon={IconRefresh} size="sm" />}
-                  variant="ghost"
-                  size="sm"
-                  isLoading={contractsQuery.isFetching}
-                  onClick={() => contractsQuery.refetch()}
-                />
-                <Button
-                  label="Tạo hợp đồng"
-                  variant="primary"
-                  onClick={() => {
-                    setHasOpenedCreate(true);
-                    setIsCreateOpen(true);
-                  }}
-                />
-              </HStack>
-            </HStack>
-          }
-        />
-
-        <HStack gap={2} vAlign="center" wrap="wrap" xstyle={styles.filterRow}>
-          <Selector
-            label="Lọc theo Incoterm"
-            isLabelHidden
-            placeholder="Incoterm"
-            size="sm"
-            hasClear
-            options={incotermOptions}
-            value={getQuickFilterValue('incoterm')}
-            renderValue={(option) =>
-              `Incoterm là ${option.label ?? option.value}`
-            }
-            xstyle={
-              getQuickFilterValue('incoterm') ? styles.filterFill : undefined
-            }
-            onChange={(next) => setQuickFilter('incoterm', next)}
-          />
-          <Selector
-            label="Lọc theo đơn vị tiền tệ"
-            isLabelHidden
-            placeholder="Đơn vị tiền tệ"
-            size="sm"
-            hasClear
-            options={currencyOptions}
-            value={getQuickFilterValue('currency')}
-            renderValue={(option) =>
-              `Tiền tệ là ${option.label ?? option.value}`
-            }
-            xstyle={
-              getQuickFilterValue('currency') ? styles.filterFill : undefined
-            }
-            onChange={(next) => setQuickFilter('currency', next)}
-          />
-        </HStack>
-
-        <Table
-          data={isLoadingContracts ? skeletonRows : filteredContracts}
-          columns={isLoadingContracts ? skeletonColumns : columns}
-          idKey="id"
-          density={density}
-          dividers="rows"
-          hasHover
-          plugins={{
-            columnSettings: columnSettingsPlugin,
-            expansion: expansionPlugin,
-            rowInteraction: rowInteractionPlugin,
-            stickyColumns: stickyColumnsPlugin,
-            filter: filterPlugin,
+      <HStack hAlign="between" vAlign="start" wrap="wrap" gap={3}>
+        <VStack gap={1}>
+          <Heading level={1}>Hợp đồng</Heading>
+        </VStack>
+        <Button
+          label="Tạo hợp đồng"
+          variant="primary"
+          onClick={() => {
+            setHasOpenedCreate(true);
+            setIsCreateOpen(true);
           }}
         />
+      </HStack>
 
-        <HStack hAlign="between" vAlign="center" wrap="wrap" gap={3}>
-          <Text type="supporting" color="secondary">
-            Tổng số: {totalContracts}
-          </Text>
-          <HStack gap={4} vAlign="center" wrap="wrap">
-            <HStack gap={2} vAlign="center">
-              <Text type="supporting" color="secondary">
-                Số dòng/trang
-              </Text>
-              <Selector
-                label="Số dòng/trang"
-                isLabelHidden
-                size="sm"
-                variant="ghost"
-                options={PAGE_SIZE_OPTIONS}
-                value={String(pageSize)}
-                onChange={handlePageSizeChange}
-                width={80}
-              />
-            </HStack>
-            <Text type="supporting" color="secondary">
-              {rangeStart}-{rangeEnd}
-            </Text>
-            <HStack gap={0} vAlign="center">
-              <IconButton
-                label="Trang đầu"
-                icon={<Icon icon="chevronsLeft" size="sm" />}
-                variant="ghost"
-                size="sm"
-                isDisabled={currentPage === 1}
-                onClick={() => setPageIndex(1)}
-              />
-              <IconButton
-                label="Trang trước"
-                icon={<Icon icon="chevronLeft" size="sm" />}
-                variant="ghost"
-                size="sm"
-                isDisabled={currentPage === 1}
-                onClick={() => setPageIndex((page) => Math.max(1, page - 1))}
-              />
-              <IconButton
-                label="Trang sau"
-                icon={<Icon icon="chevronRight" size="sm" />}
-                variant="ghost"
-                size="sm"
-                isDisabled={currentPage === totalPages}
-                onClick={() =>
-                  setPageIndex((page) => Math.min(totalPages, page + 1))
-                }
-              />
-              <IconButton
-                label="Trang cuối"
-                icon={<Icon icon="chevronsRight" size="sm" />}
-                variant="ghost"
-                size="sm"
-                isDisabled={currentPage === totalPages}
-                onClick={() => setPageIndex(totalPages)}
-              />
-            </HStack>
-          </HStack>
-        </HStack>
-      </VStack>
+      {listResult && !listResult.success ? (
+        <AdvanceTableErrorBanner message={listResult.message} />
+      ) : null}
+
+      <AdvanceTable
+        toolbarLabel="Thao tác danh sách hợp đồng"
+        searchFieldDefs={SEARCH_FIELD_DEFS}
+        entityLabel="Hợp đồng"
+        contentSearchFieldKey="contractNumber"
+        searchPlaceholder="Tìm số HĐ, dự án..."
+        columnOptions={COLUMN_OPTIONS}
+        initialColumnKeys={DEFAULT_COLUMN_KEYS}
+        defaultColumnKeys={DEFAULT_COLUMN_KEYS}
+        tableColumns={columns}
+        data={searchableContracts}
+        idKey="id"
+        isLoading={isLoadingContracts}
+        skeletonRows={skeletonRows}
+        extraPlugins={{
+          expansion: expansionPlugin,
+          rowInteraction: rowInteractionPlugin,
+        }}
+        onRefresh={() => contractsQuery.refetch()}
+        isRefreshing={contractsQuery.isFetching}
+        pagination={{
+          pageIndex,
+          pageSize,
+          totalCount: totalContracts,
+          totalPages,
+          onPageIndexChange: setPageIndex,
+          onPageSizeChange: setPageSize,
+          pageSizeOptions: PAGE_SIZE_OPTIONS,
+        }}
+      />
 
       {hasOpenedCreate ? (
         <ContractFormDialog

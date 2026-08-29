@@ -28,6 +28,19 @@ export {};
  */
 
 /**
+ * Seller catalog entry — the selling company. Same shape as {@link Customer}
+ * (Party A's catalog) but a separate list, since seller and customer are
+ * different business concepts even though their fields coincide.
+ * @typedef {Object} Seller
+ * @property {string} id
+ * @property {string} companyName
+ * @property {string | null} representativeName
+ * @property {string | null} representativeTitle
+ * @property {string | null} address
+ * @property {ExtraField[]} extraFields
+ */
+
+/**
  * @typedef {Object} ContractBank
  * @property {string} id
  * @property {string} bankName
@@ -48,6 +61,19 @@ export {};
  */
 
 /**
+ * Seller (bên bán) as recorded on one specific contract — a snapshot copied
+ * from the {@link Seller} catalog (or typed inline) at creation time.
+ * Mirrors {@link PartyA}.
+ * @typedef {Object} ContractSeller
+ * @property {string} companyName
+ * @property {string | null} representativeName
+ * @property {string | null} representativeTitle
+ * @property {string | null} address
+ * @property {string | null} sourceSellerId
+ * @property {ExtraField[]} extraFields
+ */
+
+/**
  * @typedef {Object} Contract
  * @property {string} id
  * @property {string} contractNumber
@@ -63,6 +89,7 @@ export {};
  * @property {Incoterm} incoterm
  * @property {number} incotermYear
  * @property {string | null} branchId - null when the contract isn't tied to a branch
+ * @property {ContractSeller} seller
  * @property {PartyA} partyA
  * @property {null} notifyParty - not editable from this app yet
  * @property {null} consignee - not editable from this app yet
@@ -106,6 +133,14 @@ export {};
  */
 
 /**
+ * @typedef {Object} SellerFormValues
+ * @property {string} companyName
+ * @property {string} representativeName
+ * @property {string} representativeTitle
+ * @property {string} address
+ */
+
+/**
  * @typedef {Object} ContractBankFormValues
  * @property {string} bankName
  * @property {string} beneficiary
@@ -129,6 +164,8 @@ export {};
  * @property {number | undefined} incotermYear
  * @property {string} [companyId] - not persisted, narrows the branch Selector; absent from the zod-parsed submission shape (not part of `contractSchema`)
  * @property {string} branchId - '' means no branch (optional — only Admin/global-permission callers may omit it, enforced by the backend)
+ * @property {string} sourceSellerId - '' when Seller is entered inline
+ * @property {SellerFormValues} sellerInline
  * @property {string} sourceCustomerId - '' when Party A is entered inline
  * @property {CustomerFormValues} partyAInline
  * @property {string[]} bankIds
