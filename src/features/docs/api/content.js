@@ -8,7 +8,8 @@ import rehypeSlug from 'rehype-slug';
 import remarkFrontmatter from 'remark-frontmatter';
 import remarkMdxFrontmatter from 'remark-mdx-frontmatter';
 
-import { extractToc } from '../../../shared/api/toc.js';
+import { extractToc } from '@/shared/api/toc.js';
+
 import remarkGroupContent from './remark-group-content.js';
 
 /** @typedef {{ title: string, description?: string, date?: string }} PostFrontmatter */

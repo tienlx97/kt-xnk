@@ -12,7 +12,8 @@ import { TextInput } from '@astryxdesign/core/TextInput';
 import { VStack } from '@astryxdesign/core/VStack';
 import { useState } from 'react';
 
-import { IconShuffle } from '../../../shared/components/icon/icon-shuffle.jsx';
+import { IconShuffle } from '@/shared/components/icon/icon-shuffle.jsx';
+
 import { generateRandomPassword } from '../config/generate-password.js';
 import { useResetPasswordMutation } from '../hooks/use-reset-password-mutation.js';
 

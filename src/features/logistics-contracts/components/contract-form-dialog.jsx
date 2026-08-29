@@ -12,11 +12,12 @@ import { NumberInput } from '@astryxdesign/core/NumberInput';
 import { Selector } from '@astryxdesign/core/Selector';
 import { StackItem } from '@astryxdesign/core/Stack';
 import { Text } from '@astryxdesign/core/Text';
-import { TextInput } from '@astryxdesign/core/TextInput';
 import { VStack } from '@astryxdesign/core/VStack';
 
-import { CommonDialog } from '../../../shared/components/common-dialog.jsx';
-import { currencyOptions } from '../config/currencies.js';
+import { CommonDialog } from '@/shared/components/common-dialog.jsx';
+import { TextInput } from '@/shared/components/text-input.jsx';
+
+import { currencyOptions, formatMoney } from '../config/currencies.js';
 import { incotermOptions } from '../config/incoterms.js';
 import { useContractForm } from '../hooks/use-contract-form.js';
 import { ContractBanksFields } from './contract-banks-fields.jsx';
@@ -136,7 +137,6 @@ export function ContractFormDialog({
                             isRequired
                             isLoading={isCheckingContractNumber}
                             status={fieldStatuses.contractNumber}
-                            statusVariant="tooltip"
                           />
                         </StackItem>
                         <StackItem size="fill">
@@ -146,7 +146,6 @@ export function ContractFormDialog({
                             onChange={(value) => setField('projectName', value)}
                             isRequired
                             status={fieldStatuses.projectName}
-                            statusVariant="tooltip"
                           />
                         </StackItem>
                       </HStack>
@@ -196,7 +195,6 @@ export function ContractFormDialog({
                             onChange={(value) => setField('category', value)}
                             isRequired
                             status={fieldStatuses.category}
-                            statusVariant="tooltip"
                           />
                         </StackItem>
                         <StackItem size="fill">
@@ -208,7 +206,6 @@ export function ContractFormDialog({
                             }
                             isRequired
                             status={fieldStatuses.exportCountry}
-                            statusVariant="tooltip"
                           />
                         </StackItem>
                       </HStack>
@@ -223,7 +220,6 @@ export function ContractFormDialog({
                             }
                             isRequired
                             status={fieldStatuses.portOfLoading}
-                            statusVariant="tooltip"
                           />
                         </StackItem>
                         <StackItem size="fill">
@@ -235,7 +231,6 @@ export function ContractFormDialog({
                             }
                             isRequired
                             status={fieldStatuses.portOrPlaceOfDestination}
-                            statusVariant="tooltip"
                           />
                         </StackItem>
                       </HStack>
@@ -251,6 +246,7 @@ export function ContractFormDialog({
                             min={0}
                             step={0.01}
                             units={values.currency || undefined}
+                            formatValue={formatMoney}
                             isRequired
                             status={fieldStatuses.contractValue}
                             statusVariant="tooltip"

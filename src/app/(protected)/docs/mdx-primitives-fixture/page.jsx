@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 
-import MdxPrimitiveFixture from '../../../../shared/components/mdx/fixtures/primitives.mdx';
-import { MdxArticle } from '../../../../shared/components/mdx-article.jsx';
+import MdxPrimitiveFixture from '@/shared/components/mdx/fixtures/primitives.mdx';
+import { MdxArticle } from '@/shared/components/mdx-article.jsx';
 
 const toc = [
   { value: 'Primitive typography', href: '#primitive-typography', depth: 2 },

@@ -6,7 +6,8 @@ import { DialogHeader } from '@astryxdesign/core/Dialog';
 import { HStack } from '@astryxdesign/core/HStack';
 import { Layout, LayoutContent, LayoutFooter } from '@astryxdesign/core/Layout';
 
-import { CommonDialog } from '../../../shared/components/common-dialog.jsx';
+import { CommonDialog } from '@/shared/components/common-dialog.jsx';
+
 import { useCustomerForm } from '../hooks/use-customer-form.js';
 import { CustomerFields } from './customer-fields.jsx';
 

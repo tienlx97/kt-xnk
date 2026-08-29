@@ -1,9 +1,9 @@
 import * as stylex from '@stylexjs/stylex';
 import { notFound } from 'next/navigation';
 
-import { ErrorDecoder, ErrorDecoderContext } from '../../../../shared/components/mdx/error-decoder.jsx';
-import MdxProductContextFixture from '../../../../shared/components/mdx/fixtures/product-context.mdx';
-import { MdxArticle } from '../../../../shared/components/mdx-article.jsx';
+import { ErrorDecoder, ErrorDecoderContext } from '@/shared/components/mdx/error-decoder.jsx';
+import MdxProductContextFixture from '@/shared/components/mdx/fixtures/product-context.mdx';
+import { MdxArticle } from '@/shared/components/mdx-article.jsx';
 
 const toc = [
   { value: 'Language list', href: '#language-list', depth: 2 },

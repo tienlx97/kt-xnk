@@ -1,5 +1,5 @@
-import { LogisticsOverview } from '../../../features/logistics/index.js';
-import { PageContentShell } from '../../../shared/components/page-content-shell.jsx';
+import { LogisticsOverview } from '@/features/logistics/index.js';
+import { PageContentShell } from '@/shared/components/page-content-shell.jsx';
 
 export const metadata = {
   title: 'Logistics · KT-XNK',

@@ -11,7 +11,7 @@ import {
   OverlaysSection,
   SelectionSection,
   TypographySection,
-} from '../../../features/design-system/index.js';
+} from '@/features/design-system/index.js';
 
 export default function DesignSystemPage() {
   return (

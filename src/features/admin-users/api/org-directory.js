@@ -1,4 +1,4 @@
-import { apiRequest } from '../../../shared/api/api-client.js';
+import { apiRequest } from '@/shared/api/api-client.js';
 
 /**
  * Organisation-directory reads. They require a signed-in caller (the backend

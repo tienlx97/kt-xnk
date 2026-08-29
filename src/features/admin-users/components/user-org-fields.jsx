@@ -8,7 +8,8 @@ import { StackItem } from '@astryxdesign/core/Stack';
 import { VStack } from '@astryxdesign/core/VStack';
 import { useState } from 'react';
 
-import { IconPlus } from '../../../shared/components/icon/icon-plus.jsx';
+import { IconPlus } from '@/shared/components/icon/icon-plus.jsx';
+
 import {
   useCreateBranchMutation,
   useCreateCompanyMutation,

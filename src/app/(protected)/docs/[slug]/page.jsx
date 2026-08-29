@@ -3,10 +3,10 @@ import { notFound } from 'next/navigation';
 import {
   getDocsPostSlugs,
   loadPost,
-} from '../../../../features/docs/index.js';
-import { getSidebarBreadcrumbs } from '../../../../shared/api/nav.js';
-import { MdxArticle } from '../../../../shared/components/mdx-article.jsx';
-import sidebarPost from '../../../../sidebarPost.json';
+} from '@/features/docs/index.js';
+import { getSidebarBreadcrumbs } from '@/shared/api/nav.js';
+import { MdxArticle } from '@/shared/components/mdx-article.jsx';
+import sidebarPost from '@/sidebarPost.json';
 
 export async function generateStaticParams() {
   const slugs = await getDocsPostSlugs();

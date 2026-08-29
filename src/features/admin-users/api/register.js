@@ -1,4 +1,4 @@
-import { apiRequest } from '../../../shared/api/api-client.js';
+import { apiRequest } from '@/shared/api/api-client.js';
 
 const GENERIC_ERROR_MESSAGE = 'Không thể tạo người dùng';
 

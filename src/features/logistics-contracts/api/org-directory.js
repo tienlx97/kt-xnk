@@ -1,4 +1,4 @@
-import { apiRequest } from '../../../shared/api/api-client.js';
+import { apiRequest } from '@/shared/api/api-client.js';
 
 /**
  * Minimal read-only company/branch lookup for the Contract form's Branch

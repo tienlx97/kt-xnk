@@ -18,7 +18,7 @@ import { VStack } from '@astryxdesign/core/VStack';
 import * as stylex from '@stylexjs/stylex';
 import { useState } from 'react';
 
-import { IconTrash } from '../../../shared/components/icon/icon-trash.jsx';
+import { IconTrash } from '@/shared/components/icon/icon-trash.jsx';
 
 // `Table` always bleeds edge-to-edge against `--container-padding-block-start`
 // when it's the first child of its parent (see Table's scroll-wrapper

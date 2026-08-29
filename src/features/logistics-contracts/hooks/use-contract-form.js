@@ -270,15 +270,19 @@ export function useContractForm({ contract = null, onSuccess } = {}) {
   );
 
   // Schema errors (e.g. "required") win over the duplicate-number check —
-  // both would otherwise fight for the same status slot.
-  /** @type {{ type: 'error', message: string } | undefined} */
+  // both would otherwise fight for the same status slot. Once a check has
+  // actually completed, show its outcome either way (duplicate or clear) so
+  // the user isn't left guessing whether anything happened.
+  /** @type {{ type: 'error' | 'success', message: string } | undefined} */
   const contractNumberDuplicateStatus =
-    contractNumberExistsQuery.result?.success &&
-    contractNumberExistsQuery.result.exists
-      ? { type: 'error', message: 'Số hợp đồng này đã được sử dụng' }
+    !contractNumberExistsQuery.isChecking &&
+    contractNumberExistsQuery.result?.success
+      ? contractNumberExistsQuery.result.exists
+        ? { type: 'error', message: 'Số hợp đồng này đã được sử dụng' }
+        : { type: 'success', message: 'Số hợp đồng chưa được sử dụng' }
       : undefined;
 
-  /** @type {Record<string, { type: 'error', message: string } | undefined>} */
+  /** @type {Record<string, { type: 'error' | 'success', message: string } | undefined>} */
   const fieldStatuses = {
     ...baseFieldStatuses,
     contractNumber:

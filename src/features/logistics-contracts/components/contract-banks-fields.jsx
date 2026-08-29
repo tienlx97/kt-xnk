@@ -8,7 +8,8 @@ import { Text } from '@astryxdesign/core/Text';
 import { VStack } from '@astryxdesign/core/VStack';
 import { useState } from 'react';
 
-import { IconPlus } from '../../../shared/components/icon/icon-plus.jsx';
+import { IconPlus } from '@/shared/components/icon/icon-plus.jsx';
+
 import { QuickCreateBankDialog } from './quick-create-bank-dialog.jsx';
 
 /**

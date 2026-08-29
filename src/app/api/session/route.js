@@ -1,8 +1,8 @@
 import { cookies } from 'next/headers';
 
-import { clearSessionCookies } from '../../../shared/api/server-session.js';
-import { resolveApiBaseUrl } from '../../../shared/config/api-config.js';
-import { REFRESH_TOKEN_KEY } from '../../../shared/config/session-keys.js';
+import { clearSessionCookies } from '@/shared/api/server-session.js';
+import { resolveApiBaseUrl } from '@/shared/config/api-config.js';
+import { REFRESH_TOKEN_KEY } from '@/shared/config/session-keys.js';
 
 /**
  * Ends a session. Signing *in* lives at `/api/session/login`, which never hands

@@ -1,4 +1,4 @@
-import { apiRequest } from '../../../shared/api/api-client.js';
+import { apiRequest } from '@/shared/api/api-client.js';
 
 const GENERIC_LIST_ERROR = 'Không thể tải danh sách người dùng';
 const GENERIC_DETAIL_ERROR = 'Không thể tải thông tin người dùng';

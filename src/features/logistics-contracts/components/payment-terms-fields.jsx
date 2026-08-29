@@ -12,7 +12,8 @@ import { Text } from '@astryxdesign/core/Text';
 import { TextInput } from '@astryxdesign/core/TextInput';
 import { VStack } from '@astryxdesign/core/VStack';
 
-import { IconTrash } from '../../../shared/components/icon/icon-trash.jsx';
+import { IconTrash } from '@/shared/components/icon/icon-trash.jsx';
+
 import { formatMoney } from '../config/currencies.js';
 
 /**
@@ -25,7 +26,7 @@ import { formatMoney } from '../config/currencies.js';
  * @param {{
  *   rows: import('../types/index.js').PaymentTermRow[],
  *   totalPercent: number,
- *   status?: { type: 'error', message: string },
+ *   status?: { type: 'error' | 'success', message: string },
  *   contractValue?: number,
  *   currency?: string,
  *   onAddRow: () => void,

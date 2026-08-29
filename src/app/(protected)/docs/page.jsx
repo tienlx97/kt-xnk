@@ -1,5 +1,5 @@
-import { loadDocsLanding } from '../../../features/docs/index.js';
-import { MdxArticle } from '../../../shared/components/mdx-article.jsx';
+import { loadDocsLanding } from '@/features/docs/index.js';
+import { MdxArticle } from '@/shared/components/mdx-article.jsx';
 
 export const metadata = {
   title: 'Tài liệu · KT-XNK',

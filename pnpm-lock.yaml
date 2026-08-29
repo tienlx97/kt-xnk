@@ -9,11 +9,11 @@ importers:
   .:
     dependencies:
       '@astryxdesign/core':
-        specifier: ^0.3.0
-        version: 0.3.0(@stylexjs/stylex@0.15.4)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        specifier: 0.5.0
+        version: 0.5.0(@stylexjs/stylex@0.15.4)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@astryxdesign/theme-neutral':
-        specifier: ^0.3.0
-        version: 0.3.0(@astryxdesign/core@0.3.0(@stylexjs/stylex@0.15.4)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)
+        specifier: 0.5.0
+        version: 0.5.0(@astryxdesign/core@0.5.0(@stylexjs/stylex@0.15.4)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)
       '@codemirror/lang-css':
         specifier: 6.1.1
         version: 6.1.1
@@ -47,6 +47,9 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.101.4
         version: 5.101.4(react@19.2.8)
+      lucide-react:
+        specifier: ^1.28.0
+        version: 1.28.0(react@19.2.8)
       next:
         specifier: ^16.2.11
         version: 16.2.11(@babel/core@7.29.7)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -85,8 +88,8 @@ importers:
         version: 4.4.3
     devDependencies:
       '@astryxdesign/cli':
-        specifier: ^0.3.0
-        version: 0.3.0(@astryxdesign/core@0.3.0(@stylexjs/stylex@0.15.4)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(@astryxdesign/theme-neutral@0.3.0(@astryxdesign/core@0.3.0(@stylexjs/stylex@0.15.4)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8))(gpt-tokenizer@3.4.0)
+        specifier: 0.5.0
+        version: 0.5.0(@astryxdesign/core@0.5.0(@stylexjs/stylex@0.15.4)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(@astryxdesign/theme-neutral@0.5.0(@astryxdesign/core@0.5.0(@stylexjs/stylex@0.15.4)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8))(gpt-tokenizer@3.4.0)
       '@eslint/js':
         specifier: ^9.18.0
         version: 9.39.5
@@ -99,6 +102,9 @@ importers:
       '@stylexjs/postcss-plugin':
         specifier: ^0.15.0
         version: 0.15.4
+      '@tanstack/react-query-devtools':
+        specifier: ^5.102.8
+        version: 5.102.8(@tanstack/react-query@5.101.4(react@19.2.8))(react@19.2.8)
       '@types/mdx':
         specifier: 2.0.14
         version: 2.0.14
@@ -153,8 +159,9 @@ packages:
   '@altano/repository-tools@2.0.3':
     resolution: {integrity: sha512-cSR/ZYDF6Wp9OeAJMyLYYN1GenAAhV17W+w38ELP+3c5Ltsy9jkkCymi33nz/qnXyef3n6Fbr1h2yt3dvUN5sQ==}
 
-  '@astryxdesign/cli@0.3.0':
-    resolution: {integrity: sha512-iLFJsBlZUb66GskA1r3AmuodW72yu0PhCRAorcGPMuwHbGYn54pXGb/EnnWSdHf3Yuw4E3OuN7r4dY0TYJuYmQ==}
+  '@astryxdesign/cli@0.5.0':
+    resolution: {integrity: sha512-RiRhSSMu4V07ZcbxS49r64Of04AuEnEWfoKovK7r11+3PxHalsQzP3elqothOTs49JaGVHGSHtBoLwh5o7RF9A==}
+    engines: {node: '>=22.13.0'}
     hasBin: true
     peerDependencies:
       '@astryxdesign/charts': '*'
@@ -172,17 +179,17 @@ packages:
       '@astryxdesign/theme-neutral':
         optional: true
 
-  '@astryxdesign/core@0.3.0':
-    resolution: {integrity: sha512-t2hHvR7AcwW0oKrnxCwbdEEE5Ytgy0Ug61DcYAl9BxAuV5z4XL0/kMo5DiPvX9jbDxzysmOa8ClnXqzxouRUVQ==}
+  '@astryxdesign/core@0.5.0':
+    resolution: {integrity: sha512-O2lYXrU8+/iRNV9TqOHCj3zhz1NSJxdtytfoQ0Dy/TY7g2CjZTb4/zUpl0EA5hIi4Si1tJxlVf9Uh3LMVALnmg==}
     peerDependencies:
       '@stylexjs/stylex': ^0.19.0
       react: '>=19.0.0'
       react-dom: '>=19.0.0'
 
-  '@astryxdesign/theme-neutral@0.3.0':
-    resolution: {integrity: sha512-CeKRfmTEtww60WZK4pSlW7bheBNyVPpgEliiXXUHRStXgcXOhwiUA3D/cXhMJlEx+VRgVxnzl0hMbWIr42RaVQ==}
+  '@astryxdesign/theme-neutral@0.5.0':
+    resolution: {integrity: sha512-7EVMNJ3BCzq4lVyRzDQ9SLt0v03atQCpkXiE2BvdmH3B/nRVQvd+qfMBoUhL6EGsVTqnS3b+PSVU6unNcqulgQ==}
     peerDependencies:
-      '@astryxdesign/core': 0.3.0
+      '@astryxdesign/core': 0.5.0
       react: '>=19'
 
   '@babel/code-frame@7.29.7':
@@ -822,6 +829,15 @@ packages:
 
   '@tanstack/query-core@5.101.4':
     resolution: {integrity: sha512-gNwcvOJcRbLWPOLG/2OBm+zM+Yv+MKsXKEOWC57USuZDEsI71hEErQsiEGx5wX9rzWWkfwM0fVSPoiIFSsxfiw==}
+
+  '@tanstack/query-devtools@5.102.8':
+    resolution: {integrity: sha512-ZgeMKuF5d/zOE+tgWm3cSbD6Zcbr6IugVsnbHzUcSismqLZDSUPBKM6ILUxExgwe6rPAOox2x5bA5T+PSOQG0Q==}
+
+  '@tanstack/react-query-devtools@5.102.8':
+    resolution: {integrity: sha512-QKb7A44BZOU7nxsGA4gFN1fofjYovar5O0T83Ff4Y+2eRq09RGFrAzzutVdF/6/emfSaMDohp6e759BjB3fxEw==}
+    peerDependencies:
+      '@tanstack/react-query': ^5.102.8
+      react: ^18 || ^19
 
   '@tanstack/react-query@5.101.4':
     resolution: {integrity: sha512-yRg2pfOCxIs4ZJW3XYYHU/WgtD04FHSnfHlpRT7h7pR77hwkdRG4wxbKe4aq6P0RvXUTBSQpQeadS1SUYUe+KA==}
@@ -1651,6 +1667,7 @@ packages:
   eslint@9.39.5:
     resolution: {integrity: sha512-DgZS62aPLXKlnxILS/AYCoRvHaZeXceIzlXPkkGGzJWSow1aEk0lbTlxUSlyjC8jcaKxAdOnTDz+o1JFSBsyjw==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
     peerDependencies:
       jiti: '*'
@@ -3317,7 +3334,7 @@ snapshots:
 
   '@altano/repository-tools@2.0.3': {}
 
-  '@astryxdesign/cli@0.3.0(@astryxdesign/core@0.3.0(@stylexjs/stylex@0.15.4)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(@astryxdesign/theme-neutral@0.3.0(@astryxdesign/core@0.3.0(@stylexjs/stylex@0.15.4)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8))(gpt-tokenizer@3.4.0)':
+  '@astryxdesign/cli@0.5.0(@astryxdesign/core@0.5.0(@stylexjs/stylex@0.15.4)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(@astryxdesign/theme-neutral@0.5.0(@astryxdesign/core@0.5.0(@stylexjs/stylex@0.15.4)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8))(gpt-tokenizer@3.4.0)':
     dependencies:
       commander: 12.1.0
       gpt-tokenizer: 3.4.0
@@ -3325,22 +3342,22 @@ snapshots:
       jscodeshift: 17.4.0
       zod: 4.4.3
     optionalDependencies:
-      '@astryxdesign/core': 0.3.0(@stylexjs/stylex@0.15.4)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
-      '@astryxdesign/theme-neutral': 0.3.0(@astryxdesign/core@0.3.0(@stylexjs/stylex@0.15.4)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)
+      '@astryxdesign/core': 0.5.0(@stylexjs/stylex@0.15.4)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@astryxdesign/theme-neutral': 0.5.0(@astryxdesign/core@0.5.0(@stylexjs/stylex@0.15.4)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)
     transitivePeerDependencies:
       - '@babel/preset-env'
       - supports-color
 
-  '@astryxdesign/core@0.3.0(@stylexjs/stylex@0.15.4)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
+  '@astryxdesign/core@0.5.0(@stylexjs/stylex@0.15.4)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
     dependencies:
       '@stylexjs/stylex': 0.15.4
       intl-messageformat: 11.2.13
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
 
-  '@astryxdesign/theme-neutral@0.3.0(@astryxdesign/core@0.3.0(@stylexjs/stylex@0.15.4)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)':
+  '@astryxdesign/theme-neutral@0.5.0(@astryxdesign/core@0.5.0(@stylexjs/stylex@0.15.4)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)':
     dependencies:
-      '@astryxdesign/core': 0.3.0(@stylexjs/stylex@0.15.4)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@astryxdesign/core': 0.5.0(@stylexjs/stylex@0.15.4)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       lucide-react: 1.28.0(react@19.2.8)
       react: 19.2.8
 
@@ -4095,6 +4112,14 @@ snapshots:
       tslib: 2.8.1
 
   '@tanstack/query-core@5.101.4': {}
+
+  '@tanstack/query-devtools@5.102.8': {}
+
+  '@tanstack/react-query-devtools@5.102.8(@tanstack/react-query@5.101.4(react@19.2.8))(react@19.2.8)':
+    dependencies:
+      '@tanstack/query-devtools': 5.102.8
+      '@tanstack/react-query': 5.101.4(react@19.2.8)
+      react: 19.2.8
 
   '@tanstack/react-query@5.101.4(react@19.2.8)':
     dependencies:

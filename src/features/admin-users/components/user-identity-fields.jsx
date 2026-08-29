@@ -9,7 +9,8 @@ import { Text } from '@astryxdesign/core/Text';
 import { TextInput } from '@astryxdesign/core/TextInput';
 import { VStack } from '@astryxdesign/core/VStack';
 
-import { IconShuffle } from '../../../shared/components/icon/icon-shuffle.jsx';
+import { IconShuffle } from '@/shared/components/icon/icon-shuffle.jsx';
+
 import { generateRandomPassword } from '../config/generate-password.js';
 
 /**

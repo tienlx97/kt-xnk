@@ -7,8 +7,9 @@ import {
   SESSION_ELSEWHERE_QUERY_PARAM,
   SESSION_EXPIRED_QUERY_PARAM,
   SESSION_REVOKED_QUERY_PARAM,
-} from '../../../shared/api/api-client.js';
-import { SESSION_CHANGE_EVENT } from '../../../shared/api/session-cookies.js';
+} from '@/shared/api/api-client.js';
+import { SESSION_CHANGE_EVENT } from '@/shared/api/session-cookies.js';
+
 import { loginSchema } from '../config/login-schema.js';
 import { useLoginMutation } from './use-login-mutation.js';
 

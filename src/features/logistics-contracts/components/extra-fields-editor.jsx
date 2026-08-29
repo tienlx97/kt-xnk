@@ -9,7 +9,7 @@ import { Text } from '@astryxdesign/core/Text';
 import { TextInput } from '@astryxdesign/core/TextInput';
 import { VStack } from '@astryxdesign/core/VStack';
 
-import { IconTrash } from '../../../shared/components/icon/icon-trash.jsx';
+import { IconTrash } from '@/shared/components/icon/icon-trash.jsx';
 
 /**
  * Generic "trường tùy ý" (Key/Value) repeatable-rows editor — the EAV

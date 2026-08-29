@@ -1,6 +1,7 @@
 import * as path from 'node:path';
 
-import { extractToc } from '../../../shared/api/toc.js';
+import { extractToc } from '@/shared/api/toc.js';
+
 import { tutorialPostSlugs } from '../config/posts.js';
 
 /** @typedef {{ title: string, description?: string, date?: string }} PostFrontmatter */

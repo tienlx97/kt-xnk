@@ -5,6 +5,70 @@ Append-only session log. Newest entry FIRST.
 This file is the handoff between sessions/agents — write for a reader with zero conversation context.
 -->
 
+## 2026-08-28 — Advanced search + column visibility for all list tables
+
+**Request:** Add (1) advanced/multi-field search and (2) show/hide table
+columns to the tables in the project, based on an Astryx playground reference
+link. User confirmed scope: apply to all existing tables (Contracts,
+Customers, Users).
+
+**Implementation:** Replaced the plain `TextInput` quick-search in
+`contracts-list.jsx`, `customers-list.jsx`, and `user-list.jsx` with Astryx's
+`PowerSearch` + `usePowerSearchConfig`, giving each table a token-based filter
+bar (contains/starts-with/enum-is/etc. per field) while keeping free-text
+typing mapped to the most-used field via `contentSearchFieldKey`. Added
+column show/hide via `useTableColumnSettingsState` + `useTableColumnSettings`
+wired into `Table`'s `plugins` prop, toggled from a `MultiSelector` in each
+Toolbar's `endContent`; "always visible" columns (primary identifier +
+actions) are locked. `usePowerSearchConfig`'s `applyFilters` only does flat
+`row[field]` lookups (no dot-paths), so nested/nullable fields (Party A's
+company name, user's full name/phone, customer's nullable text fields) are
+flattened/coalesced into synthetic top-level props before filtering.
+
+**TS/JSDoc notes for future edits:** `usePowerSearchConfig`'s generic field
+defs need literal `type` values (`'string'` not `string`) to type-check;
+`@type {const}` is **not** valid JSDoc in this TS version — use
+`/** @satisfies {ReadonlyArray<FieldDefinition>} */` above the array instead,
+which validates without widening literals. `applyFilters`'s generic return
+type doesn't infer cleanly against our flattened data shapes, so both its
+input and output are cast through `/** @type {any} */` at the call site.
+`useTableColumnSettings`'s generic also doesn't infer from its argument, so
+the plugin result needs an explicit `/** @type {TablePlugin<Row & Record<string, unknown>>} */` cast.
+
+**Verification:** `pnpm run typecheck` and `pnpm exec eslint` clean on all
+three files; `pnpm exec prettier --write` applied. `pnpm run test`: 79 pass,
+same pre-existing 5 failures as before this change (the `@/src` alias
+resolution issue noted in the 2026-08-28 NumberInput entry below, plus one
+unrelated `formatMoney`/`Infinity` assertion — confirmed via `git stash` that
+both predate this session). Did not open the dev server/browser to visually
+verify (no backend/credentials available in this environment) — recommend a
+manual check of the search bar and column picker on all three list pages.
+
+## 2026-08-28 — Contract value NumberInput formatting (`xxx,yyy.zz`)
+
+**Request:** Optimize the formatter used by the Contract dialog's "Giá trị
+hợp đồng" `NumberInput` and display committed values with comma thousands
+separators plus exactly two decimal digits.
+
+**Implementation:** `config/currencies.js` now creates one module-scoped
+`Intl.NumberFormat('en-US')` instance instead of allocating one for every
+format call. `formatMoney` returns an empty string for missing and non-finite
+values, retains its optional currency suffix for list/payment displays, and
+the `NumberInput` receives the stable `formatMoney` function directly instead
+of a new inline callback on every render. Added focused tests for grouping,
+two decimal places, rounding, zero, optional currency, and invalid values.
+
+**Verification:** Focused formatter tests 3/3, ESLint, typecheck, structure
+(380 modules / 1002 dependencies), production build, and quality threshold
+(168.7 kB shared gzip / 250 kB) pass. Browser reached the app but redirected
+the protected route to `/login`; no safe credentials were available, so no
+visual assertion was made. Full `pnpm test` is currently blocked by unrelated
+pre-existing working-tree changes: five API/content modules now import
+`@/src/...`, which the plain Node test runner cannot resolve (79 pass, 5 fail).
+The full shell gate also cannot start from this Windows checkout because
+`core.autocrlf=true` materialized its tracked `.sh` files with CRLF. Task 1.22
+therefore remains unchecked per the project's definition of done.
+
 ## 2026-08-27 — Contract dialog: Party A now always catalog-linked; details field collapsed
 
 **Context:** Same-day follow-up. Two user requests: (1) the customer card's

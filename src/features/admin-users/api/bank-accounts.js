@@ -1,4 +1,4 @@
-import { apiRequest } from '../../../shared/api/api-client.js';
+import { apiRequest } from '@/shared/api/api-client.js';
 
 const GENERIC_ERROR_MESSAGE = 'Không thể lưu tài khoản ngân hàng';
 const GENERIC_LIST_ERROR_MESSAGE = 'Không thể tải danh sách tài khoản ngân hàng';

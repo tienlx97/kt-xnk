@@ -1,8 +1,8 @@
 import { BreadcrumbItem,Breadcrumbs } from '@astryxdesign/core/Breadcrumbs';
 import { VStack } from '@astryxdesign/core/VStack';
 
-import { UserList } from '../../../../features/admin-users/index.js';
-import { PageContentShell } from '../../../../shared/components/page-content-shell.jsx';
+import { UserList } from '@/features/admin-users/index.js';
+import { PageContentShell } from '@/shared/components/page-content-shell.jsx';
 
 export const metadata = {
   title: 'Người dùng · Quản trị · KT-XNK',

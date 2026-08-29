@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 
-import MdxCodeFixture from '../../../../shared/components/mdx/fixtures/code.mdx';
-import { MdxArticle } from '../../../../shared/components/mdx-article.jsx';
+import MdxCodeFixture from '@/shared/components/mdx/fixtures/code.mdx';
+import { MdxArticle } from '@/shared/components/mdx-article.jsx';
 
 const toc = [
   { value: 'Syntax and line states', href: '#syntax-and-line-states', depth: 2 },

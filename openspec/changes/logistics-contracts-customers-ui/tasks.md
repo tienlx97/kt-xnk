@@ -85,3 +85,7 @@
 - [x] 1.21 `pnpm lint`/`typecheck`/`structure`/`test` (83/83) green.
       **Not** live-tested against a running dev server + BE-kt-xnk API this
       session — static verification only, see `harness/PROGRESS.md`
+- [ ] 1.22 `NumberInput` "Giá trị hợp đồng": format giá trị đã commit theo
+      mẫu `xxx,yyy.zz`; tái sử dụng một `Intl.NumberFormat` và kiểm thử các ca
+      phân cách hàng nghìn, hai chữ số thập phân, làm tròn, currency và giá
+      trị không hữu hạn

@@ -1,15 +1,15 @@
 import { cookies } from 'next/headers';
 
-import { clientAddressHeaders } from '../../../../shared/api/client-address.js';
+import { clientAddressHeaders } from '@/shared/api/client-address.js';
 import {
   sessionClaimsFromToken,
   writeSessionCookies,
-} from '../../../../shared/api/server-session.js';
-import { resolveApiBaseUrl } from '../../../../shared/config/api-config.js';
+} from '@/shared/api/server-session.js';
+import { resolveApiBaseUrl } from '@/shared/config/api-config.js';
 import {
   ACCESS_TOKEN_KEY,
   REFRESH_TOKEN_KEY,
-} from '../../../../shared/config/session-keys.js';
+} from '@/shared/config/session-keys.js';
 
 /**
  * Backend-for-frontend proxy.

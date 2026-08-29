@@ -12,21 +12,23 @@ export const currencyOptions = CURRENCY_CODES.map((code) => ({
 
 export const DEFAULT_CURRENCY = 'USD';
 
+const MONEY_FORMATTER = new Intl.NumberFormat('en-US', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
 /**
  * Formats a contract value the way the user asked for: thousands
  * separators + exactly 2 decimals + the currency code, e.g. "50,000.00 USD".
- * @param {number | undefined} value
- * @param {string} currency
+ * @param {number | null | undefined} value
+ * @param {string} [currency]
  */
 export function formatMoney(value, currency) {
-  if (value === undefined || value === null || Number.isNaN(value)) {
+  if (value === undefined || value === null || !Number.isFinite(value)) {
     return '';
   }
 
-  const formatted = new Intl.NumberFormat('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
+  const formatted = MONEY_FORMATTER.format(value);
 
   return currency ? `${formatted} ${currency}` : formatted;
 }

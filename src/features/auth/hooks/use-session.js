@@ -9,7 +9,7 @@ import {
   readSessionDisplayName,
   readSessionEmployeeCode,
   SESSION_CHANGE_EVENT,
-} from '../../../shared/api/session-cookies.js';
+} from '@/shared/api/session-cookies.js';
 
 /** @param {() => void} callback */
 function subscribeToSessionChange(callback) {

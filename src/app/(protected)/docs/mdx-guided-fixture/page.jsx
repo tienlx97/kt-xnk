@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 
-import MdxGuidedFixture from '../../../../shared/components/mdx/fixtures/guided-learning.mdx';
-import { MdxArticle } from '../../../../shared/components/mdx-article.jsx';
+import MdxGuidedFixture from '@/shared/components/mdx/fixtures/guided-learning.mdx';
+import { MdxArticle } from '@/shared/components/mdx-article.jsx';
 
 const toc = [
   { value: 'Guided challenges', href: '#guided-challenges', depth: 2 },

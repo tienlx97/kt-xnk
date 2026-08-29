@@ -9,7 +9,8 @@ import { Text } from '@astryxdesign/core/Text';
 import { VStack } from '@astryxdesign/core/VStack';
 import { useState } from 'react';
 
-import { IconPlus } from '../../../shared/components/icon/icon-plus.jsx';
+import { IconPlus } from '@/shared/components/icon/icon-plus.jsx';
+
 import { CustomerFields } from './customer-fields.jsx';
 import { QuickCreateCustomerDialog } from './quick-create-customer-dialog.jsx';
 
@@ -28,7 +29,7 @@ import { QuickCreateCustomerDialog } from './quick-create-customer-dialog.jsx';
  *   customers: import('../types/index.js').Customer[],
  *   sourceCustomerId: string,
  *   inlineValues: import('../types/index.js').CustomerFormValues,
- *   sourceCustomerIdStatus?: { type: 'error', message: string },
+ *   sourceCustomerIdStatus?: { type: 'error' | 'success', message: string },
  *   fieldStatuses: Record<string, { type: 'error', message: string } | undefined>,
  *   onSelectExisting: (customerId: string, knownCustomer?: import('../types/index.js').Customer) => void,
  *   onSwitchToInline: () => void,

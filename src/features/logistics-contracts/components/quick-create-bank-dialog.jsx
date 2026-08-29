@@ -6,7 +6,8 @@ import { DialogHeader } from '@astryxdesign/core/Dialog';
 import { HStack } from '@astryxdesign/core/HStack';
 import { Layout, LayoutContent, LayoutFooter } from '@astryxdesign/core/Layout';
 
-import { CommonDialog } from '../../../shared/components/common-dialog.jsx';
+import { CommonDialog } from '@/shared/components/common-dialog.jsx';
+
 import { useBankForm } from '../hooks/use-bank-form.js';
 import { BankFields } from './bank-fields.jsx';
 

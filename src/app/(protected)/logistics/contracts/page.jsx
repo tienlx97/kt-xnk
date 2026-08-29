@@ -1,8 +1,8 @@
 import { BreadcrumbItem, Breadcrumbs } from '@astryxdesign/core/Breadcrumbs';
 import { VStack } from '@astryxdesign/core/VStack';
 
-import { ContractsList } from '../../../../features/logistics-contracts/index.js';
-import { PageContentShell } from '../../../../shared/components/page-content-shell.jsx';
+import { ContractsList } from '@/features/logistics-contracts/index.js';
+import { PageContentShell } from '@/shared/components/page-content-shell.jsx';
 
 export const metadata = {
   title: 'Hợp đồng · Logistics · KT-XNK',
