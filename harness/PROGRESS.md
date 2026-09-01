@@ -5,6 +5,74 @@ Append-only session log. Newest entry FIRST.
 This file is the handoff between sessions/agents — write for a reader with zero conversation context.
 -->
 
+## 2026-09-01 — Contract Annex tab (`add-contract-annex-tab`)
+
+**Context:** BE-kt-xnk shipped `ContractAnnex` (full CRUD except delete,
+system-assigned sequential `AnnexNumber`, computed `AnnexCode` —
+`add-contract-annexes` in the API repo). User asked for an "Annex" tab on
+the contract row's expanded-details `TabList`, enabled only when the
+contract has at least one annex, disabled otherwise. Change:
+`openspec/changes/add-contract-annex-tab/`.
+
+**What shipped.** New feature files mirroring the existing catalog
+pattern (Country/ContractBank), except nested under a contract rather than
+flat: `types/index.js` (`ContractAnnexType`/`ContractAnnex`/
+`ContractAnnexFormValues`), `config/contract-annex-types.js` (fixed type
+set + Vietnamese labels), `config/contract-annex-schema.js` (zod),
+`api/contract-annexes.js` (list/create/update against
+`/api/v1/contracts/{contractId}/annexes...`), `hooks/
+use-contract-annexes-query.js` + `hooks/use-contract-annex-form.js`,
+`components/contract-annex-fields.jsx` + `components/
+contract-annex-form-dialog.jsx`.
+
+**`contracts-list.jsx`:** `ExpandedTab` gains `'annex'`;
+`ContractExpandedDetails` now calls `useContractAnnexesQuery(contract.id)`
+(only runs while that row's panel is mounted) and renders a "Phụ lục" tab
+with an `endContent` count. A `List` under that tab shows each annex's
+code/type/amount/signed-date/buyer-seller-signed with a per-row edit
+`IconButton`. An always-enabled "Thêm phụ lục" button sits in the bottom
+action row (next to "Sửa hợp đồng") — deliberately **not** gated behind
+the tab, since disabling the tab with zero annexes would otherwise make it
+impossible to ever create the first one through this UI.
+
+**A real Astryx API gap found while building this:** `Tab`
+(`@astryxdesign/core/TabList`) has no `isDisabled`/`disabled` prop in its
+type — unlike `Button`/`CheckboxInput`, which both declare one explicitly.
+It renders a plain `<button>` and its `onClick` always fires
+`tabListCtx.onChange(value)` regardless of `aria-disabled` (that attribute
+only changes the CSS cursor per `Tab.tsx`'s `styles.base`). Passing
+`aria-disabled={!hasAnnexes}` alone would grey the tab out but leave it
+fully clickable. Fixed by guarding in `TabList`'s own `onChange`: `if
+(value === 'annex' && !hasAnnexes) return;` before calling `setActiveTab`
+— the visual + functional disabling now match.
+
+**Verification:** `pnpm lint`/`pnpm typecheck`/`pnpm test` (104 tests, all
+pre-existing — this change added no new unit test file, see gap below)
+clean; `./harness/verify.sh` 10/10. **Live verification gap, same shape as
+`wire-contract-country-port-and-field-renames`:** no browser/Playwright
+tool was available in this environment to click through the actual UI.
+Partial evidence instead: an unrelated dev server was already running on
+port 3000 (another active session against this same repo — did not start
+a second one or kill it); its compile log
+(`.next/dev/logs/next-development.log`) showed clean `✓ Compiled` lines
+with no new runtime error immediately after each edit to
+`contracts-list.jsx` and the new files, and an unauthenticated `curl
+localhost:3000/logistics/contracts` returned the expected `307` to
+`/login`. This is evidence the code compiles and the route resolves, not
+that the tab behaves correctly on screen — flagging honestly rather than
+claiming a browser check that didn't happen.
+
+**Not done / known gaps:**
+- No unit tests added for the new schema/API modules (existing suite for
+  sibling catalogs like `contract-bank-schema` also has none, so this
+  matches the established bar for this feature area, but note it here
+  rather than let it look like an oversight).
+- No live click-through verification (see above) — needs a human or a
+  session with browser tooling to confirm the disabled/enabled tab
+  behavior and the create/edit dialogs actually work end-to-end against
+  BE-kt-xnk's live `ContractAnnex` endpoints.
+- Delete is out of scope (backend doesn't support it yet either).
+
 ## 2026-08-29 — Expandable contract rows with inline details
 
 **Request:** Preserve the current working tree in a commit, then make each row

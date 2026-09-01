@@ -4,6 +4,7 @@ import { Button } from '@astryxdesign/core/Button';
 import { Divider } from '@astryxdesign/core/Divider';
 import { HStack } from '@astryxdesign/core/HStack';
 import { Icon } from '@astryxdesign/core/Icon';
+import { IconButton } from '@astryxdesign/core/IconButton';
 import { List, ListItem } from '@astryxdesign/core/List';
 import {
   MetadataList,
@@ -19,7 +20,7 @@ import { Heading, Text } from '@astryxdesign/core/Text';
 import { Token } from '@astryxdesign/core/Token';
 import { VStack } from '@astryxdesign/core/VStack';
 import * as stylex from '@stylexjs/stylex';
-import { FileText, Pencil, Printer, Trash2 } from 'lucide-react';
+import { FileText, Pencil, Plus, Printer, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import {
@@ -31,10 +32,13 @@ import {
   expandableRowStyles,
 } from '@/shared/components/expandable-row-styles.jsx';
 
+import { labelForContractAnnexType } from '../config/contract-annex-types.js';
 import { currencyOptions, formatMoney } from '../config/currencies.js';
 import { incotermOptions } from '../config/incoterms.js';
+import { useContractAnnexesQuery } from '../hooks/use-contract-annexes-query.js';
 import { useContractBanksQuery } from '../hooks/use-contract-banks-query.js';
 import { useContractsQuery } from '../hooks/use-contracts-query.js';
+import { ContractAnnexFormDialog } from './contract-annex-form-dialog.jsx';
 import { ContractFormDialog } from './contract-form-dialog.jsx';
 
 /** @satisfies {ReadonlyArray<import('@astryxdesign/core/PowerSearch').FieldDefinition>} */
@@ -149,7 +153,7 @@ const skeletonRows = Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => ({
   bankIds: [],
 }));
 
-/** @typedef {'info' | 'seller' | 'customer' | 'banks'} ExpandedTab */
+/** @typedef {'info' | 'seller' | 'customer' | 'banks' | 'annex'} ExpandedTab */
 
 /**
  * @param {object} props
@@ -161,6 +165,14 @@ function ContractExpandedDetails({ contract, onEdit, banksById }) {
   const [activeTab, setActiveTab] = useState(
     /** @type {ExpandedTab} */ ('info'),
   );
+  const [isAnnexDialogOpen, setIsAnnexDialogOpen] = useState(false);
+  const [editingAnnex, setEditingAnnex] = useState(
+    /** @type {import('../types/index.js').ContractAnnex | null} */ (null),
+  );
+
+  const annexesQuery = useContractAnnexesQuery(contract.id);
+  const annexes = annexesQuery.data?.success ? annexesQuery.data.annexes : [];
+  const hasAnnexes = annexes.length > 0;
 
   return (
     <VStack gap={4} hAlign="stretch" xstyle={expandableRowStyles.expandedPanel}>
@@ -196,7 +208,12 @@ function ContractExpandedDetails({ contract, onEdit, banksById }) {
 
       <TabList
         value={activeTab}
-        onChange={(value) => setActiveTab(/** @type {ExpandedTab} */ (value))}
+        onChange={(value) => {
+          // The "annex" tab has nothing to show without at least one annex —
+          // block switching to it rather than opening an empty panel.
+          if (value === 'annex' && !hasAnnexes) return;
+          setActiveTab(/** @type {ExpandedTab} */ (value));
+        }}
         hasDivider
         size="sm"
       >
@@ -211,6 +228,12 @@ function ContractExpandedDetails({ contract, onEdit, banksById }) {
               ? String(contract.bankIds.length)
               : undefined
           }
+        />
+        <Tab
+          value="annex"
+          label="Phụ lục"
+          aria-disabled={!hasAnnexes}
+          endContent={hasAnnexes ? String(annexes.length) : undefined}
         />
       </TabList>
 
@@ -332,6 +355,36 @@ function ContractExpandedDetails({ contract, onEdit, banksById }) {
           </List>
         ))}
 
+      {activeTab === 'annex' &&
+        (annexes.length === 0 ? (
+          <Text color="secondary">Chưa có phụ lục</Text>
+        ) : (
+          <List hasDividers density="compact">
+            {annexes.map((annex) => (
+              <ListItem
+                key={annex.id}
+                label={`${annex.annexCode} · ${labelForContractAnnexType(annex.type)}`}
+                description={[
+                  formatMoney(annex.amount, contract.currency),
+                  `Ký ${annex.signedDate}`,
+                  `Mua: ${annex.buyerSigned ? 'đã ký' : 'chưa ký'}`,
+                  `Bán: ${annex.sellerSigned ? 'đã ký' : 'chưa ký'}`,
+                ].join(' · ')}
+                endContent={
+                  <IconButton
+                    label={`Sửa ${annex.annexCode}`}
+                    tooltip="Sửa phụ lục"
+                    icon={<Icon icon={Pencil} size="sm" />}
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setEditingAnnex(annex)}
+                  />
+                }
+              />
+            ))}
+          </List>
+        ))}
+
       <Divider />
 
       <HStack hAlign="between" vAlign="center">
@@ -344,6 +397,13 @@ function ContractExpandedDetails({ contract, onEdit, banksById }) {
           tooltip="Chưa hỗ trợ"
         />
         <HStack gap={2}>
+          <Button
+            label="Thêm phụ lục"
+            variant="secondary"
+            size="sm"
+            icon={<Icon icon={Plus} />}
+            onClick={() => setIsAnnexDialogOpen(true)}
+          />
           <Button
             label="In"
             variant="secondary"
@@ -361,6 +421,28 @@ function ContractExpandedDetails({ contract, onEdit, banksById }) {
           />
         </HStack>
       </HStack>
+
+      {isAnnexDialogOpen ? (
+        <ContractAnnexFormDialog
+          isOpen={isAnnexDialogOpen}
+          onOpenChange={setIsAnnexDialogOpen}
+          contractId={contract.id}
+          onSuccess={() => setActiveTab('annex')}
+        />
+      ) : null}
+
+      {editingAnnex ? (
+        <ContractAnnexFormDialog
+          key={editingAnnex.id}
+          isOpen={editingAnnex !== null}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setEditingAnnex(null);
+          }}
+          contractId={contract.id}
+          annex={editingAnnex}
+          onSuccess={() => setEditingAnnex(null)}
+        />
+      ) : null}
     </VStack>
   );
 }

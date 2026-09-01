@@ -98,6 +98,38 @@ export {};
  */
 
 /**
+ * @typedef {'AmountIncrease' | 'AmountDecrease' | 'ValueChange'} ContractAnnexType
+ */
+
+/**
+ * Contract amendment ("phụ lục hợp đồng") — a historical record only, never
+ * changes `Contract.contractValue`. `annexNumber`/`annexCode` are
+ * system-assigned (BE-kt-xnk): `annexCode` is `{contractNumber}/AN-{annexNumber}`,
+ * computed by the backend from the *current* contract number, so it can
+ * change if the contract is renamed even though `annexNumber` itself never
+ * does.
+ * @typedef {Object} ContractAnnex
+ * @property {string} id
+ * @property {string} contractId
+ * @property {number} annexNumber
+ * @property {string} annexCode
+ * @property {ContractAnnexType} type
+ * @property {number} amount
+ * @property {string} signedDate - ISO date (YYYY-MM-DD)
+ * @property {boolean} buyerSigned
+ * @property {boolean} sellerSigned
+ */
+
+/**
+ * @typedef {Object} ContractAnnexFormValues
+ * @property {ContractAnnexType | ''} type
+ * @property {number | undefined} amount
+ * @property {string} signedDate - ISO date (YYYY-MM-DD)
+ * @property {boolean} buyerSigned
+ * @property {boolean} sellerSigned
+ */
+
+/**
  * @typedef {Object} Company
  * @property {string} id
  * @property {string} name
