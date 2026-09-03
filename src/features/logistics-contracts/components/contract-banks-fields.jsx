@@ -1,5 +1,6 @@
 'use client';
 
+import { Banner } from '@astryxdesign/core/Banner';
 import { CheckboxList, CheckboxListItem } from '@astryxdesign/core/CheckboxList';
 import { HStack } from '@astryxdesign/core/HStack';
 import { Icon } from '@astryxdesign/core/Icon';
@@ -13,19 +14,25 @@ import { IconPlus } from '@/shared/components/icon/icon-plus.jsx';
 import { QuickCreateBankDialog } from './quick-create-bank-dialog.jsx';
 
 /**
- * Ngân hàng thụ hưởng: 0 or more `ContractBank` catalog entries, referenced
- * by id (not snapshotted — see `docs/api/ContractBanks.md`, BE-kt-xnk).
+ * Ngân hàng thụ hưởng: **at least 1** `ContractBank` catalog entry required,
+ * referenced by id (not snapshotted — see `docs/api/ContractBanks.md`,
+ * `docs/api/Contracts.md`, BE-kt-xnk).
  * @param {{
  *   banks: import('../types/index.js').ContractBank[],
  *   selectedBankIds: string[],
  *   onChange: (bankIds: string[]) => void,
+ *   status?: { type: 'error' | 'success', message: string },
  * }} props
  */
-export function ContractBanksFields({ banks, selectedBankIds, onChange }) {
+export function ContractBanksFields({ banks, selectedBankIds, onChange, status }) {
   const [isQuickCreateOpen, setIsQuickCreateOpen] = useState(false);
 
   return (
     <VStack gap={3} hAlign="stretch">
+      {status ? (
+        <Banner status="error" title={status.message} container="card" />
+      ) : null}
+
       <HStack hAlign="between" vAlign="start">
         {banks.length > 0 ? (
           <CheckboxList
@@ -40,8 +47,12 @@ export function ContractBanksFields({ banks, selectedBankIds, onChange }) {
               <CheckboxListItem
                 key={bank.id}
                 value={bank.id}
-                label={bank.bankName}
-                description={[bank.beneficiary, bank.bankAccountNumber]
+                label={bank.bankName || 'Ngân hàng chưa đặt tên'}
+                description={[
+                  bank.beneficiary,
+                  bank.bankAccountNumber,
+                  bank.branchName,
+                ]
                   .filter(Boolean)
                   .join(' · ')}
               />

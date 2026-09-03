@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { CURRENCY_CODES } from './currencies.js';
-import { INCOTERM_CODES } from './incoterms.js';
+import { INCOTERM_CODES, requiresPlaceOfDischarge } from './incoterms.js';
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -25,11 +25,9 @@ const paymentTermSchema = z.object({
  * path: "Thêm bên bán"/"Thêm khách hàng" (quick-create) is the only way to
  * add one not already in the catalog, so every Seller/Party A on a contract
  * created here ends up catalog-linked.
- * `companyId` is intentionally not in this schema — it only narrows the
- * Branch selector client-side, the backend never sees it. `branchId` is
- * deliberately unvalidated (may be `''`) — the backend accepts a `null`
- * branch, restricted server-side to a caller with a global permission
- * grant (see `docs/api/Contracts.md`, BE-kt-xnk).
+ * `companyId` is required — a contract always belongs to a company
+ * (permissions are scoped by company, not branch; see
+ * `docs/api/Contracts.md`, BE-kt-xnk).
  */
 export const contractSchema = z
   .object({
@@ -38,17 +36,16 @@ export const contractSchema = z
     quotationDate: z.string().min(1, 'Vui lòng chọn ngày báo giá'),
     projectName: z.string().trim().min(1, 'Vui lòng nhập tên dự án'),
     category: z.string().trim().min(1, 'Vui lòng nhập hạng mục'),
-    exportCountry: z.string().trim().min(1, 'Vui lòng nhập nước xuất khẩu'),
-    portOfLoading: z
+    countryId: z.string().trim().min(1, 'Vui lòng chọn nước xuất khẩu'),
+    placeOfLoading: z
       .string()
       .trim()
       .min(1, 'Vui lòng nhập cảng xếp hàng')
       .max(200, 'Tối đa 200 ký tự'),
-    portOrPlaceOfDestination: z
-      .string()
-      .trim()
-      .min(1, 'Vui lòng nhập cảng/nơi đến')
-      .max(200, 'Tối đa 200 ký tự'),
+    // Required or blank depending on `incoterm` — see the cross-field
+    // refine below (FOB/EXW end at origin, so `placeOfDischarge` must stay
+    // empty; DDP/CIF carry through to a destination, so it's required).
+    placeOfDischarge: z.string().trim().max(200, 'Tối đa 200 ký tự'),
     contractValue: z
       .number({ error: 'Vui lòng nhập giá trị hợp đồng' })
       .positive('Giá trị hợp đồng phải lớn hơn 0'),
@@ -59,7 +56,7 @@ export const contractSchema = z
       .int()
       .min(2000, 'Năm Incoterm không hợp lệ')
       .max(CURRENT_YEAR + 1, 'Năm Incoterm không hợp lệ'),
-    branchId: z.string(),
+    companyId: z.string().trim().min(1, 'Vui lòng chọn công ty'),
     sourceSellerId: z.string(),
     sellerInline: z.object({
       companyName: z.string().trim(),
@@ -68,16 +65,19 @@ export const contractSchema = z
       address: z.string().trim(),
     }),
     sourceCustomerId: z.string(),
-    partyAInline: z.object({
+    buyerInline: z.object({
       companyName: z.string().trim(),
       representativeName: z.string().trim(),
       representativeTitle: z.string().trim(),
       address: z.string().trim(),
     }),
+    note: z.string().trim().max(2000, 'Tối đa 2000 ký tự'),
     paymentTerms: z
       .array(paymentTermSchema)
       .min(1, 'Cần ít nhất 1 đợt thanh toán'),
-    bankIds: z.array(z.string()),
+    bankIds: z.array(z.string()).min(1, 'Vui lòng chọn ít nhất 1 ngân hàng'),
+    sellerSigned: z.boolean(),
+    buyerSigned: z.boolean(),
   })
   .refine((values) => Boolean(values.sourceSellerId), {
     message: 'Vui lòng chọn bên bán, hoặc bấm "Thêm bên bán" để tạo mới',
@@ -98,5 +98,33 @@ export const contractSchema = z
     {
       message: 'Tổng tỷ lệ các đợt thanh toán phải bằng 100%',
       path: ['paymentTerms'],
+    },
+  )
+  .refine(
+    (values) =>
+      !values.quotationDate ||
+      !values.createdDate ||
+      values.quotationDate <= values.createdDate,
+    {
+      // ISO date strings (YYYY-MM-DD) compare correctly with <= lexically.
+      // Mirrors the backend's `QuotationDate <= CreatedDate` rule (see
+      // `docs/api/Contracts.md`, BE-kt-xnk).
+      message: 'Ngày báo giá phải trước hoặc bằng ngày tạo hợp đồng',
+      path: ['quotationDate'],
+    },
+  )
+  .refine(
+    (values) =>
+      requiresPlaceOfDischarge(values.incoterm)
+        ? values.placeOfDischarge.length > 0
+        : values.placeOfDischarge.length === 0,
+    {
+      // `ContractFormDialog` disables and clears `placeOfDischarge` for
+      // FOB/EXW and requires it for DDP/CIF — this mirrors that rule
+      // server-side-shaped so a stale value can't slip through if the UI
+      // state and `incoterm` ever get out of sync (e.g. programmatic
+      // submission, a bug in the clearing logic).
+      message: 'Vui lòng chọn cảng/nơi đến',
+      path: ['placeOfDischarge'],
     },
   );

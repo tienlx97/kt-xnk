@@ -555,6 +555,65 @@ const styles = stylex.create({
 });
 ```
 
+### Astryx `StackItem size="fill"` does not keep siblings equal-width
+
+`StackItem size="fill"` (and the `stackItem()` xstyle helper) only sets
+`flexGrow: 1` — `flex-basis` stays `auto`. Two `fill` siblings with the same
+`flexGrow` are **not** guaranteed equal width: if one grows (a status icon,
+a spinner, a longer value) its `auto` basis grows too, and the *other*
+sibling shrinks by half that amount to compensate, even though nothing
+about it changed. This showed up as `TextInput`/`DateInput`/`Selector`
+pairs in `HStack`s visibly narrowing when a sibling field's validation icon
+appeared (see `contract-form-dialog.jsx`).
+
+Fix: give each `fill` item `flexBasis: 0` via `xstyle` so `flexGrow` alone
+decides width, independent of either item's content:
+
+```tsx
+const styles = stylex.create({
+  equalFill: { flexBasis: 0 },
+});
+
+<HStack gap={3}>
+  <StackItem size="fill" xstyle={styles.equalFill}>
+    <TextInput label="Số hợp đồng" status={status} statusVariant="tooltip" />
+  </StackItem>
+  <StackItem size="fill" xstyle={styles.equalFill}>
+    <TextInput label="Tên dự án" />
+  </StackItem>
+</HStack>
+```
+
+Only needed when two-or-more `fill` items share a row and at least one can
+change its own content size (status icon, spinner, clear button, growing
+value) — a lone `fill` item next to a `static` one is unaffected.
+
+### Astryx `LayoutContent` is scrollable by default — don't also scroll its child
+
+`LayoutContent` defaults to `isScrollable={true}` (`overflow: auto`). A
+dialog that wants a *fixed-height* content region — so the dialog itself
+doesn't resize as `Collapsible` sections expand/collapse — commonly gives
+its inner `VStack` a fixed `height` plus its own `isScrollable`. Left as
+the default, `LayoutContent` scrolls too, and you get two independent
+scrollbars nested inside each other (visibly two scroll tracks in the
+dialog). Seen in `contract-form-dialog.jsx` and `user-form-dialog.jsx`,
+both of which use this exact fixed-height-inner-VStack idiom.
+
+Fix: turn off `LayoutContent`'s own scrolling so the inner region is the
+sole scroll owner:
+
+```tsx
+<LayoutContent padding={6} isScrollable={false}>
+  <VStack gap={4} hAlign="stretch" height={560} isScrollable>
+    {/* ... */}
+  </VStack>
+</LayoutContent>
+```
+
+Only needed when the child already owns its own scrolling (a fixed height
++ `isScrollable`) — a `LayoutContent` with ordinary auto-height children
+should keep the default.
+
 ---
 
 ## More resources

@@ -18,7 +18,7 @@ import { SellerFields } from './seller-fields.jsx';
  * Seller (bên bán) must reference an existing `Seller` from the catalog
  * (snapshotted into the contract on save — see `docs/api/Contracts.md`,
  * BE-kt-xnk): pick one from the Selector, or "Thêm bên bán" to create one on
- * the spot (auto-selected once created). Mirrors `PartyAFields` — picking a
+ * the spot (auto-selected once created). Mirrors `BuyerFields` — picking a
  * seller prefills representative/title/address/extra fields from its
  * current catalog record, but those stay **editable** — the backend only
  * pins `CompanyName` to the catalog when `SourceSellerId` is set.

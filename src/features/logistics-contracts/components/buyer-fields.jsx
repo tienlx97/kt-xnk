@@ -15,16 +15,17 @@ import { CustomerFields } from './customer-fields.jsx';
 import { QuickCreateCustomerDialog } from './quick-create-customer-dialog.jsx';
 
 /**
- * Party A must reference an existing `Customer` from the catalog
- * (snapshotted into the contract on save — see `docs/api/Contracts.md`,
- * BE-kt-xnk): pick one from the Selector, or "Thêm khách hàng" to create one
- * on the spot (auto-selected once created) — there's no separate free-typed
- * path, so every Party A stays catalog-linked. Picking a customer prefills
- * representative/title/address/extra fields from its current catalog
- * record, but those stay **editable** — the backend only pins `CompanyName`
- * to the catalog when `SourceCustomerId` is set; every other field is
- * independent per contract, so the same customer can be Party A on two
- * contracts with a different representative on each.
+ * Buyer (was "Party A" on the wire — see `docs/api/Contracts.md`,
+ * BE-kt-xnk) must reference an existing `Customer` from the catalog
+ * (snapshotted into the contract on save): pick one from the Selector, or
+ * "Thêm khách hàng" to create one on the spot (auto-selected once
+ * created) — there's no separate free-typed path, so every Buyer stays
+ * catalog-linked. Picking a customer prefills representative/title/
+ * address/extra fields from its current catalog record, but those stay
+ * **editable** — the backend only pins `CompanyName` to the catalog when
+ * `SourceCustomerId` is set; every other field is independent per
+ * contract, so the same customer can be Buyer on two contracts with a
+ * different representative on each.
  * @param {{
  *   customers: import('../types/index.js').Customer[],
  *   sourceCustomerId: string,
@@ -37,7 +38,7 @@ import { QuickCreateCustomerDialog } from './quick-create-customer-dialog.jsx';
  *   extraFieldRows: ReturnType<typeof import('../hooks/use-extra-field-rows.js').useExtraFieldRows>,
  * }} props
  */
-export function PartyAFields({
+export function BuyerFields({
   customers,
   sourceCustomerId,
   inlineValues,
@@ -102,7 +103,7 @@ export function PartyAFields({
           />
         </VStack>
       ) : inlineValues.companyName ? (
-        // Editing a contract whose Party A was saved without a catalog
+        // Editing a contract whose Buyer was saved without a catalog
         // link (a typed CompanyName, no SourceCustomerId — the backend
         // still allows that, this form just no longer offers it going
         // forward). Surface the old value so the user isn't staring at an

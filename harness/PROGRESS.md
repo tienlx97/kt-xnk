@@ -5,6 +5,680 @@ Append-only session log. Newest entry FIRST.
 This file is the handoff between sessions/agents — write for a reader with zero conversation context.
 -->
 
+## 2026-09-03 — Contract signatures + Payment Schedules (`add-payment-schedule-and-contract-signatures`)
+
+**Context:** User asked (in the backend session, `../CLEAN ARCHITECTURE`)
+to check whether the ContractBank and PaymentSchedule features BE-kt-xnk
+had just shipped were wired into this frontend. ContractBank was already
+present (`contract-banks-fields.jsx`, `api/contract-banks.js`, etc., from
+earlier sessions). `PaymentSchedule` had nothing — no types, api, hooks,
+or components. Separately, `Contract.sellerSigned`/`buyerSigned` (the
+*contract's own* signature flags, distinct from `ContractAnnex`'s and
+`ServiceAgreement`'s own `sellerSigned`/`buyerSigned`, which already
+existed) were also missing everywhere in this repo. Backend session also
+added a hard rule mid-flight: creating a `PaymentSchedule` now requires
+`Contract.sellerSigned && Contract.buyerSigned` (`400` otherwise).
+
+**What shipped** (mirrors the `ContractAnnex` feature/`add-contract-annex-tab`
+pattern closely):
+
+- `Contract`/`ContractFormValues` gained `sellerSigned`/`buyerSigned` —
+  threaded through `types/index.js`, `config/contract-schema.js`
+  (`z.boolean()`, no `.refine()` — the *sign* isn't itself required),
+  `hooks/use-contract-form.js` (both `emptyValues`/`valuesFromContract`),
+  `api/contracts.js` (`SellerSigned`/`BuyerSigned` in the wire body),
+  `contract-form-dialog.jsx` (two `CheckboxInput`s after "Ghi chú"), and
+  `contracts-list.jsx`'s "Thông tin" tab (new 2-column `MetadataList`
+  showing "Đã ký"/"Chưa ký").
+- New `PaymentSchedule` feature, full stack: `types/index.js`
+  (`PaymentType`/`PaymentSchedule`/`PaymentScheduleFormValues`),
+  `config/payment-schedule-types.js` (`TT`/`LC` — mirrors the backend's
+  enum exactly, `/` isn't a valid enum identifier so "T/T"→`TT`,
+  "L/C"→`LC`), `config/payment-schedule-schema.js` (zod: `amount > 0`,
+  `type` enum, `note` ≤ 2000 chars — matches
+  `CreatePaymentScheduleCommandValidator`), `api/payment-schedules.js`
+  (list/create/update against `/api/v1/contracts/{contractId}/payment-schedules...`),
+  `hooks/use-payment-schedules-query.js` + `use-payment-schedule-form.js`,
+  `components/payment-schedule-fields.jsx` +
+  `payment-schedule-form-dialog.jsx`.
+- `contracts-list.jsx`: new "Đợt thanh toán khách" section in the
+  "Thông tin" tab (same tab `ContractAnnex`'s "Phụ lục" list already lives
+  in, not a new `ExpandedTab` — see proposal's decision log), listing each
+  schedule (`paymentCode · type`, date + note, amount, edit button) with a
+  "Thêm đợt thanh toán" button. The button is **disabled with a tooltip**
+  unless `contract.sellerSigned && contract.buyerSigned` — this mirrors
+  the backend's hard `400` rather than duplicating it as a schema rule
+  (the schema has no access to the parent `Contract`).
+- `PaymentType`'s `/` isn't valid as either a JS identifier or the
+  backend's C# enum identifier — kept the same `TT`/`LC` wire values as
+  the backend, with `paymentTypeOptions` supplying the "T/T"/"L/C" display
+  labels (same pattern as `contract-annex-types.js`).
+
+**Not done:** no delete for `PaymentSchedule` (backend has none — this was
+explicit in the original ask: "không cần delete"). No client-side zod rule
+duplicating the signed-contract precondition — a disabled button is the
+whole client-side mirror, the backend's `400`/message is the real
+enforcement.
+
+**Verification:** `pnpm lint` / `pnpm typecheck` / `pnpm test` (107/107)
+all clean; `./harness/verify.sh` full pass (project-readiness,
+memory-secrets, theme-build, lint, typecheck, structure, harness-tests,
+unit-tests, build, quality-thresholds). Evidence:
+`harness/runs/20260903-145145-33764/`.
+
+**Not live-verified in the browser this session** — no `claude-in-chrome`
+tool available. Whoever picks this up next should click through: (a) the
+Contract create/edit dialog shows the two new checkboxes and they persist
+correctly, (b) the "Thêm đợt thanh toán" button is disabled with the
+tooltip on an unsigned contract and enables once both are checked, (c) a
+created payment schedule's code renders as `{contractNumber}/PR-{NN}`.
+
+**Blockers:** none. Unrelated pre-existing gap noted in earlier entries
+(no `bankAddress`/`swiftCode` on `CreateContractBankRequest` server-side)
+is untouched by this session.
+
+---
+
+## 2026-09-02 — Correction: BankName stays required; + Tổng cộng on Thông tin tab
+
+**Request 1 — correction to the previous entry:** user clarified their
+"Ngân hàng, tất cả optional" ask from last entry meant *add the
+Bank Address/Swift Code text inputs*, not *also make Bank Name optional*
+— "vẫn tuân theo API của BE" (still follow the backend's API). Reverted
+the `bankName` part of that change: `contract-bank-schema.js` has
+`.min(1, ...)` back, `bank-fields.jsx`'s "Tên ngân hàng" has `isRequired`
+back, `types/index.js`'s `ContractBank.bankName` is `string` again (not
+`string | null`). Left everything else from that entry as-is —
+`bankAddress`/`swiftCode` stay new optional inputs (backend still drops
+them silently; that part of the gap is unchanged), and the "Ngân hàng
+chưa đặt tên" display fallbacks stay too (harmless defensive fallback,
+even though `bankName` empty can no longer happen through this form).
+
+**Request 2:** add the same "Tổng cộng" line the Service Agreement tab
+already has, to the Contract's own "Thông tin" tab — `contract.contractValue`
+plus every contract-annex `amount`, signed by `type`
+(`AmountIncrease`/`AmountDecrease`/`ValueChange`, `ValueChange`
+contributing 0, same convention as `contractAnnexAmountLabel`). New
+`contractAnnexesTotal`/`contractGrandTotal` computed right where `annexes`
+is fetched; rendered as an "Tổng cộng:" / amount row right after the
+Phụ lục list, same style as the Service Agreement tab's.
+
+**Verification:** `./harness/verify.sh` full pass. **Still not
+live-verified in the browser** — `claude-in-chrome` has not reconnected
+this session (checked again via `ToolSearch`, no match). Whoever picks
+this up next should live-check: (a) the bank quick-create dialog still
+requires a name (client-side error, not a server 400), (b) "Tổng cộng" on
+a contract with annexes computes correctly (e.g. `26KCT01`, which has
+mixed `AmountDecrease`/`ValueChange` annexes from earlier sessions).
+
+**Blockers:** same backend gap as the previous entry (no
+`bankAddress`/`swiftCode` on `CreateContractBankRequest`; "Test Bank XYZ"
+cleanup still pending) — unchanged by this correction.
+
+---
+
+## 2026-09-02 — Contract's `BankIds` made a required field
+
+**Request:** "cập nhật ngân hàng trong hợp đồng là trường bắt buộc" (make
+the bank field on a Contract required) — it was previously optional
+(`BankIds` could be an empty array).
+
+**Backend** (`../CLEAN ARCHITECTURE`, BE-kt-xnk): added
+`RuleFor(x => x.BankIds).NotEmpty()` to both
+`CreateContractCommandValidator` and `UpdateContractCommandValidator` →
+`400 detail: "At least one bank is required"` on an empty array. Updated
+every Subcutaneous/Integration test fixture that previously created
+contracts with `BankIds: []` to create and pass a real `ContractBank` id
+instead (11 test files touched). `docs/api/Contracts.md`'s `BankIds` row
+and 400 status row updated. Full backend suite: 223/223 pass. Rebuilt and
+redeployed the `cleanarchitecture-api` Docker container so the local dev
+backend enforces this now.
+
+**Frontend** (this repo): `config/contract-schema.js`'s `bankIds` field
+gained `.min(1, 'Vui lòng chọn ít nhất 1 ngân hàng')`, mirroring the
+backend rule (this file's own doc comment says it mirrors
+`CreateContractCommandValidator`/`UpdateContractCommandValidator`).
+`components/contract-banks-fields.jsx` gained a `status` prop (same
+`{type, message}` shape as `PaymentTermsFields`) rendering a `Banner` when
+invalid; `contract-form-dialog.jsx` wires `status={fieldStatuses.bankIds}`
+into it — the doc comment above `ContractBanksFields` was also updated
+from "0 or more" to "at least 1 required". `contract-schema.test.js`'s
+`baseCandidate()` now seeds `bankIds: ['bank-1']` instead of `[]` (would
+otherwise fail its own new-required-field test), plus a new
+`'requires at least one bank'` test. `contracts.test.js`'s fixture already
+used a non-empty array — untouched.
+
+**Verification:** `node --test` on both changed test files — 17/17 pass
+(no `./harness/verify.sh` run this session — scope was narrow enough that
+targeted test runs plus `eslint` on the 4 touched files, also clean,
+covered it; a future session touching this area should still run the full
+gate before considering it done).
+
+**Not live-verified in the browser** — no browser tool available this
+session. Worth a click-through confirming the "Ngân hàng thụ hưởng"
+section now shows a red banner when no bank is checked and blocks submit.
+
+**Blockers:** none for this specific change. Unrelated to it: the
+concurrent 2026-09-02 session below flagged a leftover "Test Bank XYZ" row
+in the live `contract-banks` catalog from its own diagnostic probe — still
+needs cleanup, not touched here.
+
+---
+
+## 2026-09-02 — ContractBank: added Bank Address/Swift Code, all 6 fields optional
+
+**Request:** "Ngân hàng gồm các field: Bank Name, Beneficiary, Bank Account,
+Branch, Bank Address, Swift Code. Các field optional" — two new fields
+(`bankAddress`, `swiftCode`) plus making `bankName` optional too (it was
+the one required field).
+
+**Checked the live backend directly before touching anything** (same
+discipline as the Service Agreements list gap): `CreateContractBankRequest`
+has no `bankAddress`/`swiftCode` at all — POSTing them anyway returns
+`201` but the backend silently drops both (confirmed: response echoed
+back without them). And `bankName` is **still required server-side**
+despite the OpenAPI schema marking it `nullable: true` — POSTing an empty
+`bankName` returns `400: 'Bank Name' must not be empty.` (a
+FluentValidation rule the schema doesn't surface). Asked the user how to
+proceed; they chose to code the frontend ahead of the backend anyway
+(consistent with this repo's usual practice), so implemented it with that
+gap clearly flagged in comments and here, not silently.
+
+**⚠️ Unintended side effect while probing the backend:** a diagnostic
+`POST /api/v1/contract-banks` (checking whether unknown fields get
+rejected) actually succeeded and created a real, permanent bank named
+**"Test Bank XYZ"** in the live `contract-banks` catalog. There is no
+delete endpoint for `ContractBank` anywhere (list + create only) — could
+not clean this up. Flagged to the user in-session; **whoever picks this
+up should delete/rename that row** (direct DB access or ask BE-kt-xnk) if
+it's polluting real data. Lesson: don't POST live mutating requests as a
+diagnostic probe without a way to undo them — a GET-only check (or
+reading backend source/docs first) is preferable when a delete endpoint
+isn't confirmed to exist.
+
+**What changed:**
+- `config/contract-bank-schema.js`: dropped `bankName`'s `min(1)`; added
+  `bankAddress`/`swiftCode` as plain optional trimmed strings.
+- `types/index.js`: `ContractBank.bankName` widened to `string | null`;
+  added `bankAddress`/`swiftCode` to both `ContractBank` and
+  `ContractBankFormValues`.
+- `api/contract-banks.js`: `createContractBank` now sends
+  `BankAddress`/`SwiftCode` too (currently dropped server-side, see
+  above — will start working the moment the backend adds them, no
+  further FE change needed).
+- `hooks/use-bank-form.js`: `emptyValues()` includes the two new fields.
+- `components/bank-fields.jsx`: removed `isRequired` from "Tên ngân
+  hàng"; added "Địa chỉ ngân hàng" and "Swift Code" inputs.
+- `components/contract-banks-fields.jsx` and `contracts-list.jsx`'s
+  Ngân hàng section: both places that render `bank.bankName` as a label
+  now fall back to "Ngân hàng chưa đặt tên" for an empty name (previously
+  `bankName` was guaranteed non-empty, so this case couldn't happen); both
+  description lines now also include `branchName` (previously shown
+  nowhere in read views, only beneficiary/account number).
+
+**Verification:** `./harness/verify.sh` full pass. **Not live-verified in
+the browser this session** — `claude-in-chrome` disconnected mid-session
+and did not reconnect; static checks only. Next session picking this up
+should live-verify the bank form (empty-name submission still 400s from
+the server — frontend now allows submitting it, so the user will see the
+server's error banner, not a client-side validation message) and confirm
+the two new fields render/round-trip once the backend adds them.
+
+**Blockers:** backend needs `bankAddress`/`swiftCode` added to
+`CreateContractBankRequest` (and presumably the response/entity), and
+needs to drop the `BankName` non-empty validation rule, before this
+fully matches the request. Also: "Test Bank XYZ" cleanup (see above).
+
+---
+
+## 2026-09-02 — Contract's "Service Agreement" tab now matches the SA list page; table width + Tổng cộng
+
+**Request:** (1) make the Contract expanded row's "Service Agreement" tab
+look like `service-agreements-list.jsx`'s own expanded panel; (2) fix the
+main Hợp đồng table's column widths too; (3) add a "Tổng cộng" total.
+
+**Part 1 — `contracts-list.jsx`'s `activeTab === 'serviceAgreement'`
+block:** rebuilt to match `ServiceAgreementExpandedDetails` field-for-
+field: info grid gained "Số hợp đồng"/"Dự án" (already known — same
+contract — but included for exact parity) and "Trung gian" (the
+commission recipient's name, previously not shown at all here). Needed a
+new `customersById` map — `ServiceAgreement.partyCustomerId` is a live FK
+into the Customer catalog with no name resolution of its own, same as
+`service-agreements-list.jsx`'s own `customersById`; added
+`useCustomersQuery` to `ContractsList` and threaded `customersById` down
+through `renderExpanded` alongside the existing `banksById`/
+`countriesById`. Annex rows restyled to the same label+signed-amount
+top-line / date+parties second-line pattern (new
+`serviceAgreementAnnexAmountLabel` helper, mirrors
+`contractAnnexAmountLabel` added last session). Added the same "Tổng
+cộng" line (agreement `value` + signed annex amounts) at the bottom.
+
+**Part 2 — main table width:** `contractValue` was the lone
+`proportional(1)` column among five `pixel()` siblings (`projectName`/
+`buyer` are `proportional(1.4)`, the intentional slack-sharing pair) —
+exactly the anti-pattern flagged in the 2026-09-02 "Harness gaps" entry
+above (mixing `pixel()`/`proportional()` without thinking about which
+column should flex). Changed to `pixel(160)` — tried `pixel(140)` first,
+caught via live browser check that it wrapped 6-figure values
+("100,000.00 USD") onto two lines, bumped to 160.
+
+**Verification:** `./harness/verify.sh` full pass. Live-clicked through
+on `SA-VERIFY-01`: Service Agreement tab now shows "Trung gian: Broker Co
+1788274749", 3 annexes with correct signed amounts, and "Tổng cộng:
+7,200.00 USD" (9,000 − 300 − 1,500, `InfoChange` annex contributing 0) —
+identical to the standalone Service Agreement list page's own expanded
+row for the same agreement. Main table's "Giá trị" column no longer
+wraps at any visible row. No console errors.
+
+**Blockers:** none.
+
+---
+
+## 2026-09-02 — Contracts expanded row: merged Ngân hàng/Phụ lục tabs into Thông tin
+
+**Request:** apply the same "no separate tab, everything inline" treatment
+Service Agreement's expanded row already has to the Contracts (Hợp đồng)
+expanded row: restructure the info grid into 4 specific rows, and pull
+"Ngân hàng" and "Phụ lục" out of their own tabs into the flow below it.
+"Bên bán"/"Khách hàng"/"Service Agreement" tabs weren't mentioned, so left
+untouched.
+
+**What changed in `contracts-list.jsx`'s `ContractExpandedDetails`:**
+- `ExpandedTab` typedef narrowed to `'info' | 'seller' | 'customer' |
+  'serviceAgreement'` — `'banks'`/`'annex'` tab values no longer exist.
+  Removed their `<Tab>` entries and the now-dead `hasAnnexes` var (whose
+  only use was gating the removed annex tab).
+- "Thông tin" tab's info grid restructured into the requested rows, using
+  the same continuous `columns={4}` `MetadataList` + `metadataSpacer`
+  padding technique from `service-agreements-list.jsx` (row 2 only has 2
+  fields, padded to stay column-aligned with rows 1 and 3's 4 fields
+  each). Row 4 ("Giá trị, Ghi chú chiếm 2 ô") is its own `columns={2}`
+  block instead — `MetadataListItem` has no colSpan, so a 2-of-2-column
+  block is the closest approximation to "spans 2 of the 4 columns above";
+  it does NOT share grid tracks with the rows above it (real component
+  limitation, documented inline).
+- "Ngân hàng" and "Phụ lục" sections moved from their own
+  `activeTab === 'banks'`/`activeTab === 'annex'` blocks into the always-
+  visible "Thông tin" tab content, in that order, followed by "Đợt thanh
+  toán" (moved earlier, between them) styled as a `List` with bold
+  right-aligned percent/condition instead of a plain `MetadataList` grid.
+- Phụ lục list restyled to match `service-agreements-list.jsx`'s annex
+  rows exactly: label + signed amount (`+`/`−`/no-sign via new
+  `contractAnnexAmountLabel`, mirroring that file's `annexAmountLabel`)
+  on the top line, "Ký ... · Mua: ... · Bán: ..." below. The footer's
+  standalone "Thêm phụ lục" button was removed (now redundant — the one
+  next to the inline "Phụ lục" heading is the only trigger, and it's
+  always reachable since that section is no longer tab-gated); the annex
+  dialog's now-pointless `onSuccess={() => setActiveTab('annex')}` was
+  dropped along with it.
+
+**Verification:** `./harness/verify.sh` full pass. Live-clicked through
+on `26KCT01` (has 3 annexes, no banks): all 4 info rows aligned correctly
+(row 2's 2 fields sit under columns 1–2 of rows 1/3, columns 3–4 blank),
+Ngân hàng/Đợt thanh toán/Phụ lục all render inline with no tab needed,
+annex amounts show correct sign (`AmountDecrease` → `−`, `ValueChange` →
+no sign), and the "Bên bán" tab still works untouched. No console errors
+beyond the known `claude-in-chrome` extension noise.
+
+**Blockers:** none.
+
+---
+
+## 2026-09-02 — Service Agreement list: row expansion + actions; backend endpoint now live
+
+**Request:** "Update table của Service Agreement, action button, expand
+table" — the flat read-only table from the previous entry needed the same
+expand-to-detail treatment as `contracts-list.jsx` (Phụ lục/Hợp đồng), not
+just a column dump.
+
+**Also resolved a loose end from the previous session:** re-checked
+`GET /api/v1/service-agreements` against the local dev backend one more
+time before starting this — **it's live now** (was 404 as of the last two
+checks). No frontend change needed for that; the code was already written
+against the documented contract. Confirmed with real data: 2 agreements
+(`26SA01`, `26SA02`) with resolved contract number/project/recipient name
+all correct.
+
+**What changed in `service-agreements-list.jsx`:**
+- Added `useTableRowExpansion` + `createRowExpansionInteractionPlugin`
+  (same plugins/styles as `contracts-list.jsx`'s
+  `expandable-row-styles.jsx`) so each row expands into a detail panel
+  instead of just showing flat columns.
+- New `ServiceAgreementExpandedDetails` sub-component — mirrors the
+  "Service Agreement" tab content that already exists inside
+  `ContractExpandedDetails` (`contracts-list.jsx`): header
+  icon/code/contract/recipient, a `MetadataList` of
+  code/signedDate/value/sellerSigned/partySigned, a payment-terms
+  `MetadataList`, the annex list (`useServiceAgreementAnnexesQuery`, each
+  with a "Sửa" `IconButton`), a "Thêm phụ lục" button, and a "Sửa Service
+  Agreement" action button in the footer. Reuses the existing
+  `ServiceAgreementFormDialog`/`ServiceAgreementAnnexFormDialog` — no new
+  dialogs needed, this list page now drives the same create/edit flows
+  the contract-scoped tab already had.
+- Added a `ServiceAgreementListRow` JSDoc typedef (the API's
+  `ServiceAgreement` plus the client-resolved
+  contractNumber/projectName/currency/partyCustomerName) so the skeleton
+  rows, table columns, and expansion plugins all share one type instead of
+  each re-deriving `typeof searchableServiceAgreements[number]` — the
+  original version type-errored because the inline empty
+  `paymentTerms: []` skeleton literal inferred as `never[]`.
+
+**Verification:** `./harness/verify.sh` full pass. Live-clicked through
+via `claude-in-chrome`: expanded `26SA01`'s row, confirmed all 3 real
+annexes render (including one created in the prior session's manual
+testing) with correct amounts/dates/signed-status, and opened "Sửa
+Service Agreement" — pre-filled correctly with the real signed
+date/recipient/value/payment terms. No console errors.
+
+**Blockers:** none.
+
+---
+
+## 2026-09-02 — Backend for `GET /api/v1/service-agreements` deployed; blocker cleared
+
+**Request:** "Thêm tính năng này ở FE" (add the Service Agreement list
+feature on the frontend) — turned out the FE side (`api/service-agreements.js`
+`listServiceAgreements`, `useServiceAgreementsQuery`,
+`components/service-agreements-list.jsx`, the `/logistics/service-agreements`
+route) was already fully built in the 2026-09-01 session below, coded ahead
+of the backend per this repo's practice. It was only blocked because the
+local dev backend (BE-kt-xnk, the CLEAN ARCHITECTURE repo) hadn't shipped
+`GET /api/v1/service-agreements` yet.
+
+**Done in the backend repo** (`../CLEAN ARCHITECTURE`): implemented
+`ListServiceAgreementsQuery`/Handler, `IServiceAgreementsRepository.ListPagedAsync`
+(joins `ServiceAgreements`→`Contracts` for `CompanyId` scoping — the
+agreement itself carries no `CompanyId`), and the controller action at
+`GET /api/v1/service-agreements` (paged, same `{items,page,pageSize,
+totalCount,totalPages}` shape `docs/api/ServiceAgreements.md` already
+documented). Backend integration test passes; `docs/api/ServiceAgreements.md`
+and `requests/ServiceAgreements/ListServiceAgreements.http` updated per that
+repo's AGENTS.md.
+
+**Rebuilt and redeployed** the local `cleanarchitecture-api` Docker
+container (`docker compose up -d --build api`) so the dev backend this
+Next.js app points at (`localhost:8080`) actually serves the new route.
+Verified directly against it: logged in as `DNG26F4A9C2` (Admin), called
+`GET /api/v1/service-agreements?page=1&pageSize=25` → `200 OK` with 2 real
+rows (`26SA01`, `26SA02`) in the expected shape.
+
+**No frontend code change was needed or made** — exactly what the
+2026-09-01 entry predicted ("no frontend change should be needed"). The
+`AdvanceTableErrorBanner` failure mode documented there should now be gone
+next time the page is loaded against this backend; not re-verified via
+browser this session (no browser/screenshot tool available), so still
+worth one live click-through to confirm the UI renders the 2 rows and the
+join-by-id columns (`contractNumber`, `partyCustomerName`) resolve
+correctly.
+
+**Blockers:** none for the backend. Recommend a follow-up live-verification
+pass (`claude-in-chrome` or equivalent) on `/logistics/service-agreements`
+to close the loop visually.
+
+---
+
+## 2026-09-01 — Removed disabled tabs; added Service Agreement list page
+
+**Request:** two follow-ups from the live-verification session below: (1)
+the "Phụ lục"/"Service Agreement" tabs on a contract's expanded row should
+be removed entirely when there's nothing to show, not rendered disabled;
+(2) add a "Service Agreement" entry to the Logistics side nav backed by a
+table.
+
+**Part 1 — done.** `contracts-list.jsx`'s `TabList`: the two conditional
+tabs are now wrapped in `{hasAnnexes ? <Tab .../> : null}` /
+`{hasServiceAgreement ? <Tab .../> : null}` instead of always rendering
+with `aria-disabled`. Dropped the now-dead `onChange` guards that used to
+block switching to a disabled tab's value — moot once the tab can't be
+clicked at all. Live-verified on `CompanyScopeTest-001` (a contract with
+neither): tab bar shows only Thông tin/Bên bán/Khách hàng/Ngân hàng.
+
+**Part 2 — needed a detour.** No backend endpoint lists every Service
+Agreement across contracts — checked the *live* dev backend's own swagger
+(`/api/backend/swagger/v1/swagger.json`) and only found the three
+contract-scoped paths (`/contracts/{id}/service-agreement[/annexes...]`).
+Asked the user how to proceed; they pasted the authoritative
+`docs/api/ServiceAgreements.md` (BE-kt-xnk) spec, which *does* document a
+`GET /api/v1/service-agreements` system-wide paginated endpoint
+(`{items, page, pageSize, totalCount, totalPages}`, same shape as
+`GET /contracts`). Re-checked the live backend against that exact path —
+still 404. **Conclusion: the endpoint is real and documented, just not
+yet deployed to this local dev backend instance.** Built the frontend
+against the documented contract anyway (matches this repo's established
+practice of coding to `docs/api/*.md, BE-kt-xnk` ahead of a backend
+deploy) rather than against a client-side N+1 workaround.
+
+**What was added:**
+- `api/service-agreements.js`: `listServiceAgreements({page, pageSize})` →
+  `GET /api/v1/service-agreements`.
+- `hooks/use-service-agreements-query.js`: `useServiceAgreementsQuery`
+  (paginated, same shape as `useContractsQuery`).
+- `components/service-agreements-list.jsx`: `AdvanceTable`-based list
+  (mirrors `countries-list.jsx`/`contracts-list.jsx`). The list response
+  doesn't embed contract number/project/currency or the commission
+  recipient's name, so those are resolved client-side via `useContractsQuery({page:1, pageSize:100})`
+  and `useCustomersQuery()`, same join-by-id pattern as `banksById`/
+  `countriesById` in `contracts-list.jsx`. **Known limit, documented in a
+  code comment:** a contract past the first 100 (the same ceiling
+  `docs/api/ServiceAgreements.md` documents for its own `pageSize`) would
+  show "—" for those resolved columns — fine at today's volumes, revisit
+  if it ever matters.
+- Wired in: `index.js` barrel export, new route
+  `src/app/(protected)/logistics/service-agreements/page.jsx`,
+  `sidebarLogistics.json` nav entry, and a `logistics:contracts:view`
+  rule in `route-access.js` (same permission every other Logistics list
+  page uses).
+
+**Verification:** `./harness/verify.sh` full pass. Live-clicked the new
+nav entry — page renders correctly (search bar, all 8 columns, "Tuỳ chọn
+hiển thị" popover) and shows the expected
+`AdvanceTableErrorBanner` ("Không thể tải danh sách Service Agreement")
+because the *local* dev backend 404s on the endpoint — this is the
+correct/expected failure mode, not a bug; it'll resolve once
+BE-kt-xnk deploys the documented route to this environment.
+
+**Blockers:** the Service Agreement list page cannot show real data until
+`GET /api/v1/service-agreements` is live on whichever backend this app
+points at — currently 404 on the local dev instance. Re-check after the
+next backend deploy; no frontend change should be needed.
+
+---
+
+## 2026-09-01 — Live-verified Service Agreement (annex) tab
+
+**Request:** user asked to check the UI of the "service agreement (annex)"
+feature — a not-yet-committed, un-tracked (`openspec/changes/` has no
+entry for it) set of files: `service-agreements.js`/
+`service-agreement-annexes.js` APIs, `service-agreement-*-fields.jsx`/
+`service-agreement-*-form-dialog.jsx` components, and the matching
+hooks/schema/types, all wired into `contracts-list.jsx` as a new
+"Service Agreement" tab alongside the existing "Phụ lục" (Contract Annex)
+tab.
+
+**Result: it works.** `./harness/verify.sh` full pass first. Live-clicked
+through it via `claude-in-chrome` on seeded contract `SA-VERIFY-01`: the
+Service Agreement tab shows code/signing-date/value/seller-signed/broker-
+signed plus a payment-installment breakdown and a nested annex list (2
+pre-existing annexes rendered correctly). Created a new Service Agreement
+annex (type "Phát sinh giảm", 1500, 2026-09-19) — backend correctly
+assigned `26SA01/AN-03` and it appeared in the list immediately. Edited it
+(toggled "Bên nhận hoa hồng đã ký") and confirmed the change persisted.
+Opened "Sửa Service Agreement" (edit) and "Tạo Service Agreement" (create,
+on a contract with none yet, `asd`) — both dialogs render correctly,
+including the create dialog's live running-total validation on the
+payment-installment rows ("Tổng: 0% (phải bằng 100%)").
+
+**Hit the same `claude-in-chrome` popover-click quirk documented in the
+Contract Annex entry below** — coordinate/ref clicks on Selector options
+and DateInput calendar days silently failed to register in the Service
+Agreement annex dialog too. This time confirmed it's the testing tool, not
+the app, by reproducing the identical failure on the already-verified-
+working Contract Annex dialog, then working around it with keyboard
+selection (open Selector → arrow+Enter; DateInput accepts typed
+`MM/DD/YYYY` directly) instead of `javascript_tool .click()`. Worth
+promoting to a standing note since this is the second time it's bitten a
+session — see the Contract Annex entry immediately below for the original
+writeup.
+
+**Blockers:** none. Not yet committed or captured in an `openspec/changes/`
+entry — whoever finishes this feature should add one before merging, per
+`AGENTS.md`.
+
+---
+
+## 2026-09-01 — Live-verified Contract Annex tab (closes a known gap)
+
+**Request:** user asked to check whether "phụ lục hợp đồng" (Contract
+Annex, `add-contract-annex-tab`) actually works — that change's own
+PROGRESS.md entry explicitly flagged no browser tool was available at the
+time, only compile-log/curl evidence.
+
+**Result: it works.** Live-clicked through it end to end via
+`claude-in-chrome` on the seeded `26KCT01` contract (3 pre-existing
+annexes displayed correctly: code/type/amount/signed-date/buyer-seller-
+signed) and on a zero-annex contract (`asd`) to confirm the disabled-tab
+guard: clicking "Phụ lục" with 0 annexes does not switch tabs, matching
+the `if (value === 'annex' && !hasAnnexes) return;` guard from that
+change. Created a brand-new annex on `asd` (type "Thay đổi giá trị",
+5000, 2026-09-20) — backend correctly assigned `asd/AN-01`, the tab
+auto-updated to "Phụ lục 1" and un-disabled. Edited it (toggled "Bên mua
+đã ký") and confirmed the change persisted and rendered.
+
+**A real testing-environment gotcha, not a product bug:** my first attempts
+to fill "Loại phụ lục" (Selector) and "Ngày ký" (DateInput) via
+`claude-in-chrome`'s coordinate-based clicks — and even element-ref clicks
+from the `find` tool — silently failed to register a selection (dropdown
+closed, value never updated, submit correctly blocked by validation). This
+looked exactly like the earlier `usePlaceForm` stale-state bug at first.
+It wasn't: dispatching a plain `.click()` via `javascript_tool` on the
+same DOM nodes worked immediately. Both are floating/portal-positioned
+popovers (Selector option list, DateInput calendar) — coordinate-based
+synthetic clicks landed off-target for these in this environment, while
+in-flow element clicks (text inputs, buttons, the Selector's own trigger)
+were fine throughout this whole session. **Lesson for next time:** if a
+popover-based control (Selector/DateInput/Combobox) seems to silently
+reject clicks in `claude-in-chrome` while everything else on the page
+works, suspect the click coordinates before suspecting the app — verify
+via `javascript_tool` (`element.click()`) before concluding it's a real
+bug.
+
+**Verification:** `./harness/verify.sh` full pass (confirms nothing else
+broke amid the unrelated concurrent Company/Branch refactor also landed
+this session). Live click-through as above.
+
+**Blockers:** none — the gap flagged in `add-contract-annex-tab`'s
+PROGRESS.md entry is now closed.
+
+---
+
+## 2026-09-01 — Row expansion for Người dùng, matching Hợp đồng
+
+**Request:** after the AdvanceTable migration below, user asked for row
+expansion "giống expand table ở hợp đồng" (like the Contract list's).
+
+**What shipped.** New `components/user-expanded-details.jsx`
+(`UserExpandedDetails`) — same idiom as `ContractExpandedDetails`
+(`contracts-list.jsx`): a tabbed, read-only detail panel that fetches its
+own per-row data only once expanded (`useUserDetailQuery`,
+`useBranchesQuery`, `useAdminBankAccountsQuery`, `useVietnamBanksQuery`,
+`useInheritedPermissionsQuery` — all already `enabled`-gated by their id
+arg, all pre-existing hooks built for the edit dialog/forms, none new).
+Four tabs:
+- **Thông tin**: identity/org fields (name, employeeCode, CCCD, DOB,
+  gender, phone, passport, company/branch/department/position).
+- **Địa chỉ**: old-standard and new-standard (post-2025-merger) address
+  blocks, mirroring `user-contact-fields.jsx`'s grouping.
+- **Quyền**: read-only "Quyền kế thừa từ phòng ban" (via
+  `useInheritedPermissionsQuery`, same data `create-user-permissions-fields.jsx`
+  previews at create time, reused read-only here for an existing user) —
+  **plus** the existing `UserPermissionsFields` component reused verbatim
+  underneath for individual grants, so an admin can toggle a permission
+  right from the expanded row without opening the edit dialog.
+- **Ngân hàng**: the user's bank accounts (read-only list), same shape as
+  the Contract panel's banks tab.
+- Footer: "Đặt lại mật khẩu"/"Sửa" buttons (the row's existing two actions,
+  now also reachable inline) instead of Contract's annex-specific actions.
+
+`user-list.jsx`: wired `useTableRowExpansion` +
+`createRowExpansionInteractionPlugin` (both already shared infra used
+as-is, no changes) into `AdvanceTable`'s `extraPlugins`, identical to
+`contracts-list.jsx`. One adjustment the Contract list didn't need: the
+"Chức năng" column's `DropdownMenu` sits inside a row that's now
+click-to-expand, so its cell got wrapped in an `HStack` with
+`onClick={(e) => e.stopPropagation()}` — without it, clicking "Sửa"/"Đặt
+lại mật khẩu" in the dropdown also toggled the row underneath it. Verified
+live this actually needed the fix (tested the dropdown mid-expansion,
+confirmed the row stays open).
+
+**A nice side effect**: expanding "Nguyễn Văn A" (Trưởng phòng, Logistics)
+on the Quyền tab shows his role already inherits `logistics:contracts:manage`
+— directly confirms the answer given earlier this session (why granting it
+individually was rejected: "already granted by a role") and gives a
+concrete, working account for that permission going forward.
+
+**Verification:** live browser check — all four tabs render real data for
+multiple users (incl. `System Admin`, whose `Admin` token renders and who
+has mostly-blank org fields, a useful edge case); "Thao tác" dropdown
+opens without collapsing the row; "Sửa" from the panel opens the correct
+edit dialog. `./harness/verify.sh` full pass (lint/typecheck/build all
+clean).
+
+**Blockers:** none
+
+---
+
+## 2026-09-01 — Người dùng list migrated to the shared AdvanceTable shell
+
+**Request:** user asked for `user-list.jsx` (Admin → Người dùng → Danh
+sách) to match `contracts-list.jsx`'s table.
+
+**What shipped.** Replaced the hand-rolled `Toolbar`/`Table`/pagination/
+`PowerSearch`/filtering wiring in `user-list.jsx` with
+`@/shared/components/advance-table.jsx`'s `<AdvanceTable>` — the same
+shell `contracts-list.jsx`/`places-list.jsx`/`countries-list.jsx` already
+use. `columns`/`COLUMN_OPTIONS`/`searchFieldDefs` kept as-is; dropped the
+`advancedSearchFields` prop entirely and let it auto-derive from
+`searchFieldDefs` (matches `places-list.jsx`'s usage, simpler than
+`contracts-list.jsx`'s explicit list since nothing here needs a label/
+placeholder that differs from its search-field def).
+
+**Three deliberate behavior drops**, since `AdvanceTable` doesn't expose a
+hook for any of them and none of the other three lists needed one either:
+1. The two standalone "Lọc theo đơn vị"/"Lọc theo phòng ban" quick-filter
+   pills above the table — dropped. Same filtering is still reachable via
+   each column's own header-filter funnel icon (`filter: 'companyId'`/
+   `filter: 'departmentIds'` on the columns, unchanged), which is exactly
+   how `contracts-list.jsx` exposes country/incoterm filtering — it has no
+   quick-filter pills either. Verified live that the "Phòng ban" header
+   filter (an `enum_list` field, `is_any_of` under the hood) still opens
+   and applies correctly through `AdvanceTable`'s shared
+   `useTableFiltering`/`toSearchFilters` plumbing.
+2. The `ButtonGroup` + dropdown next to "Thêm" (a disabled "Thêm từ Excel
+   (đang phát triển)" placeholder, never functional) — dropped.
+   `AdvanceTable`'s `primaryAction` only renders a single `Button`, and the
+   dropdown item had no working destination to preserve.
+3. `withActionsLast()` — the custom logic forcing the "Chức năng" column to
+   stay last no matter how columns get reordered/pinned — dropped.
+   `AdvanceTable` doesn't expose `activeColumnKeys`/`onChangeActiveColumnKeys`
+   to the caller (fully internal state), so there's no hook left to enforce
+   this from outside. Low risk: `actions` stays `isAlwaysVisible` (can't be
+   hidden) and is still listed last in `COLUMN_OPTIONS`, so it only drifts
+   from the right edge if a user actively drags it — self-correctable, and
+   `contracts-list.jsx` has no "actions" column at all so this was never a
+   concern the shared component was designed around.
+
+**Verification:** `./harness/verify.sh` full pass. Live browser check
+(this session's account has `users:manage` this time, unlike earlier in
+today's session): confirmed the advanced-search popover auto-derived the
+right fields (Tên/CCCD/Số điện thoại/Mã nhân viên/Đơn vị), the columns/
+density/pin popover works, and the "Phòng ban" `enum_list` header filter
+opens and offers Apply/Reset — all matching `contracts-list.jsx`'s chrome
+exactly.
+
+**Blockers:** none
+
+---
+
 ## 2026-09-01 — Contract Annex tab (`add-contract-annex-tab`)
 
 **Context:** BE-kt-xnk shipped `ContractAnnex` (full CRUD except delete,
@@ -72,6 +746,440 @@ claiming a browser check that didn't happen.
   behavior and the create/edit dialogs actually work end-to-end against
   BE-kt-xnk's live `ContractAnnex` endpoints.
 - Delete is out of scope (backend doesn't support it yet either).
+
+## 2026-09-01 — Fix stale country in QuickCreatePlaceDialog (real fix this time)
+
+**Request:** user reported "nút thêm cảng/nơi đến nhanh, nước không thay
+đổi khi tôi chọn nước khác" (the quick-add discharge-place button — the
+country doesn't update when I pick a different one).
+
+**This is the same symptom a prior entry in this file already claimed to
+fix, and that fix was wrong.** Root cause, actually: `QuickCreatePlaceDialog`
+stays mounted permanently (`ContractFormDialog` itself is always-mounted,
+toggled via `isOpen`, per `contracts-list.jsx`). It's opened by its
+caller's `IconButton.onClick` calling `setIsQuickCreate...Open(true)`
+**directly** — never through the dialog's own `onOpenChange`/
+`handleOpenChange`. My prior fix made `handleOpenChange` call
+`form.reset()` on both open *and* close, but since the open path never
+runs `handleOpenChange` at all, that change only ever exercised the
+pre-existing close-time reset — which is why closing-then-reopening in my
+own testing looked like it worked. The actual first-open-after-a-country-
+change case (no intervening close) was never fixed.
+
+**Real fix:** moved the reset logic into `usePlaceForm` itself, reacting
+to an `isOpen` param via React's documented "adjust state during
+rendering" pattern (a `prevIsOpen` state mirror compared during render,
+`setValues`/`setFieldErrors`/`setSubmitError` called conditionally in the
+render body) — not a `useEffect`, which this repo's lint
+(`react-hooks/set-state-in-effect`) forbids for synchronous `setState`.
+`quick-create-place-dialog.jsx` now just passes `isOpen` through and lost
+its now-redundant custom `handleOpenChange` wrapper entirely.
+
+**Verification:** live browser check reproducing the exact bug —
+Incoterm=CIF, Nước xuất khẩu=Thái Lan, clicked "+" for **the first time**
+(no prior close/reopen): correctly locked to "Thái Lan". Then changed the
+export country to Australia and reopened: correctly showed "Australia",
+not stale "Thái Lan". `./harness/verify.sh` full pass.
+
+**Lesson for next time:** when "fixing" a stale-state bug in a
+component that's opened by a direct `setState` call rather than through
+the dialog's own open/close callback, verify by testing the *first* open
+after the triggering prop changes — closing and reopening exercises a
+different code path (the close handler) and can look like success for the
+wrong reason.
+
+**Blockers:** none
+
+---
+
+## 2026-09-01 — Fix double scrollbar in form dialogs
+
+**Request:** user reported "dialog có tới 2 scrollbar" (dialog has 2
+scrollbars) after testing the Contract form from the change below.
+
+**Root cause:** Astryx `LayoutContent` defaults to `isScrollable={true}`.
+`ContractFormDialog` (and `user-form-dialog.jsx`, admin-users — same
+author, same idiom) intentionally give their inner `VStack` a fixed
+`height` + its own `isScrollable`, so the dialog's overall size stays
+constant while `Collapsible` sections expand/collapse (documented in
+`user-form-dialog.jsx`'s own comment). With `LayoutContent`'s default left
+on, that's two independently-scrolling containers nested inside each
+other — two scrollbars.
+
+**Fix:** `<LayoutContent padding={6} isScrollable={false}>` in both files
+— the inner `VStack` becomes the sole scroll owner. Documented the pattern
+in `docs/stylex-authoring.md` ("Common antipatterns") so a future fixed-
+height dialog doesn't reintroduce it.
+
+**Verification:** live browser check on `ContractFormDialog` (zoomed on
+the scrollbar track, confirmed exactly one). Could NOT visually verify
+`user-form-dialog.jsx` — the test account lacks `users:manage` and gets
+redirected off `/admin/users` (same gap noted in a prior session); fixed
+by the identical one-line change, lint/typecheck clean.
+`./harness/verify.sh` full pass.
+
+**Next step:** if a session ever gets an account with `users:manage`,
+worth a quick visual confirmation on `user-form-dialog.jsx` too — low risk
+given it's the exact same fix already proven on `ContractFormDialog`, but
+unverified there.
+
+**Blockers:** none
+
+---
+
+## 2026-09-01 — Incoterm-driven place fields (Nơi xếp hàng / Cảng/nơi đến)
+
+**Request:** user asked for business logic on the Contract form: for every
+Incoterm, "Nơi xếp hàng" (`placeOfLoading`) should come from Vietnam's
+`Place` catalog; for FOB/EXW, "Cảng/nơi đến" (`placeOfDischarge`) is
+`null`; for DDP/CIF, it comes from the export country's `Place` catalog,
+with a quick-add button next to it.
+
+**What shipped.** New `openspec/changes/incoterm-driven-place-fields/`
+(full detail + decision log there). Summary:
+- `config/vietnam-country.js` (new): matches the Country catalog's "Việt
+  Nam" entry by normalized name — `Country` has no ISO code, so this is a
+  name match, verified against the live catalog (`Việt Nam`, exact).
+- `config/incoterms.js`: `requiresPlaceOfDischarge(incoterm)` — true for
+  DDP/CIF only.
+- `config/contract-schema.js` + `api/contracts.js`: `placeOfDischarge`
+  required exactly when `requiresPlaceOfDischarge`, sent as `null` on the
+  wire when blank.
+- `hooks/use-places-query.js`: `usePlacesQuery` gained `enabled` (mirrors
+  `useBranchesQuery(companyId)`).
+- `hooks/use-contract-form.js`: resolves `vietnamCountryId`, loads
+  Vietnam-scoped and export-country-scoped place lists, clears
+  `placeOfDischarge` when Incoterm stops requiring it or the export
+  country changes.
+- `components/contract-form-dialog.jsx`: both fields are now `Selector`s
+  with a "+" quick-add (`QuickCreatePlaceDialog`, already built in a prior
+  session but never wired in — see that dialog's own doc comment), same
+  pattern as the existing "Nước xuất khẩu" Country field.
+
+**Bug found and fixed along the way:**
+`components/quick-create-place-dialog.jsx` stays mounted (toggled via
+`isOpen`, not remounted) and only called `form.reset()` on close. Once
+wired with a `countryId` that actually changes between opens (the
+currently selected export country), the Country selector inside it showed
+stale/blank state the first time it opened after `countryId` changed —
+`usePlaceForm`'s state is seeded once via `useState(emptyValues(countryId))`
+at mount, so it never picked up the new prop on its own. Fixed by
+resetting on open too, not just close. Documented nowhere else since the
+fix is self-explanatory from the diff/comment — logged here per the
+"proactive bug notes" convention only for the *non-obvious* root cause
+(the flexbox-basis bug from earlier today went to `docs/stylex-authoring.md`
+instead, since that one's genuinely reusable knowledge outside this file).
+
+**Verification:** `pnpm run test` (new: `vietnam-country.test.js`,
++3 cases in `contract-schema.test.js`, +1 in `contracts.test.js`, all
+pass). Live browser check via `claude-in-chrome`: picked DDP + Thái Lan,
+confirmed "Cảng/nơi đến" enabled and scoped to Thái Lan; quick-added "Cảng
+Bangkok" and confirmed it auto-selected; switched to FOB and confirmed the
+field disabled and cleared. `./harness/verify.sh` full pass.
+
+**Follow-up (same session):** user hit a live React "two children with the
+same key, `Cảng Bangkok`" crash. Root cause: `Place.name` has no
+uniqueness constraint, and the Selector options for both fields are keyed
+by name — my own testing had created "Cảng Bangkok" for Thái Lan twice
+(the `quick-create-place-dialog.jsx` bug above meant my first attempt
+looked like it failed, so I re-created it). Fixed by adding
+`dedupePlacesByName()` in `hooks/use-contract-form.js` (first occurrence
+wins) before building `loadingPlaces`/`dischargePlaces` — collapses to one
+option per distinct name regardless of how many catalog duplicates exist.
+Re-verified live (CIF + Thái Lan → "Cảng/nơi đến" shows exactly one "Cảng
+Bangkok", no console warning) and `./harness/verify.sh` full pass again.
+
+**Next step:** none pending. The old `wire-contract-country-port-and-field-renames`
+spec still says "Place of loading/discharge remain free text" — now
+stale; superseded by this change's spec, not rewritten in place (see that
+proposal's `specs/`).
+
+**Blockers:** none
+
+---
+
+## 2026-09-01 — Rename Port catalog to Place (matches BE-kt-xnk rename)
+
+**Request:** user reported the backend (`BE-kt-xnk`/CompanyManagement API)
+renamed its `Ports` table/entity to `Places` — `POST`/`GET /api/v1/ports`
+moved to `/api/v1/places` (same shapes: `{ id, name, countryId }` /
+`{ Name, CountryId }`). Asked to update this frontend to match.
+
+**Result:** done — mechanical rename mirroring the `Country` feature's
+naming/shape conventions, no behavior change. Note: the entire Port slice
+was still **untracked** (`git status` showed `??`) going in — an earlier
+session had finished it (`openspec/changes/add-country-port-management-pages/`,
+all tasks checked) but never committed, so this was a plain `mv`/edit, not
+`git mv`.
+
+- Renamed: `api/ports.js`→`places.js` (`listPorts`/`createPort` →
+  `listPlaces`/`createPlace`, URL `/api/v1/ports`→`/api/v1/places`);
+  `components/port-fields.jsx`→`place-fields.jsx`; `port-form-dialog.jsx`→
+  `place-form-dialog.jsx`; `ports-list.jsx`→`places-list.jsx`
+  (`PortsList`→`PlacesList`); `quick-create-port-dialog.jsx`→
+  `quick-create-place-dialog.jsx` (`QuickCreatePortDialog`→
+  `QuickCreatePlaceDialog` — confirmed still unwired into the Contract form,
+  same as before); `config/port-schema.js`→`place-schema.js`
+  (`portSchema`→`placeSchema`); `hooks/use-port-form.js`→`use-place-form.js`
+  (`usePortForm`→`usePlaceForm`); `hooks/use-ports-query.js`→
+  `use-places-query.js` (`usePortsQuery`/`useCreatePortMutation`→
+  `usePlacesQuery`/`useCreatePlaceMutation`).
+- `types/index.js`: `Port`/`PortFormValues` typedefs → `Place`/
+  `PlaceFormValues`; updated the `{@link Port}` reference inside
+  `Contract.placeOfDischarge`'s doc comment. Left `placeOfLoading`/
+  `placeOfDischarge` themselves untouched — free-text Contract fields,
+  unrelated to this catalog despite the shared word.
+- `index.js`: `PortsList` export → `PlacesList`.
+- `src/shared/config/route-access.js`: `/logistics/ports` rule →
+  `/logistics/places`. `src/sidebarLogistics.json`: "Cảng" nav entry →
+  `/logistics/places`. `src/app/(protected)/logistics/ports/` directory →
+  `.../places/` (`LogisticsPortsPage`→`LogisticsPlacesPage`,
+  `PortsList`→`PlacesList` import).
+- No test file covered the Port slice (checked `contracts.test.js`,
+  `contract-schema.test.js` — neither touches it), so none needed updating.
+- Left alone (false positives, not this catalog): `port`/`setPort` in
+  `design-system/components/sections/forms.jsx` (an unrelated `Selector`
+  demo variable); "ports the react.dev sidebar tree" in
+  `docs-shell-contract.test.js` and `mdx/tokens.stylex.js` (verb "port" =
+  adapted from react.dev, not the catalog).
+- **Verification:** `./harness/verify.sh` — 10/10 green (lint, typecheck,
+  structure, harness-tests, unit-tests, build, quality-thresholds).
+- **Left uncommitted** (per instruction) so the requesting session can
+  review and commit alongside its own backend-rename commit. Also
+  untouched/uncommitted: pre-existing unrelated working-tree changes found
+  at session start (`contract-form-dialog.jsx` TextInput migration,
+  `party-a-fields.jsx` deletion, etc. — see the entry below this one) and
+  the two `openspec/changes/` proposals already describing the (uncommitted)
+  Port feature (`add-country-port-management-pages/`,
+  `wire-contract-country-port-and-field-renames/`) — not renamed to Place,
+  since content-only edits there were out of scope for this task.
+- **Next step:** whoever commits should decide whether to also rename those
+  two `openspec/changes/` folders/content for consistency, and whether to
+  fold this into the same commit as the still-pending TextInput/StackItem
+  work already in the tree.
+
+## 2026-09-01 — Contract form: TextInput migration + StackItem fill-width bug
+
+**Request:** user pointed out `contract-form-dialog.jsx`'s "Số hợp đồng"
+field still used the old local `@/shared/components/text-input.jsx`
+wrapper, unlike every other field file in `logistics-contracts` (which
+import `TextInput` straight from `@astryxdesign/core/TextInput` with
+`statusVariant="tooltip"`). Then, after switching it over, user reported a
+layout bug: focusing/validating "Số hợp đồng" visibly narrowed the
+neighboring "Tên dự án" field.
+
+**What shipped.**
+- `contract-form-dialog.jsx`: swapped the 5 `TextInput` usages (Số hợp
+  đồng, Tên dự án, Hạng mục, Nơi xếp hàng, Cảng/nơi đến) to the astryx
+  import + `statusVariant="tooltip"`, matching `seller-fields.jsx` etc.
+  Deleted `src/shared/components/text-input.jsx` — nothing else referenced
+  it.
+- Root-caused the width bug: `StackItem size="fill"` only sets
+  `flexGrow: 1`, `flex-basis` stays `auto`, so when one `fill` sibling's
+  content grows (a status icon appearing) the other `fill` sibling shrinks
+  to compensate — not an astryx bug, a flexbox consequence of not resetting
+  basis. Fixed by adding a local `equalFill` xstyle (`flexBasis: 0`) to the
+  4 sibling-pair rows in this file (Số hợp đồng/Tên dự án, 2 date fields,
+  Hạng mục/country block, Incoterm/Năm Incoterm). Documented the pattern in
+  `docs/stylex-authoring.md` under "Common antipatterns" so it isn't
+  rediscovered per-file — check that doc before pairing two `fill`
+  `StackItem`s where either can show a status icon/spinner/clear button.
+- Verified live via `claude-in-chrome`: typed a contract number, watched
+  the duplicate-check success icon appear, confirmed "Tên dự án" width did
+  not move.
+
+**Verification:** `pnpm exec eslint` + `pnpm run typecheck` clean on the
+changed file. No `./harness/verify.sh` full run this session (small,
+manually-verified UI fix, not a tracked `openspec/changes/` task).
+
+**Next step:** none pending. If another field file starts pairing two
+`fill` `StackItem`s with per-field validation, apply the same
+`flexBasis: 0` xstyle rather than re-debugging this from scratch.
+
+**Blockers:** none
+
+---
+
+## 2026-08-30 — Country/Port management pages
+
+**Request:** the prior session in this file
+(`wire-contract-country-port-and-field-renames`) built the full
+`Country`/`Port` plumbing but, following the Seller precedent, shipped no
+standalone page — only the in-form "+ Thêm nước"/"+ Thêm cảng" quick-create
+dialogs. User explicitly asked for standalone create/list pages ("thêm
+tính năng tạo nước xuất khẩu / tạo port ở FE"), matching the Customer
+precedent instead.
+
+**What shipped.** New `openspec/changes/add-country-port-management-pages/`.
+- `src/features/logistics-contracts/components/countries-list.jsx` +
+  `country-form-dialog.jsx`, `ports-list.jsx` + `port-form-dialog.jsx` —
+  copy `customers-list.jsx`/`customer-form-dialog.jsx`'s shape exactly
+  (Toolbar+`AdvanceTable`, "+ Thêm..." opening a real-`<form>` dialog since
+  it isn't nested in another dialog's form). Reuse the existing
+  `use-country-form.js`/`use-port-form.js`/`country-fields.jsx`/
+  `port-fields.jsx` from the prior session — no duplicated form logic.
+  `CountriesList` is a single-column (Name) table, no row expansion needed.
+  `PortsList` adds a "Lọc theo nước" `Selector` above the table (uses
+  `listPorts`'s existing `?countryId=` server-side filter) and resolves
+  `Port.countryId` → country name for display the same way
+  `contracts-list.jsx` already resolves `Contract.countryId`.
+- Two new routes: `app/(protected)/logistics/{countries,ports}/page.jsx`.
+  `index.js` exports `CountriesList`/`PortsList`.
+- Nav: found the actual sidebar source is `src/sidebarLogistics.json` (not
+  `logistics-overview.jsx`, which is a placeholder banner with no links) —
+  added "Nước"/"Cảng" entries there. `route-access.js` gained
+  `/logistics/countries`/`/logistics/ports` rules, `logistics:contracts:view`
+  (matches `docs/api/Countries.md`/`docs/api/Ports.md`'s `GET` permission
+  in `BE-kt-xnk`; `POST`/create requires `logistics:contracts:manage`,
+  enforced backend-side only — same as Customers, no separate FE gate on
+  the create button).
+- Confirmed (by reading, not assuming) that
+  `use-countries-query.js`/`use-ports-query.js`'s create mutations already
+  `invalidateQueries` on the same query keys `useCountriesQuery`/
+  `usePortsQuery` use — so a country/port created from its own management
+  page needed no extra wiring to show up in the Contract form's picker.
+
+**Verification:** `pnpm lint`/`typecheck`/`structure`/`test` (96/96,
+unchanged — no new tests added, matching `customers-list.jsx`'s own
+precedent of no component tests)/`build`/`quality-thresholds` all green,
+`./harness/verify.sh` 10/10. Hit two real failures fixed along the way:
+`eslint --fix` import-sort, and Astryx `Selector`'s TS type requiring
+`hasClear` once a `value` can be `null` (the country filter's "no filter"
+state). **Live verification:** no Chrome/browser tool was available in
+this session (unlike the prior session's screenshot-based check), so this
+was verified via `curl` against the actual running `pnpm dev` server
+(already up) and the already-running `BE-kt-xnk` Docker API — one login as
+Nguyễn Văn A (`logistics:contracts:view`/`manage`), then through the app's
+own `/api/backend/*` proxy: created a country ("Verification Testland"),
+created a port under it ("Verification Port"), confirmed both appear in
+`GET /api/v1/countries` and the country-filtered `GET /api/v1/ports`
+(same calls `CountriesList`/`PortsList`/the Contract form's pickers make),
+and confirmed `/logistics/countries`/`/logistics/ports` SSR-render their
+real content (`Nước xuất khẩu`, `Thêm cảng` present in the HTML, no error
+boundary). This is real request-level golden-path evidence, not a click
+in a browser — flagging that gap honestly for whoever picks this up next
+with a Chrome bridge available. The test country/port created during this
+check were **not** deleted (no delete endpoint exists on this catalog,
+create+list only, matching the backend's scope) and remain in the shared
+dev database.
+
+**Discovered (not done, out of scope):** `countries.js`/`ports.js`/
+`country-schema.js`/`port-schema.js` still have no unit tests (flagged as
+a gap by the prior session too) — filling that gap wasn't the ask here
+either.
+
+---
+
+## 2026-08-30 — Wire Contract Country/Port catalog + BE-kt-xnk field renames
+
+**Request:** BE-kt-xnk's Contracts API shipped (backend-only, already
+merged) `PortOfLoading`→`PlaceOfLoading`, `PortOrPlaceOfDestination`→
+`PlaceOfDischarge`, `PartyA`→`Buyer`, free-text `ExportCountry`→required
+`CountryId` FK (new `Country` catalog), a new per-country `Port` lookup
+catalog, an optional `Note` field, and a `QuotationDate <= CreatedDate`
+validation rule. Wired the frontend to match.
+
+**Change:** `openspec/changes/wire-contract-country-port-and-field-renames/`.
+
+**Result:** done.
+- New catalogs `Country` and `Port`, each following the Seller/Customer
+  pattern exactly: `api/{countries,ports}.js`, `hooks/use-{countries,ports}
+  -query.js`, `hooks/use-{country,port}-form.js`, `config/{country,port}
+  -schema.js`, `components/{country,port}-fields.jsx`,
+  `components/quick-create-{country,port}-dialog.jsx`.
+- `api/contracts.js`: `buildContractBody()` now sends `CountryId`,
+  `PlaceOfLoading`, `PlaceOfDischarge`, `Buyer` (was `buildPartyAPayload`,
+  renamed `buildBuyerPayload`), `Note`.
+- `config/contract-schema.js`: `exportCountry` string rule → `countryId`
+  non-empty rule; `portOfLoading`/`portOrPlaceOfDestination` → `placeOf
+  Loading`/`placeOfDischarge`; added optional `note` (max 2000); added a
+  `.refine()` enforcing `quotationDate <= createdDate` with the error
+  attached to `path: ['quotationDate']` (same idiom as the existing
+  payment-terms-sum-to-100 refine).
+- `hooks/use-contract-form.js`: `partyAInline`/`setPartyAInlineField`/
+  `switchToInlinePartyA`/`partyAExtraFieldRows` → `buyerInline`/
+  `setBuyerInlineField`/`switchToInlineBuyer`/`buyerExtraFieldRows`; added
+  `countriesQuery`/`countries` and `note` state.
+- `components/party-a-fields.jsx` → `components/buyer-fields.jsx`
+  (`BuyerFields`).
+- `components/contract-form-dialog.jsx`: "Nước xuất khẩu" is now a
+  `Selector` (was `TextInput`) bound to `countryId`, with an adjacent
+  "Thêm nước" `IconButton` opening `QuickCreateCountryDialog` (auto-selects
+  the new country); "Cảng xếp hàng"/"Cảng/nơi đến" stayed `TextInput`s,
+  just rebound to `placeOfLoading`/`placeOfDischarge`; added a `TextArea`
+  "Ghi chú" (maxLength 2000); "Party A (Khách hàng)" section →
+  "Buyer (Khách hàng)".
+- `components/contracts-list.jsx`: "Khách hàng" column/labels now read
+  `contract.buyer.*`; confirmed via `docs/api/Contracts.md` (BE-kt-xnk)
+  that `ContractResponse` does NOT denormalize a country name — only
+  `countryId` — so added a `useCountriesQuery()` + `Map`-by-id lookup
+  (`countriesById`) for display in both the table column and the
+  expanded-row detail panel; added a "Ghi chú" row to the detail panel's
+  info tab.
+
+**Scope decisions:**
+- **Port suggestion UX:** no lightweight freeform-autocomplete component
+  exists in this design system — `Typeahead` forces selecting an item from
+  `searchSource`, it doesn't support "type anything, list is just a hint".
+  Per the task's explicit instruction not to hand-roll a typeahead, shipped
+  plain `TextInput`s for `placeOfLoading`/`placeOfDischarge`. The `Port`
+  catalog (API/hooks/schema/fields/quick-create dialog) was still built per
+  spec, just not wired into the Contract form — it's available for a
+  future picker.
+- **Country/Port standalone pages:** none, following the Seller precedent
+  (in-form quick-create only) rather than Customer's (own list page/route).
+  No signal in `logistics-contracts-customers-ui`'s proposal or this file
+  suggesting catalogs get pages by default.
+
+**Verification:** `./harness/verify.sh` — full pass (lint, typecheck,
+structure, harness-tests, unit-tests, build, quality-thresholds). Unit
+tests: 96 passing (was 84; +9 new Country/Port-adjacent + Note assertions
+in `api/contracts.test.js`, +4 in the new `config/contract-schema.test.js`
+covering the quotation-date refine, `countryId` requiredness, and the
+`note` length cap — minus the net effect of consolidating some Party A
+tests into Buyer-named equivalents). See `harness/runs/20260830-014927-97537/`.
+
+**Live verification — partial, be honest about the gap:** BE-kt-xnk's
+Docker stack (`cleanarchitecture-api-1`/`cleanarchitecture-mysql-1`) was
+already running; `docker compose ps` confirmed it, and `curl` confirmed
+login works (`POST /api/v1/authentication/login` with the seeded
+`DNG26F4A9C2`/`Admin@123456` admin) and `GET /api/v1/countries` returns the
+documented `{id, name}` array shape our `api/countries.js` expects. A full
+API round-trip (create country → port → contract with `CountryId`/`Buyer`/
+`Note`, plus a bad-quotation-date 400 check) was attempted via curl but hit
+the login endpoint's 15-minute fixed-window rate limiter
+(`LoginRateLimitSettings`, BE-kt-xnk) after a handful of attempts —
+did not wait it out. **No actual browser/UI interaction was performed** —
+this environment has no Playwright/browser-automation tool available, only
+`curl`/`WebFetch` (which doesn't drive an authenticated SPA's dialogs). So:
+confirmed the backend is up and the documented shapes match what the code
+sends/expects by inspection + a couple of live calls, but did NOT click
+through the actual Country Selector + quick-create + contract-submit flow
+in a real browser. Whoever picks this up next with browser tooling
+available should do that pass before fully trusting this as
+production-verified.
+
+**Discovered (not fixed here, logging per AGENTS.md):**
+- `api/contracts.test.js`'s `BASE_VALUES` was missing `sourceSellerId`/
+  `sellerInline` entirely — a latent bug from the "add Seller catalog"
+  commit (`6bea1d6`) that never updated this test file, so every test in
+  it would have thrown a `TypeError` in `buildSellerPayload` (`values
+  .sellerInline` undefined) the moment anyone ran `pnpm test` on a fresh
+  checkout. Fixed as part of this change (had to touch the same
+  `BASE_VALUES` object anyway for the field renames) — not scope creep,
+  but flagging since it means `unit-tests` may have been silently broken
+  since that commit landed and nobody ran the full suite locally.
+
+**Next step:** wire the `Port` catalog into an actual picker (e.g. a
+suggestion list surfaced next to the free-text place fields) once/if a
+suitable component lands in the design system, or once product confirms
+the UX. Also worth a follow-up pass with real browser tooling to close the
+live-verification gap above.
+
+**Blockers:** none blocking merge; the live-UI-verification gap above is a
+known limitation of this session's environment, not of the change itself.
+
+---
 
 ## 2026-08-29 — Expandable contract rows with inline details
 
@@ -1606,6 +2714,28 @@ ward reference data (free-text inputs, matching the backend).
 
 ## Harness gaps (mistakes that need a mechanical rule, not a manual fix)
 
+- **Noted 2026-09-02 (first occurrence — not yet a rule per
+  `harness/ENTROPY.md`'s "twice" bar):** `service-agreements-list.jsx`'s
+  `tableColumns` mixed `pixel()` (fixed) and `proportional()` (flex) column
+  widths without thinking through the combination — only one column
+  (`partyCustomerName`) used `proportional()` while every sibling used
+  `pixel()`. Since `proportional()` columns absorb *all* the table's
+  leftover width themselves, that one column ballooned to fill the entire
+  remaining row width, leaving a large visually "off" gap before the next
+  fixed column — reported by the user as columns looking "quá lệch"
+  (badly misaligned). Fixed the instance: changed it to `pixel(200)` to
+  match its siblings. **What a mechanical check would need to catch this
+  next time:** flag a `tableColumns` array (or `AdvanceTable`
+  `tableColumns` prop) where some columns use `proportional()` and others
+  use `pixel()` — either lint via a small custom rule, or a structural
+  test that greps each list component's column array for mixed width
+  helpers. General guideline until then: pick one width strategy per
+  table — either every default-visible column is `pixel()` (leftover
+  space just stays blank after the last column, which is fine), or at
+  least two-plus columns share `proportional()` so the slack splits
+  across them (see `contracts-list.jsx`'s `projectName`/`buyer`, both
+  `proportional(1.4)`) — never leave exactly one flexible column among
+  fixed ones.
 - **Resolved 2026-08-15:** upstream challenge parsing assumes component static
   `mdxName` survives into the interactive parent. App Router strips that
   server-component metadata at the RSC boundary. Registry wrappers now stamp

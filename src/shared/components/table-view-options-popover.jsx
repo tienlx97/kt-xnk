@@ -169,7 +169,12 @@ const styles = stylex.create({
  */
 export function stickyColumnKeys(edge, columnKeys, fromEnd) {
   const count = edge === 'two' ? 2 : edge === 'one' ? 1 : 0;
-  if (count === 0) {
+  // Pinning every column leaves nothing to scroll under the pinned edge's
+  // shadow, but the pinned cell still renders its shadow ::after — which
+  // bleeds past the table's own width and trips the scroll wrapper's
+  // `overflow: auto` into showing a scrollbar with nothing to scroll. Cap
+  // the sticky run so at least one column stays unpinned.
+  if (count === 0 || columnKeys.length <= count) {
     return [];
   }
   return fromEnd ? columnKeys.slice(-count) : columnKeys.slice(0, count);

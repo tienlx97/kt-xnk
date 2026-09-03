@@ -113,7 +113,7 @@ function UserFormDialogShell({ isOpen, onOpenChange, controller }) {
         <Layout
           header={<DialogHeader title={title} onOpenChange={onOpenChange} />}
           content={
-            <LayoutContent padding={6}>
+            <LayoutContent padding={6} isScrollable={false}>
               {/*
                 Fixed height + isScrollable on this inner VStack, not just a
                 min-height floor: `LayoutContent`/`Dialog` size themselves to
@@ -123,7 +123,9 @@ function UserFormDialogShell({ isOpen, onOpenChange, controller }) {
                 visibly shifts the whole dialog up/down. Pinning this
                 region's height keeps the dialog's overall size constant;
                 anything taller than the region scrolls inside it instead of
-                resizing it.
+                resizing it. `LayoutContent`'s own `isScrollable` is turned
+                off here — this inner VStack is the sole scroll owner, since
+                leaving both on stacks a second, redundant scrollbar.
 
                 In edit mode the list row is a slim projection, so the form is
                 empty until `GET /users/{id}` lands. Showing the blank form

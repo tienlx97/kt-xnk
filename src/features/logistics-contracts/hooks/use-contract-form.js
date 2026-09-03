@@ -4,20 +4,47 @@ import { useState } from 'react';
 
 import { contractSchema } from '../config/contract-schema.js';
 import { DEFAULT_CURRENCY } from '../config/currencies.js';
+import { requiresPlaceOfDischarge } from '../config/incoterms.js';
+import { findVietnamCountry } from '../config/vietnam-country.js';
 import { useContractBanksQuery } from './use-contract-banks-query.js';
 import { useContractNumberExistsQuery } from './use-contract-number-exists-query.js';
 import {
   useCreateContractMutation,
   useUpdateContractMutation,
 } from './use-contracts-query.js';
+import { useCountriesQuery } from './use-countries-query.js';
 import { useCustomersQuery } from './use-customers-query.js';
 import { useExtraFieldRows } from './use-extra-field-rows.js';
-import { useBranchesQuery, useCompaniesQuery } from './use-org-directory.js';
+import { useCompaniesQuery } from './use-org-directory.js';
 import { usePaymentTermRows } from './use-payment-term-rows.js';
+import { usePlacesQuery } from './use-places-query.js';
 import { useSellersQuery } from './use-sellers-query.js';
 
 const TODAY_ISO = new Date().toISOString().slice(0, 10);
 const CURRENT_YEAR = new Date().getFullYear();
+
+/**
+ * `placeOfLoading`/`placeOfDischarge` are plain strings on the wire (see
+ * `types/index.js`), so the Selectors backing them in
+ * `ContractFormDialog` key their options by `Place.name`, not `Place.id`.
+ * The `Place` catalog has no uniqueness constraint on `name` (two entries
+ * for the same country can share a name — e.g. created twice by mistake),
+ * which would otherwise surface as a "two children with the same key"
+ * React warning/crash in the Selector's option list. Collapsing to one
+ * option per distinct name here (first occurrence wins) keeps every
+ * consumer of `loadingPlaces`/`dischargePlaces` safe without each having
+ * to know why.
+ * @param {import('../types/index.js').Place[]} places
+ * @returns {import('../types/index.js').Place[]}
+ */
+function dedupePlacesByName(places) {
+  const seen = new Set();
+  return places.filter((place) => {
+    if (seen.has(place.name)) return false;
+    seen.add(place.name);
+    return true;
+  });
+}
 
 /** @returns {import('../types/index.js').ContractFormValues} */
 function emptyValues() {
@@ -27,15 +54,14 @@ function emptyValues() {
     quotationDate: TODAY_ISO,
     projectName: '',
     category: '',
-    exportCountry: '',
-    portOfLoading: '',
-    portOrPlaceOfDestination: '',
+    countryId: '',
+    placeOfLoading: '',
+    placeOfDischarge: '',
     contractValue: undefined,
     currency: DEFAULT_CURRENCY,
     incoterm: '',
     incotermYear: CURRENT_YEAR,
     companyId: '',
-    branchId: '',
     sourceSellerId: '',
     sellerInline: {
       companyName: '',
@@ -44,13 +70,16 @@ function emptyValues() {
       address: '',
     },
     sourceCustomerId: '',
-    partyAInline: {
+    buyerInline: {
       companyName: '',
       representativeName: '',
       representativeTitle: '',
       address: '',
     },
+    note: '',
     bankIds: [],
+    sellerSigned: false,
+    buyerSigned: false,
   };
 }
 
@@ -65,18 +94,17 @@ function valuesFromContract(contract) {
     quotationDate: contract.quotationDate,
     projectName: contract.projectName,
     category: contract.category,
-    exportCountry: contract.exportCountry,
-    portOfLoading: contract.portOfLoading,
-    portOrPlaceOfDestination: contract.portOrPlaceOfDestination,
+    countryId: contract.countryId,
+    placeOfLoading: contract.placeOfLoading,
+    placeOfDischarge: contract.placeOfDischarge,
     contractValue: contract.contractValue,
     currency: contract.currency,
     incoterm: contract.incoterm,
     incotermYear: contract.incotermYear,
-    // Branch is fixed after creation (the backend never accepts a changed
-    // BranchId on update) — companyId is left blank since it only exists to
-    // narrow the create-mode Branch selector.
-    companyId: '',
-    branchId: contract.branchId ?? '',
+    // Company is fixed after creation (the backend never accepts a changed
+    // CompanyId on update) — still loaded here so the disabled Selector in
+    // edit mode can display it.
+    companyId: contract.companyId,
     sourceSellerId: contract.seller.sourceSellerId ?? '',
     // RepresentativeName/RepresentativeTitle/Address are per-contract even
     // when linked to a source seller (only CompanyName is pinned to the
@@ -90,20 +118,23 @@ function valuesFromContract(contract) {
       representativeTitle: contract.seller.representativeTitle ?? '',
       address: contract.seller.address ?? '',
     },
-    sourceCustomerId: contract.partyA.sourceCustomerId ?? '',
+    sourceCustomerId: contract.buyer.sourceCustomerId ?? '',
     // RepresentativeName/RepresentativeTitle/Address are per-contract even
     // when linked to a source customer (only CompanyName is pinned to the
     // catalog) — always load the contract's own stored values, never blank
     // them out based on sourceCustomerId.
-    partyAInline: {
-      companyName: contract.partyA.sourceCustomerId
+    buyerInline: {
+      companyName: contract.buyer.sourceCustomerId
         ? ''
-        : contract.partyA.companyName,
-      representativeName: contract.partyA.representativeName ?? '',
-      representativeTitle: contract.partyA.representativeTitle ?? '',
-      address: contract.partyA.address ?? '',
+        : contract.buyer.companyName,
+      representativeName: contract.buyer.representativeName ?? '',
+      representativeTitle: contract.buyer.representativeTitle ?? '',
+      address: contract.buyer.address ?? '',
     },
+    note: contract.note ?? '',
     bankIds: contract.bankIds,
+    sellerSigned: contract.sellerSigned,
+    buyerSigned: contract.buyerSigned,
   };
 }
 
@@ -131,10 +162,33 @@ export function useContractForm({ contract = null, onSuccess } = {}) {
   const [submitSuccess, setSubmitSuccess] = useState('');
 
   const companiesQuery = useCompaniesQuery();
-  const branchesQuery = useBranchesQuery(values.companyId ?? '');
   const sellersQuery = useSellersQuery();
   const customersQuery = useCustomersQuery();
   const banksQuery = useContractBanksQuery();
+  const countriesQuery = useCountriesQuery();
+
+  // "Nơi xếp hàng" is always sourced from Vietnam's `Place` catalog —
+  // every Incoterm here (EXW/FOB/CIF/DDP) starts the seller's leg
+  // domestically. `vietnamCountryId` is '' until `countriesQuery` resolves
+  // (or if no country named "Việt Nam" exists in the catalog yet), in
+  // which case the loading-place picker below stays disabled/empty rather
+  // than fetching the unfiltered (every-country) place list.
+  const vietnamCountryId =
+    findVietnamCountry(
+      countriesQuery.data?.success ? countriesQuery.data.countries : [],
+    )?.id ?? '';
+  const loadingPlacesQuery = usePlacesQuery({
+    countryId: vietnamCountryId,
+    enabled: Boolean(vietnamCountryId),
+  });
+  // "Cảng/nơi đến" is sourced from the selected export country's `Place`
+  // catalog, only meaningful for DDP/CIF (see `requiresPlaceOfDischarge`).
+  // Fetched whenever a country is picked (not gated on incoterm too) so
+  // the list is already warm if the user switches into DDP/CIF.
+  const dischargePlacesQuery = usePlacesQuery({
+    countryId: values.countryId,
+    enabled: Boolean(values.countryId),
+  });
 
   const paymentTermRows = usePaymentTermRows(
     contract
@@ -152,8 +206,8 @@ export function useContractForm({ contract = null, onSuccess } = {}) {
       value: field.value,
     })),
   );
-  const partyAExtraFieldRows = useExtraFieldRows(
-    (contract?.partyA.extraFields ?? []).map((field) => ({
+  const buyerExtraFieldRows = useExtraFieldRows(
+    (contract?.buyer.extraFields ?? []).map((field) => ({
       rowKey: crypto.randomUUID(),
       key: field.key,
       value: field.value,
@@ -170,12 +224,26 @@ export function useContractForm({ contract = null, onSuccess } = {}) {
 
   /**
    * @param {string} field
-   * @param {string | number | undefined} value
+   * @param {string | number | boolean | undefined} value
    */
   function setField(field, value) {
     setValues((current) => {
       const next = { ...current, [field]: value };
-      if (field === 'companyId') next.branchId = '';
+      // "Cảng/nơi đến" only applies to DDP/CIF (see
+      // `requiresPlaceOfDischarge`) and is scoped to the export country's
+      // `Place` catalog — clear it whenever either stops holding, so a
+      // stale value from a different Incoterm/country can't slip through.
+      if (
+        (field === 'incoterm' &&
+          !requiresPlaceOfDischarge(
+            /** @type {import('../types/index.js').Incoterm | ''} */ (
+              next.incoterm
+            ),
+          )) ||
+        field === 'countryId'
+      ) {
+        next.placeOfDischarge = '';
+      }
       return next;
     });
   }
@@ -229,10 +297,10 @@ export function useContractForm({ contract = null, onSuccess } = {}) {
    * @param {'companyName' | 'representativeName' | 'representativeTitle' | 'address'} field
    * @param {string} value
    */
-  function setPartyAInlineField(field, value) {
+  function setBuyerInlineField(field, value) {
     setValues((current) => ({
       ...current,
-      partyAInline: { ...current.partyAInline, [field]: value },
+      buyerInline: { ...current.buyerInline, [field]: value },
     }));
   }
 
@@ -258,14 +326,14 @@ export function useContractForm({ contract = null, onSuccess } = {}) {
     setValues((current) => ({
       ...current,
       sourceCustomerId: customerId,
-      partyAInline: {
+      buyerInline: {
         companyName: '',
         representativeName: customer?.representativeName ?? '',
         representativeTitle: customer?.representativeTitle ?? '',
         address: customer?.address ?? '',
       },
     }));
-    partyAExtraFieldRows.setRows(
+    buyerExtraFieldRows.setRows(
       (customer?.extraFields ?? []).map((field) => ({
         rowKey: crypto.randomUUID(),
         key: field.key,
@@ -274,7 +342,7 @@ export function useContractForm({ contract = null, onSuccess } = {}) {
     );
   }
 
-  function switchToInlinePartyA() {
+  function switchToInlineBuyer() {
     setValues((current) => ({ ...current, sourceCustomerId: '' }));
   }
 
@@ -316,7 +384,7 @@ export function useContractForm({ contract = null, onSuccess } = {}) {
     const extra = {
       paymentTerms: result.data.paymentTerms,
       sellerExtraFieldRows: sellerExtraFieldRows.rows,
-      partyAExtraFieldRows: partyAExtraFieldRows.rows,
+      buyerExtraFieldRows: buyerExtraFieldRows.rows,
     };
 
     const mutationResult = contract
@@ -373,24 +441,35 @@ export function useContractForm({ contract = null, onSuccess } = {}) {
     setSellerInlineField,
     selectExistingSeller,
     switchToInlineSeller,
-    setPartyAInlineField,
+    setBuyerInlineField,
     selectExistingCustomer,
-    switchToInlinePartyA,
+    switchToInlineBuyer,
     setBankIds,
     fieldStatuses,
     isCheckingContractNumber: contractNumberExistsQuery.isChecking,
     companies: companiesQuery.data ?? [],
-    branches: branchesQuery.data ?? [],
-    isBranchFixed: isEdit,
-    fixedBranchId: contract?.branchId ?? null,
+    isCompanyFixed: isEdit,
     sellers: sellersQuery.data?.success ? sellersQuery.data.sellers : [],
     customers: customersQuery.data?.success
       ? customersQuery.data.customers
       : [],
+    countries: countriesQuery.data?.success
+      ? countriesQuery.data.countries
+      : [],
+    vietnamCountryId,
+    loadingPlaces: dedupePlacesByName(
+      loadingPlacesQuery.data?.success ? loadingPlacesQuery.data.places : [],
+    ),
+    isPlaceOfDischargeApplicable: requiresPlaceOfDischarge(values.incoterm),
+    dischargePlaces: dedupePlacesByName(
+      dischargePlacesQuery.data?.success
+        ? dischargePlacesQuery.data.places
+        : [],
+    ),
     banks: banksQuery.data?.success ? banksQuery.data.banks : [],
     paymentTermRows,
     sellerExtraFieldRows,
-    partyAExtraFieldRows,
+    buyerExtraFieldRows,
     submitError,
     submitSuccess,
     isSubmitting: createMutation.isPending || updateMutation.isPending,

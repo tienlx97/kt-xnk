@@ -10,26 +10,35 @@ const BASE_VALUES = {
   quotationDate: '2025-12-15',
   projectName: 'Dự án A',
   category: 'Máy móc',
-  exportCountry: 'Việt Nam',
-  portOfLoading: 'Cảng Hải Phòng',
-  portOrPlaceOfDestination: 'Cảng Rotterdam',
+  countryId: 'country-1',
+  placeOfLoading: 'Cảng Hải Phòng',
+  placeOfDischarge: 'Cảng Rotterdam',
   contractValue: 100000,
   currency: 'USD',
   incoterm: 'CIF',
   incotermYear: 2020,
   companyId: 'company-1',
-  branchId: 'branch-1',
+  sourceSellerId: '',
+  sellerInline: {
+    companyName: 'Seller Corp',
+    representativeName: '',
+    representativeTitle: '',
+    address: '',
+  },
   sourceCustomerId: '',
-  partyAInline: {
+  buyerInline: {
     companyName: 'ACME Corp',
     representativeName: '',
     representativeTitle: '',
     address: '',
   },
+  note: '',
   bankIds: ['bank-1'],
+  sellerSigned: false,
+  buyerSigned: false,
 };
 
-test('sends an inline Party A when no source customer is selected', async () => {
+test('sends an inline Buyer when no source customer is selected', async () => {
   const originalFetch = globalThis.fetch;
   /** @type {{ init?: RequestInit }} */
   const captured = {};
@@ -44,18 +53,20 @@ test('sends an inline Party A when no source customer is selected', async () => 
     });
 
     const body = JSON.parse(String(captured.init?.body));
-    assert.equal(body.PartyA.SourceCustomerId, null);
-    assert.equal(body.PartyA.CompanyName, 'ACME Corp');
-    assert.equal(body.BranchId, 'branch-1');
+    assert.equal(body.Buyer.SourceCustomerId, null);
+    assert.equal(body.Buyer.CompanyName, 'ACME Corp');
+    assert.equal(body.CompanyId, 'company-1');
     assert.equal(body.Currency, 'USD');
-    assert.equal(body.PortOfLoading, 'Cảng Hải Phòng');
-    assert.equal(body.PortOrPlaceOfDestination, 'Cảng Rotterdam');
+    assert.equal(body.CountryId, 'country-1');
+    assert.equal(body.PlaceOfLoading, 'Cảng Hải Phòng');
+    assert.equal(body.PlaceOfDischarge, 'Cảng Rotterdam');
     assert.deepEqual(body.PaymentTerms, [
       { PaymentRatioPercent: 100, PaymentCondition: 'T/T' },
     ]);
     assert.deepEqual(body.BankIds, ['bank-1']);
     assert.equal(body.NotifyParty, null);
     assert.equal(body.Consignee, null);
+    assert.equal(body.Note, null);
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -77,15 +88,15 @@ test('sends a SourceCustomerId reference when an existing customer is selected, 
     );
 
     const body = JSON.parse(String(captured.init?.body));
-    assert.equal(body.PartyA.SourceCustomerId, 'customer-1');
-    assert.equal(body.PartyA.CompanyName, null);
+    assert.equal(body.Buyer.SourceCustomerId, 'customer-1');
+    assert.equal(body.Buyer.CompanyName, null);
   } finally {
     globalThis.fetch = originalFetch;
   }
 });
 
 test('still sends RepresentativeName/RepresentativeTitle/Address even when a source customer is selected', async () => {
-  // A customer can be Party A on two contracts with a different
+  // A customer can be Buyer on two contracts with a different
   // representative on each — only CompanyName is pinned to the catalog
   // (see `docs/api/Contracts.md`, BE-kt-xnk), so these must not be dropped
   // just because SourceCustomerId is set.
@@ -102,7 +113,7 @@ test('still sends RepresentativeName/RepresentativeTitle/Address even when a sou
       {
         ...BASE_VALUES,
         sourceCustomerId: 'customer-1',
-        partyAInline: {
+        buyerInline: {
           companyName: '',
           representativeName: 'Rep For This Contract',
           representativeTitle: 'CEO',
@@ -113,16 +124,16 @@ test('still sends RepresentativeName/RepresentativeTitle/Address even when a sou
     );
 
     const body = JSON.parse(String(captured.init?.body));
-    assert.equal(body.PartyA.SourceCustomerId, 'customer-1');
-    assert.equal(body.PartyA.RepresentativeName, 'Rep For This Contract');
-    assert.equal(body.PartyA.RepresentativeTitle, 'CEO');
-    assert.equal(body.PartyA.Address, 'Address for this contract');
+    assert.equal(body.Buyer.SourceCustomerId, 'customer-1');
+    assert.equal(body.Buyer.RepresentativeName, 'Rep For This Contract');
+    assert.equal(body.Buyer.RepresentativeTitle, 'CEO');
+    assert.equal(body.Buyer.Address, 'Address for this contract');
   } finally {
     globalThis.fetch = originalFetch;
   }
 });
 
-test('sends BranchId as null when the branch is left blank', async () => {
+test('sends CompanyId', async () => {
   const originalFetch = globalThis.fetch;
   /** @type {{ init?: RequestInit }} */
   const captured = {};
@@ -133,12 +144,88 @@ test('sends BranchId as null when the branch is left blank', async () => {
 
   try {
     await createContract(
-      { ...BASE_VALUES, branchId: '' },
+      { ...BASE_VALUES, companyId: 'company-2' },
       { paymentTerms: [{ paymentRatioPercent: 100, paymentCondition: 'T/T' }] },
     );
 
     const body = JSON.parse(String(captured.init?.body));
-    assert.equal(body.BranchId, null);
+    assert.equal(body.CompanyId, 'company-2');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('sends Note when set, and null when blank', async () => {
+  const originalFetch = globalThis.fetch;
+  /** @type {{ init?: RequestInit }} */
+  const captured = {};
+  globalThis.fetch = async (_input, init) => {
+    captured.init = init;
+    return Response.json({ id: 'contract-1' });
+  };
+
+  try {
+    await createContract(
+      { ...BASE_VALUES, note: 'Giao hàng trước 15h' },
+      { paymentTerms: [{ paymentRatioPercent: 100, paymentCondition: 'T/T' }] },
+    );
+    const body = JSON.parse(String(captured.init?.body));
+    assert.equal(body.Note, 'Giao hàng trước 15h');
+
+    await createContract(BASE_VALUES, {
+      paymentTerms: [{ paymentRatioPercent: 100, paymentCondition: 'T/T' }],
+    });
+    const secondBody = JSON.parse(String(captured.init?.body));
+    assert.equal(secondBody.Note, null);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('sends PlaceOfDischarge as null when blank (FOB/EXW), a string otherwise', async () => {
+  const originalFetch = globalThis.fetch;
+  /** @type {{ init?: RequestInit }} */
+  const captured = {};
+  globalThis.fetch = async (_input, init) => {
+    captured.init = init;
+    return Response.json({ id: 'contract-1' });
+  };
+
+  try {
+    await createContract(
+      { ...BASE_VALUES, incoterm: 'FOB', placeOfDischarge: '' },
+      { paymentTerms: [{ paymentRatioPercent: 100, paymentCondition: 'T/T' }] },
+    );
+    const body = JSON.parse(String(captured.init?.body));
+    assert.equal(body.PlaceOfDischarge, null);
+
+    await createContract(BASE_VALUES, {
+      paymentTerms: [{ paymentRatioPercent: 100, paymentCondition: 'T/T' }],
+    });
+    const secondBody = JSON.parse(String(captured.init?.body));
+    assert.equal(secondBody.PlaceOfDischarge, 'Cảng Rotterdam');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('sends SellerSigned and BuyerSigned', async () => {
+  const originalFetch = globalThis.fetch;
+  /** @type {{ init?: RequestInit }} */
+  const captured = {};
+  globalThis.fetch = async (_input, init) => {
+    captured.init = init;
+    return Response.json({ id: 'contract-1' });
+  };
+
+  try {
+    await createContract(
+      { ...BASE_VALUES, sellerSigned: true, buyerSigned: false },
+      { paymentTerms: [{ paymentRatioPercent: 100, paymentCondition: 'T/T' }] },
+    );
+    const body = JSON.parse(String(captured.init?.body));
+    assert.equal(body.SellerSigned, true);
+    assert.equal(body.BuyerSigned, false);
   } finally {
     globalThis.fetch = originalFetch;
   }

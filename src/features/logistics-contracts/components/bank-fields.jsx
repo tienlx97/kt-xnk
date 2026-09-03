@@ -47,10 +47,27 @@ export function BankFields({ values, setField, fieldStatuses, extraFieldRows }) 
         </StackItem>
       </HStack>
 
+      <HStack gap={3}>
+        <StackItem size="fill">
+          <TextInput
+            label="Chi nhánh"
+            value={values.branchName}
+            onChange={(value) => setField('branchName', value)}
+          />
+        </StackItem>
+        <StackItem size="fill">
+          <TextInput
+            label="Địa chỉ ngân hàng"
+            value={values.bankAddress}
+            onChange={(value) => setField('bankAddress', value)}
+          />
+        </StackItem>
+      </HStack>
+
       <TextInput
-        label="Chi nhánh"
-        value={values.branchName}
-        onChange={(value) => setField('branchName', value)}
+        label="Swift Code"
+        value={values.swiftCode}
+        onChange={(value) => setField('swiftCode', value)}
       />
 
       <ExtraFieldsEditor

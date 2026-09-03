@@ -7,8 +7,20 @@
       "path": "/logistics/contracts"
     },
     {
+      "title": "Service Agreement",
+      "path": "/logistics/service-agreements"
+    },
+    {
       "title": "Khách hàng",
       "path": "/logistics/customers"
+    },
+    {
+      "title": "Nước",
+      "path": "/logistics/countries"
+    },
+    {
+      "title": "Cảng / Nơi",
+      "path": "/logistics/places"
     }
   ]
 }

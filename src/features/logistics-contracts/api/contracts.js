@@ -86,19 +86,19 @@ function buildSellerPayload(values, sellerExtraFieldRows) {
 }
 
 /**
- * Turns the validated form shape into the `PartyA` wire object. `CompanyName`
- * is only sent when there's no `SourceCustomerId` — the backend takes it
- * from the catalog record when linked. Every other field
+ * Turns the validated form shape into the `Buyer` wire object (renamed from
+ * `PartyA` — see `docs/api/Contracts.md`, BE-kt-xnk). `CompanyName` is only
+ * sent when there's no `SourceCustomerId` — the backend takes it from the
+ * catalog record when linked. Every other field
  * (`RepresentativeName`/`RepresentativeTitle`/`Address`/`ExtraFields`) is
  * always sent from the form, whether or not `SourceCustomerId` is set — the
  * backend persists them per-contract either way, so the same customer can
- * be Party A on multiple contracts with a different representative on each
- * (see `docs/api/Contracts.md`, BE-kt-xnk).
+ * be Buyer on multiple contracts with a different representative on each.
  * @param {import('../types/index.js').ContractFormValues} values
- * @param {import('../types/index.js').ExtraFieldRow[]} partyAExtraFieldRows
+ * @param {import('../types/index.js').ExtraFieldRow[]} buyerExtraFieldRows
  */
-function buildPartyAPayload(values, partyAExtraFieldRows) {
-  const extraFields = partyAExtraFieldRows
+function buildBuyerPayload(values, buyerExtraFieldRows) {
+  const extraFields = buyerExtraFieldRows
     .filter((row) => row.key.trim())
     .map((row) => ({ Key: row.key, Value: row.value }));
 
@@ -106,21 +106,21 @@ function buildPartyAPayload(values, partyAExtraFieldRows) {
     SourceCustomerId: values.sourceCustomerId || null,
     CompanyName: values.sourceCustomerId
       ? null
-      : values.partyAInline.companyName,
-    RepresentativeName: values.partyAInline.representativeName || null,
-    RepresentativeTitle: values.partyAInline.representativeTitle || null,
-    Address: values.partyAInline.address || null,
+      : values.buyerInline.companyName,
+    RepresentativeName: values.buyerInline.representativeName || null,
+    RepresentativeTitle: values.buyerInline.representativeTitle || null,
+    Address: values.buyerInline.address || null,
     ExtraFields: extraFields,
   };
 }
 
 /**
  * @param {import('../types/index.js').ContractFormValues} values
- * @param {{ paymentTerms: { paymentRatioPercent: number, paymentCondition: string }[], sellerExtraFieldRows?: import('../types/index.js').ExtraFieldRow[], partyAExtraFieldRows?: import('../types/index.js').ExtraFieldRow[] }} extra
+ * @param {{ paymentTerms: { paymentRatioPercent: number, paymentCondition: string }[], sellerExtraFieldRows?: import('../types/index.js').ExtraFieldRow[], buyerExtraFieldRows?: import('../types/index.js').ExtraFieldRow[] }} extra
  */
 function buildContractBody(
   values,
-  { paymentTerms, sellerExtraFieldRows = [], partyAExtraFieldRows = [] },
+  { paymentTerms, sellerExtraFieldRows = [], buyerExtraFieldRows = [] },
 ) {
   return {
     ContractNumber: values.contractNumber,
@@ -128,28 +128,33 @@ function buildContractBody(
     QuotationDate: values.quotationDate,
     ProjectName: values.projectName,
     Category: values.category,
-    ExportCountry: values.exportCountry,
-    PortOfLoading: values.portOfLoading,
-    PortOrPlaceOfDestination: values.portOrPlaceOfDestination,
+    CountryId: values.countryId,
+    PlaceOfLoading: values.placeOfLoading,
+    // '' for FOB/EXW (no destination leg) — see
+    // `requiresPlaceOfDischarge()`, `config/incoterms.js`.
+    PlaceOfDischarge: values.placeOfDischarge || null,
     ContractValue: values.contractValue,
     Currency: values.currency,
     Incoterm: values.incoterm,
     IncotermYear: values.incotermYear,
     Seller: buildSellerPayload(values, sellerExtraFieldRows),
-    PartyA: buildPartyAPayload(values, partyAExtraFieldRows),
+    Buyer: buildBuyerPayload(values, buyerExtraFieldRows),
     NotifyParty: null,
     Consignee: null,
+    Note: values.note || null,
     PaymentTerms: paymentTerms.map((term) => ({
       PaymentRatioPercent: term.paymentRatioPercent,
       PaymentCondition: term.paymentCondition,
     })),
     BankIds: values.bankIds,
+    SellerSigned: values.sellerSigned,
+    BuyerSigned: values.buyerSigned,
   };
 }
 
 /**
  * @param {import('../types/index.js').ContractFormValues} values
- * @param {{ paymentTerms: { paymentRatioPercent: number, paymentCondition: string }[], sellerExtraFieldRows?: import('../types/index.js').ExtraFieldRow[], partyAExtraFieldRows?: import('../types/index.js').ExtraFieldRow[] }} extra
+ * @param {{ paymentTerms: { paymentRatioPercent: number, paymentCondition: string }[], sellerExtraFieldRows?: import('../types/index.js').ExtraFieldRow[], buyerExtraFieldRows?: import('../types/index.js').ExtraFieldRow[] }} extra
  * @returns {Promise<{ success: true, contract: import('../types/index.js').Contract } | { success: false, message: string }>}
  */
 export async function createContract(values, extra) {
@@ -158,7 +163,7 @@ export async function createContract(values, extra) {
     errorMessage: GENERIC_CREATE_ERROR,
     body: {
       ...buildContractBody(values, extra),
-      BranchId: values.branchId || null,
+      CompanyId: values.companyId,
     },
   });
 
@@ -172,7 +177,7 @@ export async function createContract(values, extra) {
 /**
  * @param {string} contractId
  * @param {import('../types/index.js').ContractFormValues} values
- * @param {{ paymentTerms: { paymentRatioPercent: number, paymentCondition: string }[], sellerExtraFieldRows?: import('../types/index.js').ExtraFieldRow[], partyAExtraFieldRows?: import('../types/index.js').ExtraFieldRow[] }} extra
+ * @param {{ paymentTerms: { paymentRatioPercent: number, paymentCondition: string }[], sellerExtraFieldRows?: import('../types/index.js').ExtraFieldRow[], buyerExtraFieldRows?: import('../types/index.js').ExtraFieldRow[] }} extra
  * @returns {Promise<{ success: true, contract: import('../types/index.js').Contract } | { success: false, message: string }>}
  */
 export async function updateContract(contractId, values, extra) {

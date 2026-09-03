@@ -57,7 +57,7 @@ const styles = stylex.create({
     alignItems: 'center',
     backgroundColor: {
       default: 'transparent',
-      ':hover': colorVars['--color-background-card'],
+      ':hover': colorVars['--color-background-muted'],
     },
     borderRadius: {
       default: 0,

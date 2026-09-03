@@ -8,7 +8,14 @@ import { useExtraFieldRows } from './use-extra-field-rows.js';
 
 /** @returns {import('../types/index.js').ContractBankFormValues} */
 function emptyValues() {
-  return { bankName: '', beneficiary: '', bankAccountNumber: '', branchName: '' };
+  return {
+    bankName: '',
+    beneficiary: '',
+    bankAccountNumber: '',
+    branchName: '',
+    bankAddress: '',
+    swiftCode: '',
+  };
 }
 
 /** @param {string} [message] @returns {{ type: 'error', message: string } | undefined} */

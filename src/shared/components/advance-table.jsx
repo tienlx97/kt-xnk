@@ -5,10 +5,9 @@ import { Button } from '@astryxdesign/core/Button';
 import { HStack } from '@astryxdesign/core/HStack';
 import { Icon } from '@astryxdesign/core/Icon';
 import { IconButton } from '@astryxdesign/core/IconButton';
-import {
-  PowerSearch,
-  usePowerSearchConfig,
-} from '@astryxdesign/core/PowerSearch';
+import { InputGroup } from '@astryxdesign/core/InputGroup';
+import { Popover } from '@astryxdesign/core/Popover';
+import { usePowerSearchConfig } from '@astryxdesign/core/PowerSearch';
 import { Selector } from '@astryxdesign/core/Selector';
 import { Skeleton } from '@astryxdesign/core/Skeleton';
 import { StackItem } from '@astryxdesign/core/Stack';
@@ -22,11 +21,15 @@ import {
   useTableStickyColumns,
 } from '@astryxdesign/core/Table';
 import { Text } from '@astryxdesign/core/Text';
-import { colorVars } from '@astryxdesign/core/theme/tokens.stylex';
+import { TextInput } from '@astryxdesign/core/TextInput';
+import {
+  colorVars,
+  spacingVars,
+} from '@astryxdesign/core/theme/tokens.stylex';
 import { Toolbar } from '@astryxdesign/core/Toolbar';
 import { VStack } from '@astryxdesign/core/VStack';
 import * as stylex from '@stylexjs/stylex';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { IconRefresh } from '@/shared/components/icon/icon-refresh.jsx';
 import {
@@ -41,6 +44,15 @@ import {
  * @property {string} placeholder
  * @property {ReadonlyArray<{ value: string, label?: string }>} options
  * @property {(option: { value: string, label?: string }) => string} renderValue
+ */
+
+/**
+ * @typedef {Object} AdvanceTableAdvancedSearchField
+ * @property {string} field
+ * @property {string} label
+ * @property {string} [placeholder]
+ * @property {'string' | 'enum'} [type]
+ * @property {ReadonlyArray<{ value: string, label?: string }>} [options] Required when type is 'enum'.
  */
 
 const DEFAULT_PAGE_SIZE_OPTIONS = ['10', '25', '50', '100'];
@@ -82,6 +94,16 @@ const styles = stylex.create({
   filterFill: {
     backgroundColor: colorVars['--color-overlay-pressed'],
   },
+  searchInputGroup: {
+    width: '100%',
+  },
+  searchInput: {
+    flexGrow: 1,
+  },
+  advancedSearchPanel: {
+    paddingBlock: spacingVars['--spacing-3'],
+    paddingInline: spacingVars['--spacing-3'],
+  },
 });
 
 /**
@@ -105,6 +127,7 @@ const styles = stylex.create({
  *   entityLabel: string,
  *   contentSearchFieldKey: string,
  *   searchPlaceholder: string,
+ *   advancedSearchFields?: ReadonlyArray<AdvanceTableAdvancedSearchField>,
  *   quickFilters?: ReadonlyArray<AdvanceTableQuickFilter>,
  *   columnOptions: ReadonlyArray<{ key: string, label: string, isAlwaysVisible?: boolean }>,
  *   initialColumnKeys?: string[],
@@ -137,6 +160,7 @@ export function AdvanceTable({
   entityLabel,
   contentSearchFieldKey,
   searchPlaceholder,
+  advancedSearchFields,
   quickFilters,
   columnOptions,
   initialColumnKeys,
@@ -210,6 +234,135 @@ export function AdvanceTable({
   function getQuickFilterValue(field) {
     const active = searchFilters.find((filter) => filter.field === field);
     return active ? String(/** @type {any} */ (active.value).value) : null;
+  }
+
+  // Search box: a plain text field bound to `contentSearchFieldKey`, plus a
+  // filter-icon trigger that opens a popover with one input per advanced
+  // field. Both write into the same `searchFilters` array a per-column
+  // header filter reads from — the box just edits a `contains`/`is` clause
+  // for its own field(s) instead of PowerSearch's token UI.
+  const advancedSearchFieldsResolved = useMemo(
+    () =>
+      advancedSearchFields ??
+      searchFieldDefs
+        .filter((def) => def.type === 'string' || def.type === 'enum')
+        .map((def) => ({
+          field: def.key,
+          label: def.label ?? def.key,
+          placeholder: def.label ?? def.key,
+          type: /** @type {'string' | 'enum'} */ (
+            def.type === 'enum' ? 'enum' : 'string'
+          ),
+          options: def.enumValues,
+        })),
+    [advancedSearchFields, searchFieldDefs],
+  );
+
+  const quickSearchValue = (() => {
+    const active = searchFilters.find(
+      (filter) => filter.field === contentSearchFieldKey,
+    );
+    return active ? String(/** @type {any} */ (active.value).value) : '';
+  })();
+
+  /** @param {string} value */
+  function handleQuickSearchChange(value) {
+    setSearchFilters((current) => {
+      const rest = current.filter(
+        (filter) => filter.field !== contentSearchFieldKey,
+      );
+      return value.trim() === ''
+        ? rest
+        : [
+            ...rest,
+            {
+              field: contentSearchFieldKey,
+              operator: 'contains',
+              value: { type: 'string', value },
+            },
+          ];
+    });
+    resetPageIndex();
+  }
+
+  const advancedSearchTriggerRef = useRef(
+    /** @type {HTMLButtonElement | null} */ (null),
+  );
+  const searchBarRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const [searchBarWidth, setSearchBarWidth] = useState(
+    /** @type {number | undefined} */ (undefined),
+  );
+  const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
+  const [advancedSearchDraft, setAdvancedSearchDraft] = useState(
+    /** @type {Record<string, string>} */ ({}),
+  );
+
+  // Popover anchors to the funnel button (so its click-attach logic finds
+  // exactly one unambiguous button), but its width/placement should match
+  // the whole search bar, not just that button — track the bar's width
+  // here and align the popover's end edge to the button's end edge
+  // (`alignment="end"` below), so a wider popover grows leftward to cover
+  // the same footprint as the bar.
+  useEffect(() => {
+    const element = searchBarRef.current;
+    if (!element) return;
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width;
+      if (width != null) setSearchBarWidth(width);
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  // The Popover (in anchorRef "sibling" mode) already wires its own click
+  // listener onto the trigger button to toggle `isOpen` — adding a second
+  // onClick on the IconButton double-toggles and cancels itself out. Drive
+  // everything through `onOpenChange` instead, syncing the draft only on
+  // the open transition.
+  /** @param {boolean} isOpen */
+  function handleAdvancedSearchOpenChange(isOpen) {
+    if (isOpen) {
+      const draft = /** @type {Record<string, string>} */ ({});
+      for (const field of advancedSearchFieldsResolved) {
+        const active = searchFilters.find(
+          (filter) => filter.field === field.field,
+        );
+        draft[field.field] = active
+          ? String(/** @type {any} */ (active.value).value)
+          : '';
+      }
+      setAdvancedSearchDraft(draft);
+    }
+    setIsAdvancedSearchOpen(isOpen);
+  }
+
+  function handleAdvancedSearchSubmit() {
+    const advancedFieldKeys = new Set(
+      advancedSearchFieldsResolved.map((field) => field.field),
+    );
+    const nextAdvancedFilters = advancedSearchFieldsResolved
+      .filter((field) => advancedSearchDraft[field.field]?.trim())
+      .map((field) => {
+        const value = advancedSearchDraft[field.field].trim();
+        return field.type === 'enum'
+          ? {
+              field: field.field,
+              operator: 'is',
+              value: { type: 'enum', value },
+            }
+          : {
+              field: field.field,
+              operator: 'contains',
+              value: { type: 'string', value },
+            };
+      });
+    const preserved = searchFilters.filter(
+      (filter) => !advancedFieldKeys.has(filter.field),
+    );
+    handleSearchFiltersChange(
+      /** @type {any} */ ([...preserved, ...nextAdvancedFilters]),
+    );
+    setIsAdvancedSearchOpen(false);
   }
 
   // Per-column header filters (popover icon in the header), layered on top
@@ -304,16 +457,98 @@ export function AdvanceTable({
             xstyle={styles.toolbarPrimary}
           >
             <StackItem size="fill">
-              <PowerSearch
-                config={searchConfig}
-                filters={searchFilters}
-                onChange={handleSearchFiltersChange}
-                placeholder={searchPlaceholder}
-                resultCount={filteredData.length}
+              <InputGroup
+                ref={searchBarRef}
+                label={searchPlaceholder}
+                isLabelHidden
                 size="sm"
-                startIcon="search"
-                xstyle={styles.search}
-              />
+                xstyle={[styles.search, styles.searchInputGroup]}
+              >
+                <TextInput
+                  label={searchPlaceholder}
+                  isLabelHidden
+                  placeholder={searchPlaceholder}
+                  startIcon="search"
+                  hasClear
+                  value={quickSearchValue}
+                  onChange={handleQuickSearchChange}
+                  xstyle={styles.searchInput}
+                />
+                {advancedSearchFieldsResolved.length > 0 ? (
+                  <IconButton
+                    ref={advancedSearchTriggerRef}
+                    label="Bộ lọc nâng cao"
+                    tooltip="Bộ lọc nâng cao"
+                    icon={<Icon icon="funnel" size="sm" />}
+                    variant="ghost"
+                  />
+                ) : null}
+              </InputGroup>
+              {advancedSearchFieldsResolved.length > 0 ? (
+                <Popover
+                  anchorRef={
+                    /** @type {import('react').RefObject<HTMLElement>} */ (
+                      advancedSearchTriggerRef
+                    )
+                  }
+                  isOpen={isAdvancedSearchOpen}
+                  onOpenChange={handleAdvancedSearchOpenChange}
+                  placement="below"
+                  alignment="end"
+                  width={searchBarWidth}
+                  label="Tìm kiếm nâng cao"
+                  content={
+                    <VStack
+                      gap={3}
+                      hAlign="stretch"
+                      xstyle={styles.advancedSearchPanel}
+                    >
+                      {advancedSearchFieldsResolved.map((field) =>
+                        field.type === 'enum' ? (
+                          <Selector
+                            key={field.field}
+                            label={field.label}
+                            isLabelHidden
+                            placeholder={field.placeholder ?? field.label}
+                            hasClear
+                            options={[...(field.options ?? [])]}
+                            value={advancedSearchDraft[field.field] ?? null}
+                            onChange={(next) =>
+                              setAdvancedSearchDraft((current) => ({
+                                ...current,
+                                [field.field]: next ?? '',
+                              }))
+                            }
+                          />
+                        ) : (
+                          <TextInput
+                            key={field.field}
+                            label={field.label}
+                            isLabelHidden
+                            placeholder={field.placeholder ?? field.label}
+                            hasClear
+                            value={advancedSearchDraft[field.field] ?? ''}
+                            onChange={(next) =>
+                              setAdvancedSearchDraft((current) => ({
+                                ...current,
+                                [field.field]: next,
+                              }))
+                            }
+                            onEnter={handleAdvancedSearchSubmit}
+                          />
+                        ),
+                      )}
+                      <HStack hAlign="end">
+                        <Button
+                          label="Tìm kiếm"
+                          variant="primary"
+                          onClick={handleAdvancedSearchSubmit}
+                        />
+                      </HStack>
+                    </VStack>
+                  }
+                />
+              ) : null}
             </StackItem>
             <HStack gap={2} vAlign="center" xstyle={styles.toolbarEnd}>
               <TableViewOptionsPopover

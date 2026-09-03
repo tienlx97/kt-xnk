@@ -30,10 +30,17 @@ export async function createContractBank(values, extraFieldRows = []) {
     method: 'POST',
     errorMessage: GENERIC_CREATE_ERROR,
     body: {
-      BankName: values.bankName,
+      BankName: values.bankName || null,
       Beneficiary: values.beneficiary || null,
       BankAccountNumber: values.bankAccountNumber || null,
       BranchName: values.branchName || null,
+      // `CreateContractBankRequest` has no `BankAddress`/`SwiftCode` yet
+      // (verified against the live backend: it 201s but silently drops
+      // both) — sent anyway so this starts working the moment BE-kt-xnk
+      // adds them, no frontend change needed. See
+      // `config/contract-bank-schema.js`.
+      BankAddress: values.bankAddress || null,
+      SwiftCode: values.swiftCode || null,
       ExtraFields: extraFieldRows
         .filter((row) => row.key.trim())
         .map((row) => ({ Key: row.key, Value: row.value })),
