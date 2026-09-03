@@ -43,10 +43,11 @@ tooltip, not a duplicated schema rule (the check needs the parent
   equivalents.
 - New `components/payment-schedule-fields.jsx` (DateInput + NumberInput +
   Selector + TextArea) and `components/payment-schedule-form-dialog.jsx`.
-- `components/contracts-list.jsx`: per-contract payment-schedule query, a
-  "Đợt thanh toán khách" section in the "Thông tin" tab (list + "Thêm đợt
-  thanh toán" button, disabled with a tooltip unless
-  `sellerSigned && buyerSigned`), create/edit dialogs.
+- `components/contracts-list.jsx`: per-contract payment-schedule query, its
+  own "Đợt thanh toán khách" `ExpandedTab` (list + "Thêm đợt thanh toán"
+  button, disabled with a tooltip unless `sellerSigned && buyerSigned`),
+  create/edit dialogs. (Originally landed inside the "Thông tin" tab — see
+  decision log entry below for the move to its own tab.)
 
 ## Out of scope
 
@@ -62,3 +63,4 @@ tooltip, not a duplicated schema rule (the check needs the parent
 | Date | Decision | Why |
 |---|---|---|
 | 2026-09-03 | Payment-schedule list/section placed inside the existing "Thông tin" tab (next to "Đợt thanh toán" payment *terms*), not a new `ExpandedTab` | Matches where `ContractAnnex`'s "Phụ lục" list already lives (pulled into "Thông tin" per an earlier session) — one info tab, not a proliferation of tabs. |
+| 2026-09-03 | Reverted the above, same day: moved to its own `paymentSchedule` `ExpandedTab` (always visible, next to "Khách hàng", before "Service Agreement") | Explicit user follow-up request: "Đợt thanh toán khách hãy để 1 tab riêng" (put it in its own tab). |

@@ -257,7 +257,7 @@ const skeletonRows = Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => ({
   buyerSigned: false,
 }));
 
-/** @typedef {'info' | 'seller' | 'customer' | 'serviceAgreement'} ExpandedTab */
+/** @typedef {'info' | 'seller' | 'customer' | 'paymentSchedule' | 'serviceAgreement'} ExpandedTab */
 
 /**
  * @param {object} props
@@ -387,6 +387,7 @@ function ContractExpandedDetails({
         <Tab value="info" label="Thông tin" />
         <Tab value="seller" label="Bên bán" />
         <Tab value="customer" label="Khách hàng" />
+        <Tab value="paymentSchedule" label="Đợt thanh toán khách" />
         {hasServiceAgreement ? (
           <Tab value="serviceAgreement" label="Service Agreement" />
         ) : null}
@@ -512,61 +513,6 @@ function ContractExpandedDetails({
             )}
           </VStack>
 
-          {/* Đợt thanh toán khách (PaymentSchedule) — requires the contract
-              to be fully signed to create; the backend also enforces this
-              (`400` otherwise), the disabled button + tooltip here is just
-              the UX-level mirror of that rule. */}
-          <HStack hAlign="between" vAlign="center">
-            <Text weight="semibold">Đợt thanh toán khách</Text>
-            <Button
-              label="Thêm đợt thanh toán"
-              variant="secondary"
-              size="sm"
-              icon={<Icon icon={Plus} />}
-              isDisabled={!isFullySigned}
-              tooltip={
-                isFullySigned
-                  ? undefined
-                  : 'Hợp đồng phải được cả 2 bên ký trước khi thêm đợt thanh toán'
-              }
-              onClick={() => setIsPaymentScheduleDialogOpen(true)}
-            />
-          </HStack>
-
-          {paymentSchedules.length === 0 ? (
-            <Text color="secondary">Chưa có đợt thanh toán</Text>
-          ) : (
-            <List hasDividers density="compact">
-              {paymentSchedules.map((schedule) => (
-                <ListItem
-                  key={schedule.id}
-                  label={`${schedule.paymentCode} · ${labelForPaymentType(schedule.type)}`}
-                  description={[
-                    `Ngày ${schedule.paymentDate}`,
-                    schedule.note,
-                  ]
-                    .filter(Boolean)
-                    .join(' · ')}
-                  endContent={
-                    <HStack gap={1} vAlign="center">
-                      <Text weight="semibold">
-                        {formatMoney(schedule.amount, contract.currency)}
-                      </Text>
-                      <IconButton
-                        label={`Sửa ${schedule.paymentCode}`}
-                        tooltip="Sửa đợt thanh toán"
-                        icon={<Icon icon={Pencil} size="sm" />}
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setEditingPaymentSchedule(schedule)}
-                      />
-                    </HStack>
-                  }
-                />
-              ))}
-            </List>
-          )}
-
           {/* Phụ lục — pulled down from the old "Phụ lục" tab, styled to
               match `service-agreements-list.jsx`'s annex list: label +
               signed amount on the top line, sign/dates/parties below. */}
@@ -667,6 +613,64 @@ function ContractExpandedDetails({
         </MetadataList>
       )}
 
+      {activeTab === 'paymentSchedule' && (
+        <VStack gap={4} hAlign="stretch">
+          {/* Requires the contract to be fully signed to create; the
+              backend also enforces this (`400` otherwise), the disabled
+              button + tooltip here is just the UX-level mirror of that
+              rule. */}
+          <HStack hAlign="between" vAlign="center">
+            <Text weight="semibold">Đợt thanh toán khách</Text>
+            <Button
+              label="Thêm đợt thanh toán"
+              variant="secondary"
+              size="sm"
+              icon={<Icon icon={Plus} />}
+              isDisabled={!isFullySigned}
+              tooltip={
+                isFullySigned
+                  ? undefined
+                  : 'Hợp đồng phải được cả 2 bên ký trước khi thêm đợt thanh toán'
+              }
+              onClick={() => setIsPaymentScheduleDialogOpen(true)}
+            />
+          </HStack>
+
+          {paymentSchedules.length === 0 ? (
+            <Text color="secondary">Chưa có đợt thanh toán</Text>
+          ) : (
+            <List hasDividers density="compact">
+              {paymentSchedules.map((schedule) => (
+                <ListItem
+                  key={schedule.id}
+                  label={`${schedule.paymentCode} · ${labelForPaymentType(schedule.type)}`}
+                  description={[
+                    `Ngày ${schedule.paymentDate}`,
+                    schedule.note,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                  endContent={
+                    <HStack gap={1} vAlign="center">
+                      <Text weight="semibold">
+                        {formatMoney(schedule.amount, contract.currency)}
+                      </Text>
+                      <IconButton
+                        label={`Sửa ${schedule.paymentCode}`}
+                        tooltip="Sửa đợt thanh toán"
+                        icon={<Icon icon={Pencil} size="sm" />}
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setEditingPaymentSchedule(schedule)}
+                      />
+                    </HStack>
+                  }
+                />
+              ))}
+            </List>
+          )}
+        </VStack>
+      )}
 
       {activeTab === 'serviceAgreement' && serviceAgreement && (
         <VStack gap={4} hAlign="stretch">

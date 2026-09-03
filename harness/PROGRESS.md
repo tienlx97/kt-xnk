@@ -5,6 +5,31 @@ Append-only session log. Newest entry FIRST.
 This file is the handoff between sessions/agents — write for a reader with zero conversation context.
 -->
 
+## 2026-09-03 — Payment Schedule moved to its own tab
+
+**Request:** "Đợt thanh toán khách hãy để 1 tab riêng" — follow-up to the
+entry directly below: move the "Đợt thanh toán khách" section out of the
+"Thông tin" tab into its own `ExpandedTab`.
+
+**What changed:** `contracts-list.jsx`'s `ExpandedTab` typedef gained
+`'paymentSchedule'`; a new always-visible `Tab value="paymentSchedule"
+label="Đợt thanh toán khách"` was added to the `TabList` (after "Khách
+hàng", before the conditional "Service Agreement" tab). The list/"Thêm đợt
+thanh toán" button block (unchanged internally — still disabled with a
+tooltip unless `sellerSigned && buyerSigned`) was moved verbatim from
+inside `activeTab === 'info'` into its own `activeTab === 'paymentSchedule'`
+block. Updated this change's `proposal.md` decision log (the original
+"keep it inside Thông tin" decision from the same day is superseded, not
+deleted).
+
+**Verification:** `pnpm lint` / `pnpm typecheck` clean; `./harness/verify.sh`
+full pass. Evidence: `harness/runs/20260903-150808-46385/`.
+
+**Not live-verified in the browser** — no `claude-in-chrome` tool this
+session either (same gap as the entry below).
+
+---
+
 ## 2026-09-03 — Contract signatures + Payment Schedules (`add-payment-schedule-and-contract-signatures`)
 
 **Context:** User asked (in the backend session, `../CLEAN ARCHITECTURE`)
