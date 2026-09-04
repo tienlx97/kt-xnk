@@ -4,10 +4,7 @@ import { Button } from '@astryxdesign/core/Button';
 import { Divider } from '@astryxdesign/core/Divider';
 import { HStack } from '@astryxdesign/core/HStack';
 import { Icon } from '@astryxdesign/core/Icon';
-import {
-  MetadataList,
-  MetadataListItem,
-} from '@astryxdesign/core/MetadataList';
+import { MetadataList } from '@astryxdesign/core/MetadataList';
 import { proportional, useTableRowExpansion } from '@astryxdesign/core/Table';
 import { Heading, Text } from '@astryxdesign/core/Text';
 import { VStack } from '@astryxdesign/core/VStack';
@@ -22,6 +19,7 @@ import {
 import {
   createRowExpansionInteractionPlugin,
   expandableRowStyles,
+  UnderlinedMetadataListItem as MetadataListItem,
 } from '@/shared/components/expandable-row-styles.jsx';
 
 import { useCustomersQuery } from '../hooks/use-customers-query.js';

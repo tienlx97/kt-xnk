@@ -8,11 +8,12 @@ import { IconButton } from '@astryxdesign/core/IconButton';
 import { List, ListItem } from '@astryxdesign/core/List';
 import {
   MetadataList,
-  MetadataListItem,
+  MetadataListItem as RawMetadataListItem,
 } from '@astryxdesign/core/MetadataList';
 import {
   pixel,
   proportional,
+  Table,
   useTableRowExpansion,
 } from '@astryxdesign/core/Table';
 import { Tab, TabList } from '@astryxdesign/core/TabList';
@@ -20,7 +21,7 @@ import { Heading, Text } from '@astryxdesign/core/Text';
 import { Token } from '@astryxdesign/core/Token';
 import { VStack } from '@astryxdesign/core/VStack';
 import * as stylex from '@stylexjs/stylex';
-import { FileText, Pencil, Plus, Printer, Trash2 } from 'lucide-react';
+import { FileText, Maximize2, Minimize2, Pencil, Plus, Printer, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import {
@@ -30,13 +31,17 @@ import {
 import {
   createRowExpansionInteractionPlugin,
   expandableRowStyles,
+  UnderlinedMetadataListItem as MetadataListItem,
 } from '@/shared/components/expandable-row-styles.jsx';
+import { useFullscreenToggle } from '@/shared/components/fullscreen-panel.jsx';
 
 import { labelForContractAnnexType } from '../config/contract-annex-types.js';
 import { currencyOptions, formatMoney } from '../config/currencies.js';
 import { incotermOptions } from '../config/incoterms.js';
 import { labelForPaymentType } from '../config/payment-schedule-types.js';
 import { labelForServiceAgreementAnnexType } from '../config/service-agreement-annex-types.js';
+import { labelForShipmentQuantityUnit } from '../config/shipment-quantity-units.js';
+import { labelForShipmentType } from '../config/shipment-types.js';
 import { useContractAnnexesQuery } from '../hooks/use-contract-annexes-query.js';
 import { useContractBanksQuery } from '../hooks/use-contract-banks-query.js';
 import { useContractsQuery } from '../hooks/use-contracts-query.js';
@@ -45,11 +50,15 @@ import { useCustomersQuery } from '../hooks/use-customers-query.js';
 import { usePaymentSchedulesQuery } from '../hooks/use-payment-schedules-query.js';
 import { useServiceAgreementAnnexesQuery } from '../hooks/use-service-agreement-annexes-query.js';
 import { useServiceAgreementQuery } from '../hooks/use-service-agreement-query.js';
+import { useShipmentsQuery } from '../hooks/use-shipments-query.js';
 import { ContractAnnexFormDialog } from './contract-annex-form-dialog.jsx';
 import { ContractFormDialog } from './contract-form-dialog.jsx';
 import { PaymentScheduleFormDialog } from './payment-schedule-form-dialog.jsx';
 import { ServiceAgreementAnnexFormDialog } from './service-agreement-annex-form-dialog.jsx';
 import { ServiceAgreementFormDialog } from './service-agreement-form-dialog.jsx';
+import { ShipmentExpandedDetails } from './shipment-expanded-details.jsx';
+import { ShipmentFormDialog } from './shipment-form-dialog.jsx';
+import { ShipmentVgmFormDialog } from './shipment-vgm-form-dialog.jsx';
 
 /** @satisfies {ReadonlyArray<import('@astryxdesign/core/PowerSearch').FieldDefinition>} */
 const SEARCH_FIELD_DEFS = [
@@ -166,14 +175,16 @@ function formatPaymentTerms(terms) {
  * row's 4 columns are the same width and line up with each other — while
  * still visually grouping fields onto their own row even when a row has
  * fewer than 4 fields (see `service-agreements-list.jsx`'s identical
- * technique).
+ * technique). Uses the raw (unwrapped) `MetadataListItem` so the spacer
+ * doesn't pick up the field underline every real item gets — an empty
+ * underlined box would read as a broken field, not blank padding.
  * @param {string} key
  */
 function metadataSpacer(key) {
   return (
-    <MetadataListItem key={key} label="">
+    <RawMetadataListItem key={key} label="">
       {''}
-    </MetadataListItem>
+    </RawMetadataListItem>
   );
 }
 
@@ -257,15 +268,35 @@ const skeletonRows = Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => ({
   buyerSigned: false,
 }));
 
-/** @typedef {'info' | 'seller' | 'customer' | 'paymentSchedule' | 'serviceAgreement'} ExpandedTab */
+/** @typedef {'info' | 'seller' | 'customer' | 'paymentSchedule' | 'shipment' | 'serviceAgreement'} ExpandedTab */
 
 /**
+ * All dialogs opened from within this component's own tabs (Shipment,
+ * Payment Schedule, Annex, Service Agreement, VGM) are deliberately owned
+ * and rendered by `ContractsList`, not here — see the "Selector popover
+ * stacking" note above `ContractsList` for why. This component only
+ * forwards trigger callbacks (`onAddShipment`, `onEditShipment`, ...) up to
+ * whichever entity the click was about; it never opens a `*FormDialog`
+ * itself.
  * @param {object} props
  * @param {import('../types/index.js').Contract} props.contract
  * @param {(contract: import('../types/index.js').Contract) => void} props.onEdit
  * @param {Map<string, import('../types/index.js').ContractBank>} props.banksById
  * @param {Map<string, import('../types/index.js').Country>} props.countriesById
  * @param {Map<string, import('../types/index.js').Customer>} props.customersById
+ * @param {ExpandedTab} props.activeTab
+ * @param {(tab: ExpandedTab) => void} props.onActiveTabChange
+ * @param {() => void} props.onAddAnnex
+ * @param {(annex: import('../types/index.js').ContractAnnex) => void} props.onEditAnnex
+ * @param {() => void} props.onAddPaymentSchedule
+ * @param {(schedule: import('../types/index.js').PaymentSchedule) => void} props.onEditPaymentSchedule
+ * @param {() => void} props.onAddShipment
+ * @param {(shipment: import('../types/index.js').Shipment) => void} props.onEditShipment
+ * @param {(payload: { contractId: string, shipmentId: string }) => void} props.onAddVgm
+ * @param {(payload: { contractId: string, shipmentId: string, vgm: import('../types/index.js').ShipmentVgm }) => void} props.onEditVgm
+ * @param {(payload: { contractId: string, currency: string, serviceAgreement: import('../types/index.js').ServiceAgreement | null }) => void} props.onOpenServiceAgreement
+ * @param {() => void} props.onAddServiceAgreementAnnex
+ * @param {(annex: import('../types/index.js').ServiceAgreementAnnex) => void} props.onEditServiceAgreementAnnex
  */
 function ContractExpandedDetails({
   contract,
@@ -273,29 +304,23 @@ function ContractExpandedDetails({
   banksById,
   countriesById,
   customersById,
+  activeTab,
+  onActiveTabChange,
+  onAddAnnex,
+  onEditAnnex,
+  onAddPaymentSchedule,
+  onEditPaymentSchedule,
+  onAddShipment,
+  onEditShipment,
+  onAddVgm,
+  onEditVgm,
+  onOpenServiceAgreement,
+  onAddServiceAgreementAnnex,
+  onEditServiceAgreementAnnex,
 }) {
-  const [activeTab, setActiveTab] = useState(
-    /** @type {ExpandedTab} */ ('info'),
+  const [expandedShipmentId, setExpandedShipmentId] = useState(
+    /** @type {string | null} */ (null),
   );
-  const [isAnnexDialogOpen, setIsAnnexDialogOpen] = useState(false);
-  const [editingAnnex, setEditingAnnex] = useState(
-    /** @type {import('../types/index.js').ContractAnnex | null} */ (null),
-  );
-  const [isPaymentScheduleDialogOpen, setIsPaymentScheduleDialogOpen] =
-    useState(false);
-  const [editingPaymentSchedule, setEditingPaymentSchedule] = useState(
-    /** @type {import('../types/index.js').PaymentSchedule | null} */ (null),
-  );
-  const [isServiceAgreementDialogOpen, setIsServiceAgreementDialogOpen] =
-    useState(false);
-  const [isServiceAgreementAnnexDialogOpen, setIsServiceAgreementAnnexDialogOpen] =
-    useState(false);
-  const [editingServiceAgreementAnnex, setEditingServiceAgreementAnnex] =
-    useState(
-      /** @type {import('../types/index.js').ServiceAgreementAnnex | null} */ (
-        null
-      ),
-    );
 
   const annexesQuery = useContractAnnexesQuery(contract.id);
   const annexes = annexesQuery.data?.success ? annexesQuery.data.annexes : [];
@@ -315,6 +340,124 @@ function ContractExpandedDetails({
   const paymentSchedules = paymentSchedulesQuery.data?.success
     ? paymentSchedulesQuery.data.schedules
     : [];
+
+  const shipmentsQuery = useShipmentsQuery(contract.id);
+  const shipments = shipmentsQuery.data?.success
+    ? shipmentsQuery.data.shipments
+    : [];
+
+  /** @type {import('@astryxdesign/core/Table').TableColumn<import('../types/index.js').Shipment & Record<string, unknown>>[]} */
+  const shipmentColumns = [
+    {
+      key: 'shipmentCode',
+      header: 'Mã',
+      width: pixel(120),
+      renderCell: (shipment) => shipment.shipmentCode,
+    },
+    {
+      key: 'name',
+      header: 'Tên lô hàng',
+      width: proportional(1.2),
+      renderCell: (shipment) => shipment.name,
+    },
+    {
+      key: 'type',
+      header: 'Loại hình',
+      width: pixel(90),
+      renderCell: (shipment) => labelForShipmentType(shipment.type),
+    },
+    {
+      key: 'quantity',
+      header: 'Số lượng',
+      width: pixel(110),
+      renderCell: (shipment) =>
+        `${shipment.quantityAmount} ${labelForShipmentQuantityUnit(shipment.quantityUnit)}`,
+    },
+    {
+      key: 'bookingNumber',
+      header: 'Booking',
+      width: pixel(140),
+      renderCell: (shipment) => shipment.bookingNumber,
+    },
+    {
+      key: 'supplier',
+      header: 'Forwarder',
+      width: proportional(1.2),
+      renderCell: (shipment) =>
+        orDash(customersById.get(shipment.supplierCustomerId)?.companyName),
+    },
+    {
+      key: 'invoiceValue',
+      header: 'Giá trị invoice',
+      width: pixel(140),
+      align: 'end',
+      renderCell: (shipment) =>
+        formatMoney(shipment.invoiceValue, shipment.invoiceCurrency),
+    },
+    {
+      key: 'actions',
+      header: '',
+      width: pixel(60),
+      renderCell: (shipment) => (
+        <IconButton
+          label={`Sửa ${shipment.shipmentCode}`}
+          tooltip="Sửa Shipment"
+          icon={<Icon icon={Pencil} size="sm" />}
+          variant="ghost"
+          size="sm"
+          onClick={(event) => {
+            event.stopPropagation();
+            onEditShipment(shipment);
+          }}
+        />
+      ),
+    },
+  ];
+
+  const shipmentExpandedKeys = useMemo(
+    () => new Set(expandedShipmentId ? [expandedShipmentId] : []),
+    [expandedShipmentId],
+  );
+  const shipmentExpansionPlugin =
+    /** @type {import('@astryxdesign/core/Table').TablePlugin<import('../types/index.js').Shipment & Record<string, unknown>>} */ (
+      useTableRowExpansion({
+        expandedKeys: shipmentExpandedKeys,
+        onToggle: (shipmentId) =>
+          setExpandedShipmentId((current) =>
+            current === shipmentId ? null : shipmentId,
+          ),
+        getRowKey: (shipment) => shipment.id,
+        renderExpanded: (shipment) => (
+          <ShipmentExpandedDetails
+            contractId={contract.id}
+            shipment={shipment}
+            supplierName={
+              customersById.get(shipment.supplierCustomerId)?.companyName ??
+              ''
+            }
+            customersById={customersById}
+            onAddVgm={() =>
+              onAddVgm({ contractId: contract.id, shipmentId: shipment.id })
+            }
+            onEditVgm={(vgm) =>
+              onEditVgm({ contractId: contract.id, shipmentId: shipment.id, vgm })
+            }
+          />
+        ),
+      })
+    );
+  const shipmentRowInteractionPlugin = useMemo(
+    /** @returns {import('@astryxdesign/core/Table').TablePlugin<import('../types/index.js').Shipment & Record<string, unknown>>} */
+    () =>
+      createRowExpansionInteractionPlugin({
+        expandedId: expandedShipmentId,
+        onToggle: (shipmentId) =>
+          setExpandedShipmentId((current) =>
+            current === shipmentId ? null : shipmentId,
+          ),
+      }),
+    [expandedShipmentId],
+  );
 
   const serviceAgreementQuery = useServiceAgreementQuery(contract.id);
   const serviceAgreementResult = serviceAgreementQuery.data;
@@ -380,7 +523,9 @@ function ContractExpandedDetails({
 
       <TabList
         value={activeTab}
-        onChange={(value) => setActiveTab(/** @type {ExpandedTab} */ (value))}
+        onChange={(value) =>
+          onActiveTabChange(/** @type {ExpandedTab} */ (value))
+        }
         hasDivider
         size="sm"
       >
@@ -388,6 +533,7 @@ function ContractExpandedDetails({
         <Tab value="seller" label="Bên bán" />
         <Tab value="customer" label="Khách hàng" />
         <Tab value="paymentSchedule" label="Đợt thanh toán khách" />
+        <Tab value="shipment" label="Shipment" />
         {hasServiceAgreement ? (
           <Tab value="serviceAgreement" label="Service Agreement" />
         ) : null}
@@ -523,7 +669,7 @@ function ContractExpandedDetails({
               variant="secondary"
               size="sm"
               icon={<Icon icon={Plus} />}
-              onClick={() => setIsAnnexDialogOpen(true)}
+              onClick={onAddAnnex}
             />
           </HStack>
 
@@ -551,7 +697,7 @@ function ContractExpandedDetails({
                         icon={<Icon icon={Pencil} size="sm" />}
                         variant="ghost"
                         size="sm"
-                        onClick={() => setEditingAnnex(annex)}
+                        onClick={() => onEditAnnex(annex)}
                       />
                     </HStack>
                   }
@@ -632,7 +778,7 @@ function ContractExpandedDetails({
                   ? undefined
                   : 'Hợp đồng phải được cả 2 bên ký trước khi thêm đợt thanh toán'
               }
-              onClick={() => setIsPaymentScheduleDialogOpen(true)}
+              onClick={onAddPaymentSchedule}
             />
           </HStack>
 
@@ -661,13 +807,44 @@ function ContractExpandedDetails({
                         icon={<Icon icon={Pencil} size="sm" />}
                         variant="ghost"
                         size="sm"
-                        onClick={() => setEditingPaymentSchedule(schedule)}
+                        onClick={() => onEditPaymentSchedule(schedule)}
                       />
                     </HStack>
                   }
                 />
               ))}
             </List>
+          )}
+        </VStack>
+      )}
+
+      {activeTab === 'shipment' && (
+        <VStack gap={4} hAlign="stretch">
+          <HStack hAlign="between" vAlign="center">
+            <Text weight="semibold">Shipment</Text>
+            <Button
+              label="Thêm Shipment"
+              variant="secondary"
+              size="sm"
+              icon={<Icon icon={Plus} />}
+              onClick={onAddShipment}
+            />
+          </HStack>
+
+          {shipments.length === 0 ? (
+            <Text color="secondary">Chưa có Shipment nào</Text>
+          ) : (
+            <Table
+              columns={shipmentColumns}
+              data={shipments}
+              idKey="id"
+              dividers="rows"
+              density="compact"
+              plugins={{
+                expansion: shipmentExpansionPlugin,
+                rowInteraction: shipmentRowInteractionPlugin,
+              }}
+            />
           )}
         </VStack>
       )}
@@ -729,7 +906,7 @@ function ContractExpandedDetails({
               variant="secondary"
               size="sm"
               icon={<Icon icon={Plus} />}
-              onClick={() => setIsServiceAgreementAnnexDialogOpen(true)}
+              onClick={onAddServiceAgreementAnnex}
             />
           </HStack>
 
@@ -760,7 +937,7 @@ function ContractExpandedDetails({
                         icon={<Icon icon={Pencil} size="sm" />}
                         variant="ghost"
                         size="sm"
-                        onClick={() => setEditingServiceAgreementAnnex(annex)}
+                        onClick={() => onEditServiceAgreementAnnex(annex)}
                       />
                     </HStack>
                   }
@@ -791,15 +968,17 @@ function ContractExpandedDetails({
         />
         <HStack gap={2}>
           <Button
-            label={
-              hasServiceAgreement
-                ? 'Sửa Service Agreement'
-                : 'Tạo Service Agreement'
-            }
+            label={hasServiceAgreement ? 'Sửa Commission' : 'Tạo Commission'}
             variant="secondary"
             size="sm"
             icon={<Icon icon={hasServiceAgreement ? Pencil : Plus} />}
-            onClick={() => setIsServiceAgreementDialogOpen(true)}
+            onClick={() =>
+              onOpenServiceAgreement({
+                contractId: contract.id,
+                currency: contract.currency,
+                serviceAgreement,
+              })
+            }
           />
           <Button
             label="In"
@@ -819,84 +998,31 @@ function ContractExpandedDetails({
         </HStack>
       </HStack>
 
-      {isAnnexDialogOpen ? (
-        <ContractAnnexFormDialog
-          isOpen={isAnnexDialogOpen}
-          onOpenChange={setIsAnnexDialogOpen}
-          contractId={contract.id}
-        />
-      ) : null}
-
-      {editingAnnex ? (
-        <ContractAnnexFormDialog
-          key={editingAnnex.id}
-          isOpen={editingAnnex !== null}
-          onOpenChange={(isOpen) => {
-            if (!isOpen) setEditingAnnex(null);
-          }}
-          contractId={contract.id}
-          annex={editingAnnex}
-          onSuccess={() => setEditingAnnex(null)}
-        />
-      ) : null}
-
-      {isPaymentScheduleDialogOpen ? (
-        <PaymentScheduleFormDialog
-          isOpen={isPaymentScheduleDialogOpen}
-          onOpenChange={setIsPaymentScheduleDialogOpen}
-          contractId={contract.id}
-        />
-      ) : null}
-
-      {editingPaymentSchedule ? (
-        <PaymentScheduleFormDialog
-          key={editingPaymentSchedule.id}
-          isOpen={editingPaymentSchedule !== null}
-          onOpenChange={(isOpen) => {
-            if (!isOpen) setEditingPaymentSchedule(null);
-          }}
-          contractId={contract.id}
-          schedule={editingPaymentSchedule}
-          onSuccess={() => setEditingPaymentSchedule(null)}
-        />
-      ) : null}
-
-      {isServiceAgreementDialogOpen ? (
-        <ServiceAgreementFormDialog
-          isOpen={isServiceAgreementDialogOpen}
-          onOpenChange={setIsServiceAgreementDialogOpen}
-          contractId={contract.id}
-          currency={contract.currency}
-          serviceAgreement={serviceAgreement}
-          onSuccess={() => setActiveTab('serviceAgreement')}
-        />
-      ) : null}
-
-      {isServiceAgreementAnnexDialogOpen ? (
-        <ServiceAgreementAnnexFormDialog
-          isOpen={isServiceAgreementAnnexDialogOpen}
-          onOpenChange={setIsServiceAgreementAnnexDialogOpen}
-          contractId={contract.id}
-        />
-      ) : null}
-
-      {editingServiceAgreementAnnex ? (
-        <ServiceAgreementAnnexFormDialog
-          key={editingServiceAgreementAnnex.id}
-          isOpen={editingServiceAgreementAnnex !== null}
-          onOpenChange={(isOpen) => {
-            if (!isOpen) setEditingServiceAgreementAnnex(null);
-          }}
-          contractId={contract.id}
-          annex={editingServiceAgreementAnnex}
-          onSuccess={() => setEditingServiceAgreementAnnex(null)}
-        />
-      ) : null}
     </VStack>
   );
 }
 
+/**
+ * Selector popover stacking: Astryx's `Selector` positions its dropdown by
+ * walking up from its own DOM position and portaling out to the nearest
+ * ancestor outside any "unsafe host" (`<table>`, `<tr>`, ... — see
+ * `resolveLayerPortalTarget` in `@astryxdesign/core`'s `Layer/layerHost.ts`).
+ * A `*FormDialog` declared inside this table's own `renderExpanded` callback
+ * is, in the React/DOM tree, still a descendant of this `<table>` even
+ * though the Dialog itself floats visually above the page — so any
+ * `Selector` inside it gets portaled to the *table's* scroll wrapper instead
+ * of the dialog's own layer, and ends up stacked underneath the dialog:
+ * visually it looks fine, but a mouse click on an option lands on the
+ * dialog's trigger button underneath instead of the option (only keyboard
+ * selection worked). Every dialog that has a `Selector` field and is opened
+ * from inside a row's expanded content (Shipment, Payment Schedule, Annex,
+ * Service Agreement, VGM) is therefore rendered HERE — a sibling of
+ * `AdvanceTable`, not a descendant of it — with only trigger callbacks
+ * passed down to `ContractExpandedDetails`/`ShipmentExpandedDetails`. Do not
+ * move a `*FormDialog` back inside `renderExpanded`.
+ */
 export function ContractsList() {
+  const { isFullscreen, toggle: toggleFullscreen } = useFullscreenToggle();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [hasOpenedCreate, setHasOpenedCreate] = useState(false);
   const [editingContract, setEditingContract] = useState(
@@ -907,6 +1033,49 @@ export function ContractsList() {
   const [expandedContractId, setExpandedContractId] = useState(
     /** @type {string | null} */ (null),
   );
+  const [expandedTab, setExpandedTab] = useState(
+    /** @type {ExpandedTab} */ ('info'),
+  );
+  const [shipmentDialog, setShipmentDialog] = useState(
+    /** @type {{ contractId: string, shipment?: import('../types/index.js').Shipment } | null} */ (
+      null
+    ),
+  );
+  const [annexDialog, setAnnexDialog] = useState(
+    /** @type {{ contractId: string, annex?: import('../types/index.js').ContractAnnex } | null} */ (
+      null
+    ),
+  );
+  const [paymentScheduleDialog, setPaymentScheduleDialog] = useState(
+    /** @type {{ contractId: string, schedule?: import('../types/index.js').PaymentSchedule } | null} */ (
+      null
+    ),
+  );
+  const [serviceAgreementDialog, setServiceAgreementDialog] = useState(
+    /** @type {{ contractId: string, currency: string, serviceAgreement: import('../types/index.js').ServiceAgreement | null } | null} */ (
+      null
+    ),
+  );
+  const [serviceAgreementAnnexDialog, setServiceAgreementAnnexDialog] =
+    useState(
+      /** @type {{ contractId: string, annex?: import('../types/index.js').ServiceAgreementAnnex } | null} */ (
+        null
+      ),
+    );
+  const [vgmDialog, setVgmDialog] = useState(
+    /** @type {{ contractId: string, shipmentId: string, vgm?: import('../types/index.js').ShipmentVgm } | null} */ (
+      null
+    ),
+  );
+
+  /** @param {string} contractId */
+  function toggleExpandedContract(contractId) {
+    setExpandedContractId((current) => {
+      const next = current === contractId ? null : contractId;
+      if (next !== current) setExpandedTab('info');
+      return next;
+    });
+  }
 
   const contractsQuery = useContractsQuery({ page: pageIndex, pageSize });
   const listResult = contractsQuery.data;
@@ -1078,10 +1247,7 @@ export function ContractsList() {
     /** @type {import('@astryxdesign/core/Table').TablePlugin<import('../types/index.js').Contract & Record<string, unknown>>} */ (
       useTableRowExpansion({
         expandedKeys,
-        onToggle: (contractId) =>
-          setExpandedContractId((current) =>
-            current === contractId ? null : contractId,
-          ),
+        onToggle: toggleExpandedContract,
         getRowKey: (contract) => contract.id,
         getIsItemExpandable: (contract) => !contract.id.startsWith('skeleton-'),
         renderExpanded: (contract) => (
@@ -1091,6 +1257,33 @@ export function ContractsList() {
             banksById={banksById}
             countriesById={countriesById}
             customersById={customersById}
+            activeTab={expandedTab}
+            onActiveTabChange={setExpandedTab}
+            onAddAnnex={() => setAnnexDialog({ contractId: contract.id })}
+            onEditAnnex={(annex) =>
+              setAnnexDialog({ contractId: contract.id, annex })
+            }
+            onAddPaymentSchedule={() =>
+              setPaymentScheduleDialog({ contractId: contract.id })
+            }
+            onEditPaymentSchedule={(schedule) =>
+              setPaymentScheduleDialog({ contractId: contract.id, schedule })
+            }
+            onAddShipment={() => setShipmentDialog({ contractId: contract.id })}
+            onEditShipment={(shipment) =>
+              setShipmentDialog({ contractId: contract.id, shipment })
+            }
+            onAddVgm={(payload) => setVgmDialog(payload)}
+            onEditVgm={(payload) => setVgmDialog(payload)}
+            onOpenServiceAgreement={(payload) =>
+              setServiceAgreementDialog(payload)
+            }
+            onAddServiceAgreementAnnex={() =>
+              setServiceAgreementAnnexDialog({ contractId: contract.id })
+            }
+            onEditServiceAgreementAnnex={(annex) =>
+              setServiceAgreementAnnexDialog({ contractId: contract.id, annex })
+            }
           />
         ),
       })
@@ -1100,10 +1293,7 @@ export function ContractsList() {
     () =>
       createRowExpansionInteractionPlugin({
         expandedId: expandedContractId,
-        onToggle: (contractId) =>
-          setExpandedContractId((current) =>
-            current === contractId ? null : contractId,
-          ),
+        onToggle: toggleExpandedContract,
         isExpandable: (contract) => !contract.id.startsWith('skeleton-'),
       }),
     [expandedContractId],
@@ -1123,14 +1313,23 @@ export function ContractsList() {
         <VStack gap={1}>
           <Heading level={1}>Hợp đồng</Heading>
         </VStack>
-        <Button
-          label="Tạo hợp đồng"
-          variant="primary"
-          onClick={() => {
-            setHasOpenedCreate(true);
-            setIsCreateOpen(true);
-          }}
-        />
+        <HStack gap={2}>
+          <IconButton
+            label={isFullscreen ? 'Thu nhỏ danh sách hợp đồng' : 'Phóng to danh sách hợp đồng'}
+            tooltip={isFullscreen ? 'Thu nhỏ' : 'Phóng to'}
+            icon={<Icon icon={isFullscreen ? Minimize2 : Maximize2} size="sm" />}
+            variant="secondary"
+            onClick={toggleFullscreen}
+          />
+          <Button
+            label="Tạo hợp đồng"
+            variant="primary"
+            onClick={() => {
+              setHasOpenedCreate(true);
+              setIsCreateOpen(true);
+            }}
+          />
+        </HStack>
       </HStack>
 
       {listResult && !listResult.success ? (
@@ -1186,6 +1385,92 @@ export function ContractsList() {
           }}
           contract={editingContract}
           onSuccess={() => setEditingContract(null)}
+        />
+      ) : null}
+
+      {/* Every dialog below is opened from inside a Contracts-row's expanded
+          content but rendered here, a sibling of `AdvanceTable` rather than
+          a descendant of it — see the note above this component for why. */}
+
+      {shipmentDialog ? (
+        <ShipmentFormDialog
+          key={shipmentDialog.shipment?.id ?? 'create'}
+          isOpen
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setShipmentDialog(null);
+          }}
+          contractId={shipmentDialog.contractId}
+          shipment={shipmentDialog.shipment}
+          onSuccess={() => setShipmentDialog(null)}
+        />
+      ) : null}
+
+      {annexDialog ? (
+        <ContractAnnexFormDialog
+          key={annexDialog.annex?.id ?? 'create'}
+          isOpen
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setAnnexDialog(null);
+          }}
+          contractId={annexDialog.contractId}
+          annex={annexDialog.annex}
+          onSuccess={() => setAnnexDialog(null)}
+        />
+      ) : null}
+
+      {paymentScheduleDialog ? (
+        <PaymentScheduleFormDialog
+          key={paymentScheduleDialog.schedule?.id ?? 'create'}
+          isOpen
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setPaymentScheduleDialog(null);
+          }}
+          contractId={paymentScheduleDialog.contractId}
+          schedule={paymentScheduleDialog.schedule}
+          onSuccess={() => setPaymentScheduleDialog(null)}
+        />
+      ) : null}
+
+      {serviceAgreementDialog ? (
+        <ServiceAgreementFormDialog
+          isOpen
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setServiceAgreementDialog(null);
+          }}
+          contractId={serviceAgreementDialog.contractId}
+          currency={serviceAgreementDialog.currency}
+          serviceAgreement={serviceAgreementDialog.serviceAgreement}
+          onSuccess={() => {
+            setExpandedTab('serviceAgreement');
+            setServiceAgreementDialog(null);
+          }}
+        />
+      ) : null}
+
+      {serviceAgreementAnnexDialog ? (
+        <ServiceAgreementAnnexFormDialog
+          key={serviceAgreementAnnexDialog.annex?.id ?? 'create'}
+          isOpen
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setServiceAgreementAnnexDialog(null);
+          }}
+          contractId={serviceAgreementAnnexDialog.contractId}
+          annex={serviceAgreementAnnexDialog.annex}
+          onSuccess={() => setServiceAgreementAnnexDialog(null)}
+        />
+      ) : null}
+
+      {vgmDialog ? (
+        <ShipmentVgmFormDialog
+          key={vgmDialog.vgm?.id ?? 'create'}
+          isOpen
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setVgmDialog(null);
+          }}
+          contractId={vgmDialog.contractId}
+          shipmentId={vgmDialog.shipmentId}
+          vgm={vgmDialog.vgm}
+          onSuccess={() => setVgmDialog(null)}
         />
       ) : null}
     </VStack>

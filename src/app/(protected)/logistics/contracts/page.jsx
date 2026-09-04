@@ -2,6 +2,7 @@ import { BreadcrumbItem, Breadcrumbs } from '@astryxdesign/core/Breadcrumbs';
 import { VStack } from '@astryxdesign/core/VStack';
 
 import { ContractsList } from '@/features/logistics-contracts/index.js';
+import { FullscreenPanel } from '@/shared/components/fullscreen-panel.jsx';
 import { PageContentShell } from '@/shared/components/page-content-shell.jsx';
 
 export const metadata = {
@@ -15,15 +16,17 @@ export const metadata = {
  */
 export default function LogisticsContractsPage() {
   return (
-    <PageContentShell>
-      <VStack gap={4} hAlign="stretch">
-        <Breadcrumbs>
-          <BreadcrumbItem href="/logistics">Logistics</BreadcrumbItem>
-          <BreadcrumbItem isCurrent>Hợp đồng</BreadcrumbItem>
-        </Breadcrumbs>
+    <FullscreenPanel>
+      <PageContentShell>
+        <VStack gap={4} hAlign="stretch">
+          <Breadcrumbs>
+            <BreadcrumbItem href="/logistics">Logistics</BreadcrumbItem>
+            <BreadcrumbItem isCurrent>Hợp đồng</BreadcrumbItem>
+          </Breadcrumbs>
 
-        <ContractsList />
-      </VStack>
-    </PageContentShell>
+          <ContractsList />
+        </VStack>
+      </PageContentShell>
+    </FullscreenPanel>
   );
 }

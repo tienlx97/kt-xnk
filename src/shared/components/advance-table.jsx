@@ -2,11 +2,12 @@
 
 import { Banner } from '@astryxdesign/core/Banner';
 import { Button } from '@astryxdesign/core/Button';
+import { Dialog, DialogHeader } from '@astryxdesign/core/Dialog';
 import { HStack } from '@astryxdesign/core/HStack';
 import { Icon } from '@astryxdesign/core/Icon';
 import { IconButton } from '@astryxdesign/core/IconButton';
 import { InputGroup } from '@astryxdesign/core/InputGroup';
-import { Popover } from '@astryxdesign/core/Popover';
+import { Layout, LayoutContent, LayoutFooter } from '@astryxdesign/core/Layout';
 import { usePowerSearchConfig } from '@astryxdesign/core/PowerSearch';
 import { Selector } from '@astryxdesign/core/Selector';
 import { Skeleton } from '@astryxdesign/core/Skeleton';
@@ -29,7 +30,7 @@ import {
 import { Toolbar } from '@astryxdesign/core/Toolbar';
 import { VStack } from '@astryxdesign/core/VStack';
 import * as stylex from '@stylexjs/stylex';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { IconRefresh } from '@/shared/components/icon/icon-refresh.jsx';
 import {
@@ -285,40 +286,14 @@ export function AdvanceTable({
     resetPageIndex();
   }
 
-  const advancedSearchTriggerRef = useRef(
-    /** @type {HTMLButtonElement | null} */ (null),
-  );
-  const searchBarRef = useRef(/** @type {HTMLDivElement | null} */ (null));
-  const [searchBarWidth, setSearchBarWidth] = useState(
-    /** @type {number | undefined} */ (undefined),
-  );
   const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
   const [advancedSearchDraft, setAdvancedSearchDraft] = useState(
     /** @type {Record<string, string>} */ ({}),
   );
 
-  // Popover anchors to the funnel button (so its click-attach logic finds
-  // exactly one unambiguous button), but its width/placement should match
-  // the whole search bar, not just that button — track the bar's width
-  // here and align the popover's end edge to the button's end edge
-  // (`alignment="end"` below), so a wider popover grows leftward to cover
-  // the same footprint as the bar.
-  useEffect(() => {
-    const element = searchBarRef.current;
-    if (!element) return;
-    const observer = new ResizeObserver((entries) => {
-      const width = entries[0]?.contentRect.width;
-      if (width != null) setSearchBarWidth(width);
-    });
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
-
-  // The Popover (in anchorRef "sibling" mode) already wires its own click
-  // listener onto the trigger button to toggle `isOpen` — adding a second
-  // onClick on the IconButton double-toggles and cancels itself out. Drive
-  // everything through `onOpenChange` instead, syncing the draft only on
-  // the open transition.
+  // The funnel button opens a `Dialog`. Unlike the popover this replaced,
+  // it's a plain controlled overlay: no anchor-click wiring to fight with,
+  // so the trigger's own `onClick` drives it directly.
   /** @param {boolean} isOpen */
   function handleAdvancedSearchOpenChange(isOpen) {
     if (isOpen) {
@@ -458,7 +433,6 @@ export function AdvanceTable({
           >
             <StackItem size="fill">
               <InputGroup
-                ref={searchBarRef}
                 label={searchPlaceholder}
                 isLabelHidden
                 size="sm"
@@ -476,78 +450,86 @@ export function AdvanceTable({
                 />
                 {advancedSearchFieldsResolved.length > 0 ? (
                   <IconButton
-                    ref={advancedSearchTriggerRef}
                     label="Bộ lọc nâng cao"
                     tooltip="Bộ lọc nâng cao"
                     icon={<Icon icon="funnel" size="sm" />}
                     variant="ghost"
+                    onClick={() => handleAdvancedSearchOpenChange(true)}
                   />
                 ) : null}
               </InputGroup>
               {advancedSearchFieldsResolved.length > 0 ? (
-                <Popover
-                  anchorRef={
-                    /** @type {import('react').RefObject<HTMLElement>} */ (
-                      advancedSearchTriggerRef
-                    )
-                  }
+                <Dialog
                   isOpen={isAdvancedSearchOpen}
                   onOpenChange={handleAdvancedSearchOpenChange}
-                  placement="below"
-                  alignment="end"
-                  width={searchBarWidth}
-                  label="Tìm kiếm nâng cao"
-                  content={
-                    <VStack
-                      gap={3}
-                      hAlign="stretch"
-                      xstyle={styles.advancedSearchPanel}
-                    >
-                      {advancedSearchFieldsResolved.map((field) =>
-                        field.type === 'enum' ? (
-                          <Selector
-                            key={field.field}
-                            label={field.label}
-                            isLabelHidden
-                            placeholder={field.placeholder ?? field.label}
-                            hasClear
-                            options={[...(field.options ?? [])]}
-                            value={advancedSearchDraft[field.field] ?? null}
-                            onChange={(next) =>
-                              setAdvancedSearchDraft((current) => ({
-                                ...current,
-                                [field.field]: next ?? '',
-                              }))
-                            }
+                  purpose="form"
+                  width={400}
+                >
+                  <Layout
+                    header={
+                      <DialogHeader
+                        title="Tìm kiếm nâng cao"
+                        onOpenChange={handleAdvancedSearchOpenChange}
+                      />
+                    }
+                    content={
+                      <LayoutContent>
+                        <VStack
+                          gap={3}
+                          hAlign="stretch"
+                          xstyle={styles.advancedSearchPanel}
+                        >
+                          {advancedSearchFieldsResolved.map((field) =>
+                            field.type === 'enum' ? (
+                              <Selector
+                                key={field.field}
+                                label={field.label}
+                                isLabelHidden
+                                placeholder={field.placeholder ?? field.label}
+                                hasClear
+                                options={[...(field.options ?? [])]}
+                                value={advancedSearchDraft[field.field] ?? null}
+                                onChange={(next) =>
+                                  setAdvancedSearchDraft((current) => ({
+                                    ...current,
+                                    [field.field]: next ?? '',
+                                  }))
+                                }
+                              />
+                            ) : (
+                              <TextInput
+                                key={field.field}
+                                label={field.label}
+                                isLabelHidden
+                                placeholder={field.placeholder ?? field.label}
+                                hasClear
+                                value={advancedSearchDraft[field.field] ?? ''}
+                                onChange={(next) =>
+                                  setAdvancedSearchDraft((current) => ({
+                                    ...current,
+                                    [field.field]: next,
+                                  }))
+                                }
+                                onEnter={handleAdvancedSearchSubmit}
+                              />
+                            ),
+                          )}
+                        </VStack>
+                      </LayoutContent>
+                    }
+                    footer={
+                      <LayoutFooter>
+                        <HStack hAlign="end">
+                          <Button
+                            label="Tìm kiếm"
+                            variant="primary"
+                            onClick={handleAdvancedSearchSubmit}
                           />
-                        ) : (
-                          <TextInput
-                            key={field.field}
-                            label={field.label}
-                            isLabelHidden
-                            placeholder={field.placeholder ?? field.label}
-                            hasClear
-                            value={advancedSearchDraft[field.field] ?? ''}
-                            onChange={(next) =>
-                              setAdvancedSearchDraft((current) => ({
-                                ...current,
-                                [field.field]: next,
-                              }))
-                            }
-                            onEnter={handleAdvancedSearchSubmit}
-                          />
-                        ),
-                      )}
-                      <HStack hAlign="end">
-                        <Button
-                          label="Tìm kiếm"
-                          variant="primary"
-                          onClick={handleAdvancedSearchSubmit}
-                        />
-                      </HStack>
-                    </VStack>
-                  }
-                />
+                        </HStack>
+                      </LayoutFooter>
+                    }
+                  />
+                </Dialog>
               ) : null}
             </StackItem>
             <HStack gap={2} vAlign="center" xstyle={styles.toolbarEnd}>

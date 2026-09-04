@@ -5,6 +5,835 @@ Append-only session log. Newest entry FIRST.
 This file is the handoff between sessions/agents — write for a reader with zero conversation context.
 -->
 
+## 2026-09-04 — Standalone Shipments list page
+
+**Context:** UX review of Contracts/Customers (this session, user asked
+"Đánh giá giao diện... đã thực sự tối ưu trải nghiệm người dùng chưa")
+flagged the contract row's expanded panel as overloaded (6 tabs, nested
+CRUD, an existing Selector-in-dialog portal-stacking workaround). User
+picked "tách tab Shipment thành trang riêng" as the fix, mirroring the
+existing Service Agreement standalone-page precedent. User confirmed
+(against BE docs) that `GET /api/v1/shipments` — system-wide, paginated —
+already exists, so no backend dependency. Tracked as
+`openspec/changes/add-shipments-list-page/` (proposal.md + tasks.md).
+
+**What shipped.** New `listAllShipments`/`useShipmentsListQuery`/
+`ShipmentsList` (`/logistics/shipments`, new sidebar entry + route-access
+rule), built by cloning `service-agreements-list.jsx`'s standalone-list
+pattern: flat paginated table, `contractNumber`/`projectName`/forwarder
+name resolved client-side via `useContractsQuery`/`useCustomersQuery`
+joins. Row expansion reuses `ShipmentExpandedDetails` unchanged except
+one new optional `onEdit` prop (renders a "Sửa Shipment" footer button,
+`contracts-list.jsx` doesn't pass it so nothing changes there). "Thêm
+Shipment" opens a small contract-picker `Selector` dialog first (no
+precedent in this codebase — Service Agreement's standalone page has no
+create button at all), then the existing `ShipmentFormDialog` with the
+picked `contractId`. `ShipmentFormDialog`/`ShipmentVgmFormDialog` render
+as siblings of `AdvanceTable`, never inside `renderExpanded` — following
+`contracts-list.jsx`'s proven-safe fix for the Selector-portal-stacking
+bug, not `service-agreements-list.jsx`'s pattern (which renders its own
+Selector-bearing dialogs inside `renderExpanded` and likely carries the
+same latent bug — noted, not fixed, out of scope).
+
+**Bug found and fixed during live verification:** the original plan had
+a per-row "Sửa" icon column in `tableColumns`, copied from the *contract
+row's* raw (non-`AdvanceTable`) Shipment tab table. On the real page it
+silently never rendered — `AdvanceTable`'s `useTableColumnSettings`
+drops any `tableColumns` key not also declared in `columnOptions`, and
+no other `AdvanceTable`-based list in this app has a persistent action
+column for that reason. Fixed by moving edit into the expanded panel's
+footer instead (see `onEdit` above), matching how every other
+`AdvanceTable` list already handles editing.
+
+**Verification:** `./harness/verify.sh` full pass. Live-verified against
+the local Docker backend, logged in as `DNG26F4A9C2`/`Admin@123456`:
+`/logistics/shipments` loads 4 real shipments with `contractNumber`/
+`shipmentCode` correctly joined (an initial 404 on page load turned out
+to be a stale/kicked session, not a missing endpoint — a page refresh
+after re-login returned 200 with real data); "Thêm Shipment" → contract
+picker → `ShipmentFormDialog` opens with the picked contract; row
+expansion shows metadata + VGM table; "Thêm VGM"'s `Selector` dropdown
+opened correctly on top of its dialog and was mouse-clickable (no
+portal-stacking regression); "Sửa Shipment" footer button opens the edit
+dialog pre-filled with the row's data.
+
+**Next step:** none pending for this change. The two other UX findings
+from the same review (Customers has no "Sửa khách hàng" at all; Hợp
+đồng/Khách hàng "Xoá"/"In" buttons are permanently disabled stubs) are
+still open — the "phase" is the user's items 1/2, not started.
+
+---
+
+## 2026-09-04 — Shipment code by type, forwarder wording (frontend)
+
+**Context:** Same request as the backend `add-shipment-type-scoped-
+numbering` change (`../CLEAN ARCHITECTURE/harness/PROGRESS.md`): LCL
+shipments get `{ContractNumber}/LCL-{n}` codes, FCL get
+`{ContractNumber}/LOT-{n}` (separate 1-based sequence per type); the
+Số lượng unit is now derived from Loại hình (LCL → Kiện, FCL → Cont),
+not a free choice; Booking info's "Nhà cung cấp" reads "Forwarder".
+"Forwarder" wording had already been applied to `shipment-fields.jsx`/
+`shipment-expanded-details.jsx` by the time this session picked up the
+rest — left as-is, just extended the same rename to the one remaining
+spot (`contracts-list.jsx`'s Shipment table column header).
+
+**What shipped.** `shipment-schema.js`/`use-shipment-form.js`/
+`api/shipments.js` drop `quantityUnit` entirely (no longer a form field
+or a request field, create or update). `config/shipment-quantity-
+units.js` gained `quantityUnitForShipmentType(type)` — a small pure
+mirror of the backend's `Shipment.QuantityUnit` computed getter, so the
+form can preview the unit without a round trip. `shipment-fields.jsx`:
+the "Số lượng" field shows the derived unit as its `units` suffix
+instead of a separate Selector (with a hint description before a type
+is chosen); "Loại hình" is `isDisabled` whenever editing an existing
+shipment (`isEditing` prop, threaded from `ShipmentFormDialog`), with
+`disabledMessage="Không thể đổi loại hình sau khi đã tạo"` — matches the
+backend's `Type` now being immutable after creation. `api/shipments.js`
+split into `toCreateRequestBody`/`toUpdateRequestBody` since only create
+sends `Type` any more (update never did have `quantityUnit`, but now
+neither field is in either body, and `Type` is create-only).
+
+**Verification:** `./harness/verify.sh` full pass (lint/typecheck/build/
+quality-thresholds). Live-verified against the local Docker backend on
+`26KCTLIVE01`: creating a new LCL shipment showed the "Kiện" units
+suffix live as soon as "LCL" was picked (before that, the hint text);
+after saving, the row displayed as `26KCTLIVE01/LCL-01` with "10 Kiện",
+while the pre-existing FCL shipment re-rendered as `26KCTLIVE01/LOT-01`
+with "3 Cont" (was `SHP-01` before this backend change) — confirming
+independent per-type numbering end to end, not just in isolation.
+Re-opened the new LCL shipment's edit dialog: "Loại hình" showed
+visibly greyed out/disabled, matching the immutability rule.
+
+**Not done:** the new test shipment (`26KCTLIVE01/LCL-01`) was left in
+place — `Shipment` still has no delete endpoint (unchanged scope from
+every prior shipment-area session).
+
+## 2026-09-03 — Fullscreen toggle: fix state reset on every toggle
+
+**Context:** User bug report (Vietnamese): clicking the maximize button
+resets all state — expanded rows, open tabs, everything. Reproduced live:
+expanded a contract row, switched to its "Shipment" tab, clicked
+maximize — the row collapsed back to nothing.
+
+**Root cause, found through two wrong fixes before the real one — full
+story kept in `fullscreen-panel.jsx`'s doc comment since both false
+starts are exactly the kind of thing a future editor of this file will
+try again:**
+
+1. **First attempt** (this same day, an earlier entry below): swap which
+   *type* of element `FullscreenPanel` returns — `content` directly vs.
+   `createPortal(<div>{content}</div>, target)`. Wrong: that changes what
+   sits in this component's one return slot from React's perspective on
+   every toggle, so React unmounts and remounts the whole subtree —
+   exactly the bug, not yet fixed by that attempt (it was written for the
+   theming bug, not this one, and happened to make this one worse: now
+   every toggle, not just first mount, wiped state).
+2. **Second attempt**: keep one `createPortal(content, container)` call
+   across every render, only ever changing which `container` it targets.
+   This *looked* right — portals are supposed to be DOM-position-
+   independent — but verified live it still remounted `content` on every
+   toggle. React does not guarantee preserving a portal's children when
+   its `container` argument changes between renders.
+3. **The actual fix**: `createPortal` always targets the exact same DOM
+   node — `portalContainer`, created once via `useState`'s lazy
+   initializer, so the `container` argument passed to `createPortal`
+   never changes across any render, ever. Moving that container between
+   the placeholder (`<div ref={placeholderRef} />`, rendered in the
+   page's normal flow) and `#fullscreen-portal-root` is done with plain
+   `container.appendChild(...)` inside a `useLayoutEffect` — imperative
+   DOM manipulation, entirely outside React's reconciliation, so
+   `createPortal` itself never has a reason to remount anything.
+
+**A second bug inside the fix, caught by live-testing rather than
+assumed correct:** the `useLayoutEffect` that moves `portalContainer`
+didn't list `isMounted` in its dependency array. `isFullscreen`/
+`portalContainer` are identical between the "not mounted yet" render
+(which returns `content` directly, no placeholder div) and the very next
+"now mounted" render (which adds the placeholder) — since neither
+tracked dependency actually changed, React skipped re-running the effect
+for that second render. It fired exactly once, too early, found
+`placeholderRef.current` still null, appended nothing, and never got
+another chance — silently orphaning the entire page's content in a
+detached DOM node. Symptom: the whole `/logistics/contracts` page
+rendered blank (nav/sidebar visible, `<main>` empty) — caught by
+checking `document.querySelector('main').outerHTML` directly after the
+"container swap" fix looked correct on paper but wasn't actually
+visible. Added `isMounted` to the effect's dependency list; fixed.
+
+**Verification:** `./harness/verify.sh` full pass. Live-verified the
+actual reported scenario end to end: expanded contract `26KCT01`,
+switched to its "Shipment" tab, typed "markertest" into the search box
+(confirms local component state specifically, not just visible DOM),
+clicked maximize — search text survived; cleared it — the same row was
+still expanded on the same tab, unchanged. Clicked minimize — nav/side
+nav returned, same state still intact. Diagnosed both wrong fixes with
+a temporary `useEffect` mount/unmount console log on `ContractsList`
+(removed once confirmed clean) — recommended technique for verifying a
+"does this actually remount" claim, since it's easy to reason your way
+to a wrong confident answer here (both false starts felt correct until
+tested).
+
+## 2026-09-03 — VGM inline table: pin the edit/delete actions column
+
+**Context:** Same-day follow-up to the header-truncation fix directly
+below, which is what made this table scroll horizontally at narrow
+widths in the first place. User asked to pin ("pin nó") the action
+buttons (Sửa/Xoá) so they don't scroll out of view with the rest of the
+table.
+
+**What shipped.** `shipment-expanded-details.jsx`: `useTableStickyColumns
+({ endKeys: ['actions'] })` from `@astryxdesign/core/Table`
+(`astryx template StickyColumnsHookUsage` — found via `astryx component
+Table`'s related-templates list), passed to the `Table` as
+`plugins={{ stickyColumns }}`. Needed one explicit JSDoc cast
+(`/** @type {TablePlugin<ShipmentVgm & Record<string, unknown>>} */`) on
+the hook's return value — `tsc` couldn't otherwise unify the hook's
+generic `TablePlugin<Record<string, unknown>>` inference with the
+already-typed `vgmColumns`, same shape of cast `contracts-list.jsx`
+already uses for `useTableRowExpansion`.
+
+**Verification:** `./harness/verify.sh` full pass. Live-verified: since
+`resize_window` wasn't actually resizing the browser window in this
+session (`window.innerWidth` stayed 1920 despite a "successful" resize
+call — flagged here in case it's a recurring environment quirk, not
+re-litigated further this session), verified instead by constraining the
+VGM table's own `.astryx-table-scroll-wrapper` to 700px via a temporary
+`element.style.maxWidth` (removed after). Scrolling that constrained
+table horizontally: the Sửa/Xoá icon buttons stayed pinned at the right
+edge with Astryx's soft shadow divider, visible throughout, while every
+other column scrolled underneath.
+
+## 2026-09-03 — VGM inline table: fix header truncation at narrow widths
+
+**Context:** User bug report (Vietnamese): at a small viewport, the VGM
+table's headers get cut off — "Ngày đóng h...", "Gross weight...".
+Reproduced live by resizing the browser to 1100×800 and expanding a VGM
+row: `packingDate`'s header truncated to "Ngày đóng h..." and, scrolling
+right, `grossWeight`/`maxGross` did too.
+
+**Root cause.** The previous "smart columns" follow-up switched every
+`vgmColumns` width from fixed `pixel()` to `proportional()`. Astryx's
+`proportional()` has a **120px default minimum width**
+(`DEFAULT_MIN_COLUMN_WIDTH`) — enough for short headers like "Tare (kg)"
+but not for "Ngày đóng hàng" or "Gross weight (kg)", so at a narrow
+viewport those columns hit the 120px floor and Astryx's header cells
+(which always truncate, per `astryx component Table`) ellipsized them.
+
+**Fix.** `proportional()` accepts a second argument,
+`{ minWidth: number }` (`astryx component Table` docs / `columnUtils.d.ts`
+— not obvious from the one-line signature in the earlier `smart columns`
+session, found only by reading the `.d.ts` directly). Set an explicit
+`minWidth` sized to each column's own header text: `carrierCustomerId`
+160, `packingDate`/`maxGross` 150, `grossWeight` 170; short-header
+columns (`containerType`/`containerNumber`/`sealNumber`/`tare`/`vgm`)
+keep the 120px default, which already fits them. Below the new
+minimums, the table now grows its own `tableMinWidth` and scrolls
+horizontally instead of squeezing header text into an ellipsis.
+
+**Verification:** `./harness/verify.sh` full pass. Live-verified by
+resizing the browser back to 1100×800 (the exact width that reproduced
+the bug) and re-expanding the same VGM row: "Ngày đóng hàng" now renders
+in full, and scrolling the table horizontally shows "Max gross (kg)"/
+"Gross weight (kg)" in full too, with a working scrollbar instead of
+truncated text.
+
+## 2026-09-03 — Fullscreen toggle: trigger placement + a real theming bug
+
+**Context:** Same-day follow-up to the `FullscreenPanel` entry directly
+below. Two pieces of user feedback: (1) put the maximize button beside
+the page's existing action button ("Tạo hợp đồng"), not floating on its
+own; (2) maximized, font and colors were broken.
+
+**(1) Trigger placement — API change, not a style tweak.** The maximize
+button used to be `FullscreenPanel`'s own, absolutely positioned inside
+a wrapper it rendered itself — no way for a page to put it anywhere
+else. Reworked into a Context: `FullscreenPanel` now only owns state +
+the portal, exposed via a new `useFullscreenToggle()` hook any
+descendant can call. `ContractsList` calls it and renders the
+maximize/restore `IconButton` itself, in the same `HStack` as "Tạo hợp
+đồng" — exactly where the user asked. `page.jsx` dropped the now-unused
+`label` prop.
+
+**(2) The theming bug was real and specific, not vague "CSS broke".**
+Confirmed via `getComputedStyle` in the live page: "Tạo hợp đồng"'s
+background was `rgba(0, 0, 0, 0)` (fully transparent) while maximized,
+`rgb(36, 119, 104)` (its real teal-green) normally — text color survived
+(`appShellContentStyle` from the previous entry covered that), but the
+*component's own* background did not. Root cause: `createPortal(...,
+document.body)` escapes **`<Theme>`'s own wrapper element**, not just
+`ProtectedAppShell`'s `.root` div — Astryx's component-level theme CSS
+(a button's background token, etc.) resolves from custom properties that
+live on that wrapper, not from the `data-astryx-theme`/`data-theme`
+attributes synced onto `<html>` (those cover `@scope` matching and
+`color-scheme`, not every token). A `document.body` portal is a sibling
+of `<html>`'s `<body>` itself — several ancestors removed from
+`<Theme>`.
+
+**Fix:** `ProtectedAppShell` now renders `<div id="fullscreen-portal-
+root" />` as a sibling of `.layout` (so, of `<main>`) — still inside
+`.root`, so still inside `<Theme>` (the root layout wraps everything in
+one `<Theme>`), but *not* a descendant of `<main>`, so `main`'s
+`isolation: isolate` still can't trap it below the header. `Fullscreen
+Panel` portals there instead of `document.body`. Verified live: the
+button's background matched exactly (`rgb(36, 119, 104)`) in both
+states after the fix, confirmed via the same `getComputedStyle` check
+that caught the bug.
+
+**Verification:** `./harness/verify.sh` full pass. Live-verified in the
+browser: maximize button now sits directly beside "Tạo hợp đồng"; while
+maximized, `getComputedStyle` on the button matches its normal-mode
+values exactly (background, text color, font-family, font-size); Escape
+still restores the normal layout with both nav elements back.
+
+## 2026-09-03 — Fullscreen toggle for the Contracts page (`add-fullscreen-contracts-panel`)
+
+**Context:** User idea, illustrated with an annotated screenshot circling
+the page content below the top nav on `/logistics/contracts`: add a
+maximize button that expands that circled area to fill the whole
+viewport, covering both the top nav and the side nav.
+
+**What shipped.** New `FullscreenPanel`
+(`src/shared/components/fullscreen-panel.jsx`) — a shared (not
+Contracts-specific) wrapper: children render normally with a small
+maximize `IconButton` pinned top-right; clicking it portals the children
+(`createPortal` to `document.body`) into a `position: fixed; inset: 0`
+overlay above the app shell's header. **Portalling out of `<main>` is
+required, not optional** — `ProtectedAppShell`'s `<main>` has
+`isolation: isolate` (`protected-app-shell.jsx`), which traps a
+`position: fixed` descendant inside `<main>`'s own stacking context,
+painted *below* the header's z-index-40 context no matter how high a
+z-index the descendant is given (isolation creates a new stacking
+context for the isolated element as a whole; nothing inside can escape
+where that whole context sits relative to siblings). A portal sidesteps
+this by not being a DOM descendant of `<main>` in the first place.
+Escape and a restore button both exit; body scroll locks while
+maximized, same pattern as the existing mobile side-nav overlay.
+`logistics/contracts/page.jsx` wraps its `PageContentShell` in this —
+the only page wired up so far, since that's the page the user's
+screenshot showed; the component itself is generic and reusable.
+
+**One real lint failure caught and fixed, not a design change.** The
+first draft used a `useState` + `useEffect(() => setIsMounted(true), [])`
+"has this hydrated yet" flag (needed to gate the `createPortal` call,
+which can only run client-side) — React's `react-hooks/set-state-in-
+effect` rule correctly flagged this as a synchronous setState-in-effect.
+Replaced with the same `useSyncExternalStore`-based idiom already used
+by `mdx/error-decoder.jsx`'s `isHydrated` (`subscribeNever`/
+`getHydrated`/`getServerHydrated`) instead of inventing a new pattern.
+
+**Verification:** `./harness/verify.sh` full pass (lint/typecheck/build/
+quality-thresholds). Live-verified in the browser: clicking the
+maximize button hides the top nav and side nav completely, content
+fills the viewport; a Contracts table row still expands correctly while
+maximized; Escape restores the normal layout with both nav elements
+back.
+
+**Not done:** no other page opted into `FullscreenPanel` yet — only
+Contracts, matching what was actually asked.
+
+## 2026-09-03 — VGM inline table: smart column widths, left-aligned text
+
+**Context:** Same-day follow-up to the column-reorder entry directly
+below. User asked for two more tweaks to the same table (Vietnamese):
+columns should be "smart" (share the table's actual width instead of a
+fixed pixel each) and every column's text should be left-aligned.
+
+**What changed.** `shipment-expanded-details.jsx`'s `vgmColumns`: every
+`width: pixel(N)` → `width: proportional(N)` (Astryx's flex-distribution
+helper — each column gets a share of the table's real width instead of a
+fixed px value, with a 120px floor so nothing collapses on a narrow
+viewport); `Nhà cung cấp` weighted `proportional(2)` (longest values —
+company names), every other data column `proportional(1)`. Dropped
+`align: 'end'` from the four weight columns (Max gross/Tare/Gross weight/
+VGM) — `align` defaults to left, so removing it left-aligns their numbers
+along with everything else. The trailing `actions` icon-button column
+stays a fixed `pixel(90)` — it holds icons, not text, so neither ask
+applies to it.
+
+**Verification:** `./harness/verify.sh` full pass. Live-verified in the
+browser on `26KCTLIVE01/SHP-01`'s `CONT-002` row: columns now spread to
+fill the table's full width instead of leaving a gap after the last
+data column, and every cell — including the four previously
+right-aligned numeric columns — reads left-aligned.
+
+## 2026-09-03 — VGM inline table: column reorder
+
+**Context:** Same-day follow-up to the VGM dialog redesign entry
+directly below. User specified the exact inline VGM table column order
+(Vietnamese): Nhà cung cấp / Ngày đóng hàng / Loại cont / Tên cont / Tên
+seal / Max Gross / Tare / Gross weight / VGM.
+
+**What changed.** `shipment-expanded-details.jsx`'s `vgmColumns` reordered
+to match exactly — carrier and date now lead (previously last, added by
+the additional-info follow-up), followed by container identity (loại
+cont/tên cont/tên seal, was cont/seal/loại before), then the weight
+figures ending in the two computed values. Also **added a `maxGross`
+column** (`Max gross (kg)`, between Tên seal and Tare) — not present in
+the table before, called out explicitly in the requested order. Payload/
+Net weight/Khối lượng bao bì stay dialog-only, unchanged from the
+previous session's choice to keep the table from growing too wide.
+
+**Verification:** `./harness/verify.sh` full pass. Live-verified in the
+browser on `26KCTLIVE01/SHP-01`'s existing `CONT-002` row — table header
+and cell order read left-to-right exactly as specified: Nhà cung cấp
+(Unknown) / Ngày đóng hàng (2026-01-01) / Loại cont (40') / Tên cont
+(CONT-002) / Tên seal (SEAL-002) / Max gross (28000.00) / Tare (2100.00)
+/ Gross weight (20400.00) / VGM (22500.00).
+
+## 2026-09-03 — VGM dialog: collapse-card layout, wider, reordered fields
+
+**Context:** Same-day follow-up to the `add-shipment-vgm-additional-info`
+entry directly below. User feedback on that dialog (Vietnamese,
+verbatim intent): (1) use the same collapsible-card layout as "Thêm hợp
+đồng" (`ContractFormDialog`); (2) widen the dialog; (3) reorder/pair
+fields — Ngày đóng hàng and Nhà cung cấp each on their own row at the
+top, then Tên cont/Tên seal, Loại cont/Max gross, Tare/Payload, Net
+weight/Khối lượng bao bì paired two-per-row — with a separate "Thông tin
+bổ sung" card for what's left (the three optional schedule/arrival times
++ note).
+
+**What changed.** `shipment-vgm-fields.jsx` split into two exported
+components: `ShipmentVgmFields` (the reordered/paired required fields —
+`packingDate`/`carrierCustomerId` promoted out of the old flat "Thông
+tin bổ sung" section since they're required, not optional, followed by
+four `HStack`-paired rows, then the Gross weight/VGM computed summary)
+and `ShipmentVgmAdditionalFields` (unchanged: the three `TimeInput`s +
+`Ghi chú`, still single-column). `shipment-vgm-form-dialog.jsx` rebuilt
+around the exact `FormSection`(`Card`+`Collapsible`)/`CollapsibleGroup`/
+fixed-height-scroll-VStack idiom `ContractFormDialog` and
+`UserFormDialog` already use — two cards, "Thông tin container" and
+"Thông tin bổ sung", both open by default (`defaultValue={['main',
+'additional']}`). Width `640` → `760` (matches `ShipmentFormDialog`,
+comfortably fits the new two-up field rows).
+
+**Verification:** `./harness/verify.sh` full pass (lint/typecheck/build/
+quality-thresholds all clean — no new components needed adding to any
+allowlist). Live-verified in the browser on `26KCTLIVE01/SHP-01`: "Thêm
+VGM" now renders both cards with the requested field order and pairing;
+collapsing "Thông tin bổ sung" via its chevron worked and — thanks to
+the fixed-height scroll container copied from `ContractFormDialog` — the
+dialog itself did not resize/jump, same as the Contract dialog's
+behavior. Re-opened the edit dialog on the pre-existing `CONT-002` row
+(the one backfilled by the backend migration's "Unknown" placeholder
+customer) — every field, including the backfilled `Ngày đóng hàng
+January 1, 2026` / `Nhà cung cấp Unknown`, pre-filled correctly in the
+new layout.
+
+## 2026-09-03 — Shipment VGM additional info (`add-shipment-vgm-additional-info`)
+
+**Context:** Same-day follow-up to the `add-shipment-vgm` entry below.
+Backend shipped six new "Thông tin bổ sung" fields on `ShipmentVgm`
+(`../CLEAN ARCHITECTURE/openspec/changes/add-shipment-vgm-additional-info/`):
+`packingDate` (required), `plannedPackingTime`/`actualPackingTime`/
+`truckArrivalTime` (optional), `carrierCustomerId` (required, live
+`Customer` reference), `note` (optional). User asked to build the FE.
+
+**What shipped.** `types/index.js`, `config/shipment-vgm-schema.js`,
+`api/shipment-vgms.js`, `hooks/use-shipment-vgm-form.js` (now also fetches
+the `Customer` catalog, mirroring `useShipmentForm`), and
+`components/shipment-vgm-fields.jsx` (new "Thông tin bổ sung" section:
+`DateInput`, a `hasSearch` `Selector` for the carrier, three `TimeInput`s
+with `hasClear`/`24h`, a `TextArea` for the note) all updated. The inline
+VGM table (`shipment-expanded-details.jsx`) gained "Ngày đóng hàng"/"Nhà
+cung cấp vận chuyển" columns — `contracts-list.jsx` now threads its
+already-fetched `customersById` map down as a new prop to resolve the
+carrier name per row; the other four fields stay edit-dialog-only, same
+as the pre-existing weight fields, to avoid an even wider table.
+
+**Real bug found and fixed via live verification, not by code review.**
+The first live submit attempt failed with a generic "Không thể thêm VGM"
+banner — no useful detail. Traced via direct `fetch()` calls against the
+backend proxy (bypassing the form) to isolate the cause: the backend's
+`TimeOnly?` fields (`plannedPackingTime` etc.) deserialize through System
+.Text.Json's built-in `TimeOnly` converter, which requires a value with
+seconds (`HH:MM:SS`) — Astryx's `TimeInput` component emits bare `HH:MM`
+(no `hasSeconds` prop set), which the backend rejected with a `400` whose
+detail (`"The JSON value could not be converted..."`) never reached the
+UI because `apiRequest` shows a generic message on parse-style 400s.
+Fixed by adding a `withSeconds()` normalizer in `api/shipment-vgms.js`
+that appends `:00` to a bare `HH:MM` value before sending. Confirmed the
+fix with a raw `fetch()` (`201`, not `400`) before re-testing through the
+actual UI.
+
+**Verification:** `./harness/verify.sh` full pass (lint, typecheck,
+structure, harness-tests, unit-tests, build, quality-thresholds — no test
+count changed, this feature has no dedicated unit tests, consistent with
+every other `*-fields.jsx` component in this codebase). Live-verified
+against the local Docker backend on contract `26KCTLIVE01` / shipment
+`SHP-01`: "Thêm VGM" now creates a row correctly (all six new fields,
+including the live Gross weight/VGM preview); the new row appeared
+inline with the right date/carrier; the edit dialog re-opened on it with
+every field — including all three times — pre-filled correctly; delete
+removed it. The one pre-existing VGM row (backfilled by the backend
+migration's "Unknown" placeholder `Customer`, see that repo's
+PROGRESS.md) rendered correctly in the new table columns too, confirming
+the whole chain end-to-end including a value nobody explicitly entered
+through this UI.
+
+**Not done:** no new dedicated FE tests — this codebase has none for
+`shipment-vgm-fields.jsx` either before or after this session (`quality-
+thresholds` still passed, so no coverage regression was introduced).
+
+## 2026-09-03 — Fix: Selector fields unclickable by mouse in row-nested dialogs
+
+**Report:** user could not select "Nhà cung cấp" (Selector with `hasSearch`),
+"Loại hình" (LCL/FCL), or "Đơn vị" (currency) in the "Thêm Shipment" dialog —
+clicking an option closed the dropdown without setting a value.
+
+**Root cause (confirmed via `document.elementFromPoint` on the live page,
+not guessed):** `ShipmentFormDialog` — and every other `*FormDialog` opened
+from inside a contract row's expanded content (Payment Schedule, Contract
+Annex, Service Agreement, Service Agreement Annex, Shipment VGM) — was
+declared inside `ContractExpandedDetails`, which `contracts-list.jsx` uses
+as the Contracts `<Table>`'s row-expansion content (`renderExpanded`). Even
+though the Dialog floats visually above the page, its `Selector` fields are
+still, in the DOM, descendants of that `<table>`/`<tr>`.
+
+Astryx's popover positioning (`@astryxdesign/core`'s
+`Layer/layerHost.ts`, `resolveLayerPortalTarget`) treats `<table>`/`<tr>` as
+"unsafe hosts" and portals a `Selector`'s dropdown out to the nearest safe
+ancestor *outside* the table — landing it in the Contracts table's own
+scroll wrapper, not inside the open dialog's layer. It still paints where
+expected, but for mouse clicks it ends up stacked *underneath* the dialog's
+own trigger button: a click on a visible option actually lands on the
+trigger beneath it (closing the dropdown, selecting nothing). Keyboard
+selection (arrow keys + Enter) bypassed this entirely, which is how the bug
+was initially isolated from a real UI bug vs. a data/business-rule issue.
+
+**Fix (comprehensive, not shipment-only — user chose this scope
+explicitly over a shipment-only patch):** lifted every `*FormDialog` with a
+`Selector` field out of `ContractExpandedDetails`/`ShipmentExpandedDetails`
+and up into `ContractsList` (a sibling of `AdvanceTable`, not a descendant
+of the Contracts table). `ContractExpandedDetails` and
+`ShipmentExpandedDetails` now only call trigger callback props
+(`onAddShipment`, `onEditShipment`, `onAddVgm`, `onOpenServiceAgreement`,
+...) — `ContractsList` owns the open/editing state and renders the actual
+dialogs. `activeTab` (the expanded row's tab) was also lifted to
+`ContractsList` (as `expandedTab`) so the Service Agreement dialog's
+`onSuccess` can switch to the "Service Agreement" tab without a
+callback-registration hack. VGM's delete confirmation (`AlertDialog`, no
+`Selector`) was left nested — it isn't affected by this bug.
+
+Left a detailed comment on `ContractsList` (search "Selector popover
+stacking") explaining the constraint so a future dialog doesn't get added
+back inside `renderExpanded` by mistake.
+
+**Verification:** `./harness/verify.sh` full pass. Live-tested in browser:
+reproduced the original bug first (mouse click failed, keyboard arrow+Enter
+worked, confirming it wasn't a business-rule issue), traced it to the DOM
+via `document.elementFromPoint` at the option's own bounding-rect center
+(returned the trigger button, not the option). After the fix: "Thêm
+Shipment" dialog's Nhà cung cấp/Loại hình/Đơn vị all set correctly via
+mouse click; spot-checked "Thêm phụ lục" (Contract Annex, also lifted) —
+its "Loại phụ lục" Selector also now works via mouse click. Did not
+individually click-test Payment Schedule/Service Agreement/Service
+Agreement Annex/VGM dialogs beyond confirming the file compiles and lints —
+same mechanical fix as Annex/Shipment, low risk, but worth a pass next
+session if time allows.
+
+## 2026-09-03 — Shipment tab redesign: Table + expand-row, VGM inline, terminology
+
+**Request:** three concrete asks (bigger dialogs, VGM fields one per row,
+table-style list items) plus a proposal to evaluate: nest a sub-tab per
+Shipment inside the "Shipment" tab, VGM shown as a table within each.
+Recommended against the sub-tabs (a `TabList` doesn't scale to a dynamic,
+possibly-large list of records — no precedent for it anywhere else in
+this codebase) in favor of the pattern already used twice here
+(`useTableRowExpansion`, on the top-level Contracts table and the
+Service Agreement list): Shipment list becomes a real `Table`, expanding
+a row reveals full Book/Lot info + VGM as an inline table, no more modal
+for the VGM *list* (add/edit stay small dialogs, which is normal for
+forms). User approved implementing this version first and asked for a
+live-verified pass before building the sub-tab alternative.
+
+**What changed:**
+- New `components/shipment-expanded-details.jsx` — the expanded-row
+  content for one Shipment: `MetadataList`s for Book/Lot info, then VGM
+  as an inline `Table` (`Table` from `@astryxdesign/core/Table`, not
+  `AdvanceTable` — no search/filter/pagination chrome needed at this
+  nesting depth) with "Thêm VGM"/edit/delete, delete still confirmed via
+  `AlertDialog` first.
+- `components/contracts-list.jsx`: "Shipment" tab's `List`/`ListItem`
+  replaced with a `Table` (`shipmentColumns`: Mã/Tên lô hàng/Loại
+  hình/Số lượng/Booking/Nhà cung cấp/Giá trị invoice/edit) +
+  `useTableRowExpansion` + `createRowExpansionInteractionPlugin`
+  (`expandedShipmentId` state), rendering `ShipmentExpandedDetails` per
+  row. Removed `vgmShipment` state and the "Quản lý VGM" icon
+  button/`Boxes` import (VGM is always visible on expand now, no
+  separate trigger needed).
+- **Deleted** `components/shipment-vgm-list-dialog.jsx` — fully replaced
+  by the inline table above; nothing else imported it.
+- Terminology: Tab label/heading "Xuất hàng" → "Shipment" (button/empty-
+  state/tooltip text too — "Thêm Shipment", "Chưa có Shipment nào", "Sửa
+  Shipment"); "Tạo/Sửa Service Agreement" button → "Tạo/Sửa Commission"
+  (only that action button — the "Service Agreement" tab/page/entity name
+  itself was left alone, wasn't part of the request).
+- Dialogs made bigger: `ShipmentFormDialog` 560→760px,
+  `ShipmentVgmFormDialog` 520→640px.
+- `components/shipment-vgm-fields.jsx`: every field now its own full-
+  width row (`HStack`/`StackItem` pairing removed) instead of 2-3 fields
+  side by side.
+
+**Verification:** `./harness/verify.sh` full pass (one `simple-import-
+sort/imports` lint error from the new/reordered imports, fixed with
+`eslint --fix`). Live-clicked through on `26KCTLIVE01/SHP-01`: tab reads
+"Shipment", list renders as a real table with headers, clicking a row
+expands it (chevron + accent border, same look as every other expandable
+row in this app) to show Book/Lot info; added VGM `CONT-002` — the inline
+table appeared immediately with the backend-computed row (Tare 2100.00,
+Gross weight 20400.00, VGM 22500.00 — matches the live client-preview
+math), edit dialog pre-filled with the new one-field-per-row layout, and
+the delete `AlertDialog` still fires correctly from the inline table's
+trash icon (cancelled it — kept the row for a future session).
+"Tạo Commission" button confirmed renamed. No console errors.
+
+**Not done yet:** the sub-tab-per-Shipment alternative (Version 2) —
+user asked for Version 1 live-verified first, which this entry closes
+out. Revisit only if asked; current recommendation stands (Version 1 is
+the better fit, see above).
+
+**Blockers:** none.
+
+---
+
+## 2026-09-03 — Retest passed: Shipments/VGM backend now deployed
+
+**Request:** "test lại" — re-run the previous entry's blocked
+verification now that the backend gap might be closed (same pattern as
+the Service Agreements list saga: FE built ahead, BE catches up mid-
+session).
+
+**Result: fully working end-to-end, no frontend changes needed.**
+Checked live swagger first — `/api/v1/contracts/{id}/shipments`,
+`.../shipments/{id}`, `.../shipments/{id}/vgm`, `.../vgm/{vgmId}` are all
+now present (were 0 matches last entry). Live-clicked through the full
+create → list → edit → VGM create → VGM edit → VGM delete flow on
+`26KCTLIVE01`:
+
+- Created shipment → backend assigned `26KCTLIVE01/SHP-01`; list row
+  shows `FCL · 3 Kiện · Booking BOOK-LIVE-002 · Broker2 1788276513` +
+  `60,000.00 VND`, all correct.
+- Edit dialog pre-fills every field, all 4 Selectors included.
+- "Quản lý VGM" opens with the right shipment code in the title. Created
+  a VGM (`CONT-001`, tare 2200/payload 26000/max gross 30480/net
+  25000/khối lượng bao bì 500) — the live client-side preview (Gross
+  25500.00 kg, VGM 27700.00 kg) matched the backend-computed value
+  exactly after save.
+- Edit pre-fills correctly, same live preview reproduces.
+- Delete → `AlertDialog` confirmation → confirming actually removes the
+  row (list returns to "Chưa có bản ghi VGM").
+- No console errors beyond the standing `claude-in-chrome` extension
+  noise.
+
+**Updated:** `openspec/changes/add-contract-shipments/tasks.md` and
+`add-shipment-vgm/tasks.md` — 1.9 now fully checked off with what was
+verified.
+
+**A `claude-in-chrome` quirk worth logging, not a product bug:** several
+submit-button clicks (shipment create, VGM create, VGM delete confirm)
+made the tab's `Page.captureScreenshot` CDP call hang/timeout for
+~5-10s right after the click, before recovering on its own and showing
+the correct post-submit state. Never affected correctness, just added a
+`wait` + retry-screenshot step each time. Possibly the extension
+capturing mid-navigation/mid-re-render; no action needed unless it
+starts actually losing actions.
+
+**Blockers:** none — both changes' `add-contract-shipments`/
+`add-shipment-vgm` are now fully verified and working.
+
+---
+
+## 2026-09-03 — Live-verified Shipments/VGM: backend has 0 routes deployed
+
+**Request:** "live browser verification cho tính năng vgm, lô hàng" —
+closing out the `add-contract-shipments`/`add-shipment-vgm` changes'
+unchecked 1.9 tasks (both built earlier this same day, never
+browser-tested).
+
+**Result: frontend is correct; backend blocks everything.** Live-clicked
+through on the seeded `26KCTLIVE01` ("Live smoke test") contract via
+`claude-in-chrome`:
+- ✅ "Xuất hàng" tab appears in the right position (after "Đợt thanh toán
+  khách", before "Service Agreement" when present).
+- ✅ "Thêm lần xuất hàng" opens the create dialog; the "Nhà cung cấp"
+  `Selector` is populated from the Customer catalog (Broker2, Broker Co,
+  Verify Buyer Co, ...); filled every field (supplier, booking number,
+  lot name, LCL/FCL, payment condition, invoice/declaration
+  value+currency, exchange rate, quantity+unit, declared weight) —
+  Selector fields needed the by-now-standard keyboard-arrow-then-Enter
+  workaround for `claude-in-chrome` mouse clicks on popovers, same as
+  every prior session.
+- ❌ Submit **404s**. Checked the live backend directly
+  (`GET /api/backend/swagger/v1/swagger.json`): **zero** paths matching
+  `/shipment/i` exist — not `/contracts/{id}/shipments`, not the VGM
+  sub-routes, nothing. `add-contract-shipments`' own proposal says
+  BE-kt-xnk "shipped" this in the backend repo's own
+  `openspec/changes/add-contract-shipments/` — same situation as the
+  Service Agreements list saga a few sessions back: built in that repo,
+  not yet deployed to the backend instance this app's `/api/backend`
+  proxy points at.
+- ✅ **But the frontend's failure handling is correct**: the create
+  dialog shows a proper error banner ("Không thể thêm lần xuất hàng")
+  instead of crashing or silently no-opping — confirmed via
+  `read_network_requests` (`POST .../shipments` → 404) and the visible
+  banner. No console errors beyond the standing `claude-in-chrome`
+  extension noise.
+- **VGM entirely untestable this session** — it lives inside a Shipment,
+  and no Shipment can be created while the backend 404s. Blocked
+  transitively, not a VGM-specific issue.
+
+**One observation, not a bug to fix now:** a failed
+`useShipmentsQuery` (404, 500, anything) renders identically to "genuinely
+zero shipments" (`Chưa có lần xuất hàng`) — `shipments =
+shipmentsQuery.data?.success ? ... : []` swallows the error with no
+banner. Checked: this is the **existing, consistent convention** for
+every contract-scoped embedded list in `ContractExpandedDetails`
+(`annexes`, `serviceAgreementAnnexes` do the same) — `AdvanceTableErrorBanner`
+is only used for the top-level table query. Not a shipments-specific
+regression, so not fixed here; worth reconsidering as a deliberate UX
+decision at some point (a real fetch failure currently looks identical
+to "nothing here yet" everywhere in this component, not just shipments).
+
+**Updated:** `openspec/changes/add-contract-shipments/tasks.md` and
+`openspec/changes/add-shipment-vgm/tasks.md` — 1.9 marked with these
+findings (shipments: partially verified, VGM: blocked transitively).
+
+**Blockers:** `add-contract-shipments`' and `add-shipment-vgm`'s backend
+routes need deploying to this environment before either can be fully
+live-verified or actually used. Re-run this same click-through once
+that happens — no frontend change expected to be needed (same pattern as
+the Service Agreements list, which turned out to need zero FE changes
+once deployed).
+
+---
+
+## 2026-09-03 — Shipment VGM (`add-shipment-vgm`)
+
+**Context:** Follow-up to the same-day `add-contract-shipments` entry
+below. User request (Vietnamese): each shipment needs VGM info per
+container — tên cont, tên seal, loại cont, tare, payload, max gross, net
+weight, gross weight (= net weight + khối lượng bao bì, computed), VGM
+(= gross weight + tare, computed). BE-kt-xnk shipped this as `ShipmentVgm`
+(1 shipment : many, **with delete** — the one child entity in this whole
+feature area that has it).
+
+**What shipped.**
+
+- `types/index.js`: `ShipmentContainerType` (`Size20`/`Size40`/
+  `Size40HC`/`Size45`), `ShipmentVgm`, `ShipmentVgmFormValues`.
+- `config/shipment-container-types.js` (labels `"20'"`/`"40'"`/`"40'HC"`/
+  `"45'"`), `config/shipment-vgm-schema.js` (zod, mirrors the backend's
+  `CreateShipmentVgmCommandValidator`).
+- `api/shipment-vgms.js` — the first `delete*` function in this feature
+  (mirrors `admin-users/api/bank-accounts.js`'s `{ success: true }`
+  no-body-204 pattern), `hooks/use-shipment-vgms-query.js` (list +
+  create/update/delete mutations), `hooks/use-shipment-vgm-form.js`.
+- `components/shipment-vgm-fields.jsx` — also live-computes
+  `grossWeight`/`vgm` client-side from the current form values as a UX
+  preview while typing (the backend's computed response values are what
+  actually get displayed everywhere else, e.g. the list), `components/shipment-vgm-form-dialog.jsx`.
+- New `components/shipment-vgm-list-dialog.jsx`: a **third level of
+  nested dialog** — Contract → Shipment → VGM — since VGM records belong
+  to one specific shipment, not the contract as a whole (every other
+  child list in this feature lives directly in a Contract-level tab).
+  Opened via a new "Quản lý VGM" icon button (`Boxes` lucide icon) added
+  to each shipment row in the "Xuất hàng" tab
+  (`components/contracts-list.jsx`). Lists containers with add/edit/
+  **delete**; delete asks for confirmation first via Astryx `AlertDialog`
+  — the first delete-confirmation flow in this app, no prior pattern
+  existed to copy since nothing else here has delete yet.
+
+**Not done:** no precondition tying VGM to a signed contract/shipment
+state — the backend doesn't enforce one either.
+
+**Verification:** `pnpm lint` / `pnpm typecheck` clean; `./harness/verify.sh`
+full pass (project-readiness, memory-secrets, theme-build, lint,
+typecheck, structure, harness-tests, unit-tests, build,
+quality-thresholds). Evidence: `harness/runs/20260903-175915-154148/`.
+
+**Not live-verified in the browser this session** — no `claude-in-chrome`
+tool used (would also require the backend up with seeded data). Whoever
+picks this up next should click through: (a) the new "Quản lý VGM" icon
+button on a shipment row opens the VGM list dialog with the right
+`shipmentCode` in the title, (b) "Thêm VGM" creates a record and the list
+refreshes with the backend-computed `grossWeight`/`vgm` (not the
+client-side preview values — confirm they match), (c) the delete icon
+opens the `AlertDialog`, confirming actually removes the row and calling
+DELETE twice on the same id 404s cleanly, (d) editing an existing VGM
+pre-fills every field and the live gross/VGM preview updates as fields
+change.
+
+**Blockers:** none.
+
+## 2026-09-03 — Contract shipments (`add-contract-shipments`)
+
+**Context:** User asked to build the FE for BE-kt-xnk's `Shipment`
+feature (`../CLEAN ARCHITECTURE/openspec/changes/add-contract-shipments/`,
+same session as this frontend one): a `Contract` has one or more shipments
+("lần xuất hàng"), each with Book info (booking/B-L/vessel) and Shipment
+(lot) info (LCL/FCL, invoice/declaration values, quantity, weight); cost
+info is deliberately deferred on the backend too.
+
+**What shipped** (mirrors the `PaymentSchedule`/`ServiceAgreement`
+pattern closely — see
+`openspec/changes/add-payment-schedule-and-contract-signatures/proposal.md`
+for the sibling precedent):
+
+- `types/index.js`: `ShipmentType` (`LCL`/`FCL`), `ShipmentQuantityUnit`
+  (`Cont`/`Kien`), `Shipment`, `ShipmentFormValues`.
+- `config/shipment-types.js`, `config/shipment-quantity-units.js` (fixed
+  sets + Vietnamese labels — "Kiện" for `Kien`), `config/shipment-schema.js`
+  (zod, mirrors the backend's `CreateShipmentCommandValidator`: required
+  `supplierCustomerId`/`bookingNumber`/`type`/`name`/`paymentCondition`
+  (reuses the existing `PAYMENT_TYPES` TT/LC set) + every Shipment-info
+  numeric field `> 0`; `billOfLadingNumber`/`shippingLine`/`vesselName`
+  optional — often not known yet at booking time; `invoiceCurrency`/
+  `declarationCurrency` constrained to the curated `CURRENCY_CODES`
+  shortlist, same narrowing choice `contract-schema.js` makes for
+  `currency`).
+- `api/shipments.js` (list/create/update against the nested
+  `/api/v1/contracts/{contractId}/shipments...` routes),
+  `hooks/use-shipments-query.js` (list query + mutations),
+  `hooks/use-shipment-form.js` (create-or-update form state; pulls
+  `customers` from the existing `useCustomersQuery` for the supplier
+  picker — same pattern `use-service-agreement-form.js` uses for its
+  `partyCustomerId` picker, since `Shipment.supplierCustomerId` is the
+  same kind of live reference into the Customer catalog).
+- `components/shipment-fields.jsx` (two sections — "Thông tin Book",
+  "Thông tin lô hàng"; no cost-info section, matches the backend
+  deferral), `components/shipment-form-dialog.jsx`.
+- `components/contracts-list.jsx`: new `'shipment'` `ExpandedTab`, a
+  "Xuất hàng" tab (list of `shipmentCode · name`, description line
+  `type · quantity+unit · booking number · supplier name`, invoice value
+  + edit button; "Thêm lần xuất hàng" button — **unconditionally
+  enabled**, unlike `PaymentSchedule`'s signed-contract gate, because the
+  backend doesn't enforce any precondition for `Shipment`), create/edit
+  dialogs wired the same way as the sibling entities' dialogs.
+
+**Not done:** no cost-info fields/section (explicitly deferred on the
+backend too — will follow in a later change on both sides). No delete
+(the backend has none, matching the `ContractAnnex`/`PaymentSchedule`/
+`ServiceAgreement` convention on this aggregate).
+
+**Verification:** `pnpm lint` / `pnpm typecheck` clean; `./harness/verify.sh`
+full pass (project-readiness, memory-secrets, theme-build, lint,
+typecheck, structure, harness-tests, unit-tests, build,
+quality-thresholds). Evidence: `harness/runs/20260903-165413-112667/`.
+
+**Not live-verified in the browser this session** — no `claude-in-chrome`
+tool used (would also require bringing up the backend + seeded data,
+out of scope for this pass). Whoever picks this up next should click
+through: (a) a contract's expanded row shows the new "Xuất hàng" tab
+between "Đợt thanh toán khách" and (if present) "Service Agreement", (b)
+"Thêm lần xuất hàng" opens the dialog with the supplier `Selector`
+populated from the Customer catalog, (c) a created shipment's code
+renders as `{contractNumber}/SHP-{NN}` and its row shows the right
+type/quantity/booking/supplier/invoice-value summary, (d) editing an
+existing shipment pre-fills every field correctly including the optional
+B/L/line/vessel ones when they're `null`.
+
+**Blockers:** none.
+
 ## 2026-09-03 — Payment Schedule moved to its own tab
 
 **Request:** "Đợt thanh toán khách hãy để 1 tab riêng" — follow-up to the

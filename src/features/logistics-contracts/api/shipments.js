@@ -1,0 +1,153 @@
+import { apiRequest } from '@/shared/api/api-client.js';
+
+const GENERIC_LIST_ERROR = 'Không thể tải danh sách lần xuất hàng';
+const GENERIC_LIST_ALL_ERROR = 'Không thể tải danh sách Shipment';
+const GENERIC_CREATE_ERROR = 'Không thể thêm lần xuất hàng';
+const GENERIC_UPDATE_ERROR = 'Không thể cập nhật lần xuất hàng';
+
+/**
+ * `QuantityUnit` is derived from `Type` on the backend now (LCL is always
+ * Kiện, FCL always Cont) — never sent, on create or update.
+ * @param {import('../types/index.js').ShipmentFormValues} values
+ */
+function toCreateRequestBody(values) {
+  return {
+    SupplierCustomerId: values.supplierCustomerId,
+    BookingNumber: values.bookingNumber,
+    BillOfLadingNumber: values.billOfLadingNumber || null,
+    ShippingLine: values.shippingLine || null,
+    VesselName: values.vesselName || null,
+    Type: values.type,
+    Name: values.name,
+    PaymentCondition: values.paymentCondition,
+    InvoiceValue: values.invoiceValue,
+    InvoiceCurrency: values.invoiceCurrency,
+    DeclarationValue: values.declarationValue,
+    DeclarationCurrency: values.declarationCurrency,
+    DeclarationExchangeRate: values.declarationExchangeRate,
+    QuantityAmount: values.quantityAmount,
+    DeclarationWeightKg: values.declarationWeightKg,
+  };
+}
+
+/**
+ * `Type` is immutable after creation (see `Shipment`'s class doc comment,
+ * BE-kt-xnk) — not part of the update body either.
+ * @param {import('../types/index.js').ShipmentFormValues} values
+ */
+function toUpdateRequestBody(values) {
+  return {
+    SupplierCustomerId: values.supplierCustomerId,
+    BookingNumber: values.bookingNumber,
+    BillOfLadingNumber: values.billOfLadingNumber || null,
+    ShippingLine: values.shippingLine || null,
+    VesselName: values.vesselName || null,
+    Name: values.name,
+    PaymentCondition: values.paymentCondition,
+    InvoiceValue: values.invoiceValue,
+    InvoiceCurrency: values.invoiceCurrency,
+    DeclarationValue: values.declarationValue,
+    DeclarationCurrency: values.declarationCurrency,
+    DeclarationExchangeRate: values.declarationExchangeRate,
+    QuantityAmount: values.quantityAmount,
+    DeclarationWeightKg: values.declarationWeightKg,
+  };
+}
+
+/**
+ * Requires `logistics:contracts:view`, scoped to the contract's company.
+ * @param {string} contractId
+ * @returns {Promise<{ success: true, shipments: import('../types/index.js').Shipment[] } | { success: false, message: string }>}
+ */
+export async function listShipments(contractId) {
+  const result = await apiRequest(
+    `/api/v1/contracts/${contractId}/shipments`,
+    { errorMessage: GENERIC_LIST_ERROR },
+  );
+
+  if (!result.success) {
+    return { success: false, message: result.message };
+  }
+
+  return { success: true, shipments: result.data ?? [] };
+}
+
+/**
+ * System-wide list across every contract (unlike `listShipments`, not
+ * scoped under `/contracts/{contractId}`) — non-Admin callers only see
+ * shipments whose parent contract's `CompanyId` they have
+ * `logistics:contracts:view` on; Admin sees all. Sorted by the parent
+ * contract's `CreatedDate` descending, then `ShipmentNumber` descending
+ * (newest first).
+ * @param {{ page?: number, pageSize?: number }} [options]
+ * @returns {Promise<{ success: true, shipments: import('../types/index.js').Shipment[], page: number, pageSize: number, totalCount: number, totalPages: number } | { success: false, message: string }>}
+ */
+export async function listAllShipments({ page = 1, pageSize = 25 } = {}) {
+  const result = await apiRequest(
+    `/api/v1/shipments?page=${page}&pageSize=${pageSize}`,
+    { errorMessage: GENERIC_LIST_ALL_ERROR },
+  );
+
+  if (!result.success) {
+    return { success: false, message: result.message };
+  }
+
+  return {
+    success: true,
+    shipments: result.data?.items ?? [],
+    page: result.data?.page ?? page,
+    pageSize: result.data?.pageSize ?? pageSize,
+    totalCount: result.data?.totalCount ?? 0,
+    totalPages: result.data?.totalPages ?? 0,
+  };
+}
+
+/**
+ * Requires `logistics:contracts:manage`, scoped to the contract's company.
+ * `shipmentNumber`/`shipmentCode` are assigned by the backend, never sent
+ * here.
+ * @param {string} contractId
+ * @param {import('../types/index.js').ShipmentFormValues} values
+ * @returns {Promise<{ success: true, shipment: import('../types/index.js').Shipment } | { success: false, message: string }>}
+ */
+export async function createShipment(contractId, values) {
+  const result = await apiRequest(
+    `/api/v1/contracts/${contractId}/shipments`,
+    {
+      method: 'POST',
+      errorMessage: GENERIC_CREATE_ERROR,
+      body: toCreateRequestBody(values),
+    },
+  );
+
+  if (!result.success) {
+    return { success: false, message: result.message };
+  }
+
+  return { success: true, shipment: result.data };
+}
+
+/**
+ * Requires `logistics:contracts:manage`, scoped to the contract's company.
+ * `shipmentNumber` is immutable — not part of the request body.
+ * @param {string} contractId
+ * @param {string} shipmentId
+ * @param {import('../types/index.js').ShipmentFormValues} values
+ * @returns {Promise<{ success: true, shipment: import('../types/index.js').Shipment } | { success: false, message: string }>}
+ */
+export async function updateShipment(contractId, shipmentId, values) {
+  const result = await apiRequest(
+    `/api/v1/contracts/${contractId}/shipments/${shipmentId}`,
+    {
+      method: 'PUT',
+      errorMessage: GENERIC_UPDATE_ERROR,
+      body: toUpdateRequestBody(values),
+    },
+  );
+
+  if (!result.success) {
+    return { success: false, message: result.message };
+  }
+
+  return { success: true, shipment: result.data };
+}

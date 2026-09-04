@@ -62,6 +62,22 @@ const styles = stylex.create({
     lineHeight: '20px',
     minHeight: '100vh',
   },
+  // Same typographic/color contract as `root` above, minus `minHeight` —
+  // exported for `FullscreenPanel` (`fullscreen-panel.jsx`), which
+  // portals into `#fullscreen-portal-root` below (a descendant of `.root`,
+  // so this is actually redundant with plain CSS inheritance there — kept
+  // explicit anyway as the one place that states this contract, and as a
+  // defensive floor if the portal target ever moves outside `.root`
+  // again). Also supplies the overlay's own opaque background, since it
+  // needs to visually cover the header/side nav stacked beneath it.
+  content: {
+    backgroundColor: colorVars['--color-background-surface'],
+    color: colorVars['--color-text-primary'],
+    fontFamily: 'var(--font-family-body)',
+    fontSize: '14px',
+    fontWeight: fontWeightVars['--font-weight-medium'],
+    lineHeight: '20px',
+  },
   topNav: {
     insetBlockStart: 0,
     position: 'sticky',
@@ -115,6 +131,8 @@ const styles = stylex.create({
     zIndex: 30,
   },
 });
+
+export const appShellContentStyle = styles.content;
 
 /**
  * Route-aware application frame. AppShell must receive `undefined` for
@@ -290,6 +308,24 @@ export function ProtectedAppShell({
           />
         </aside>
       ) : null}
+
+      {/* `FullscreenPanel` (`fullscreen-panel.jsx`) portals into this — a
+          sibling of `.layout` (so, of `<main>`), not a descendant of it.
+          Two things this buys over portalling straight to `document.body`:
+          (1) it's still inside `<Theme>` (root layout wraps everything
+          here in one), so Astryx's component-level theme CSS custom
+          properties — which live on `<Theme>`'s own wrapper element, not
+          just synced onto `<html>` — keep resolving; portalling past
+          `<Theme>` entirely left buttons rendered with a transparent
+          background (color survived via `appShellContentStyle`, but
+          component theming didn't). (2) since it's NOT inside `<main>`,
+          `main`'s `isolation: isolate` can't trap its stacking order
+          below `header`'s z-index-40 context — a `position: fixed`
+          child here paints above the header purely from normal stacking
+          rules (both this div and `header` are non-positioned children
+          of the same unstyled `.root` div, so a positioned descendant's
+          z-index is compared at that shared level). */}
+      <div id="fullscreen-portal-root" />
     </div>
   );
 }

@@ -1,3 +1,6 @@
+'use client';
+
+import { MetadataListItem } from '@astryxdesign/core/MetadataList';
 import {
   borderVars,
   colorVars,
@@ -69,7 +72,29 @@ export const expandableRowStyles = stylex.create({
     height: spacingVars['--spacing-10'],
     width: spacingVars['--spacing-10'],
   },
+  // A hairline under the value, like a read-only input field — per user
+  // request (2026-09-03) that MetadataListItem values in these expanded
+  // panels read as input-style fields instead of bare key/value text.
+  metadataListItemUnderline: {
+    borderBottomColor: colorVars['--color-border'],
+    borderBottomStyle: 'solid',
+    borderBottomWidth: borderVars['--border-width'],
+    paddingBottom: spacingVars['--spacing-1'],
+  },
 });
+
+/**
+ * `MetadataListItem` with the shared underline treatment baked in — a drop-in
+ * replacement wherever a contract/customer/shipment expanded panel renders
+ * metadata fields, so every such panel gets the same input-like look without
+ * repeating the `xstyle` at each call site.
+ * @param {import('@astryxdesign/core/MetadataList').MetadataListItemProps} props
+ */
+export function UnderlinedMetadataListItem(props) {
+  return (
+    <MetadataListItem {...props} xstyle={expandableRowStyles.metadataListItemUnderline} />
+  );
+}
 
 /**
  * Builds the `transformBodyRow` plugin that makes a table row clickable to

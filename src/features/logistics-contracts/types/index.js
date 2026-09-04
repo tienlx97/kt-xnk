@@ -344,3 +344,126 @@ export {};
  * @property {PaymentType | ''} type
  * @property {string} note
  */
+
+/**
+ * @typedef {'LCL' | 'FCL'} ShipmentType
+ */
+
+/**
+ * @typedef {'Cont' | 'Kien'} ShipmentQuantityUnit
+ */
+
+/**
+ * One shipment ("lần xuất hàng") against a `Contract` — a contract has one
+ * or more. Groups Book info (booking/B-L/vessel) and Shipment/lot info;
+ * cost info is a deliberately deferred future addition (BE-kt-xnk).
+ * `shipmentNumber`/`shipmentCode` are system-assigned (BE-kt-xnk):
+ * `shipmentCode` is `{contractNumber}/LCL-{shipmentNumber:D2}` for LCL
+ * shipments or `{contractNumber}/LOT-{shipmentNumber:D2}` for FCL (2026-
+ * 09-03 business rule) — computed by the backend from the *current*
+ * contract number (same live-reference pattern as
+ * `ContractAnnex.annexCode`), so it can change if the contract is
+ * renamed even though `shipmentNumber` itself never does. `type` is
+ * immutable after creation (BE-kt-xnk) since both the code's prefix and
+ * `shipmentNumber`'s own per-type sequence depend on it — LCL and FCL
+ * each number independently within a contract, not one shared sequence.
+ * `quantityUnit` is derived from `type` (LCL → Kiện, FCL → Cont), also
+ * never independently settable.
+ * `supplierCustomerId` ("Forwarder") is a live reference into the
+ * {@link Customer} catalog (not a snapshot), same pattern as
+ * `ServiceAgreement.partyCustomerId`.
+ * @typedef {Object} Shipment
+ * @property {string} id
+ * @property {string} contractId
+ * @property {number} shipmentNumber
+ * @property {string} shipmentCode
+ * @property {string} supplierCustomerId
+ * @property {string} bookingNumber
+ * @property {string | null} billOfLadingNumber
+ * @property {string | null} shippingLine
+ * @property {string | null} vesselName
+ * @property {ShipmentType} type
+ * @property {string} name
+ * @property {PaymentType} paymentCondition
+ * @property {number} invoiceValue
+ * @property {string} invoiceCurrency - 3-letter uppercase ISO 4217 code
+ * @property {number} declarationValue
+ * @property {string} declarationCurrency - 3-letter uppercase ISO 4217 code
+ * @property {number} declarationExchangeRate
+ * @property {number} quantityAmount
+ * @property {ShipmentQuantityUnit} quantityUnit
+ * @property {number} declarationWeightKg
+ */
+
+/**
+ * @typedef {Object} ShipmentFormValues
+ * @property {string} supplierCustomerId
+ * @property {string} bookingNumber
+ * @property {string} billOfLadingNumber
+ * @property {string} shippingLine
+ * @property {string} vesselName
+ * @property {ShipmentType | ''} type
+ * @property {string} name
+ * @property {PaymentType | ''} paymentCondition
+ * @property {number | undefined} invoiceValue
+ * @property {string} invoiceCurrency
+ * @property {number | undefined} declarationValue
+ * @property {string} declarationCurrency
+ * @property {number | undefined} declarationExchangeRate
+ * @property {number | undefined} quantityAmount
+ * @property {number | undefined} declarationWeightKg
+ */
+
+/**
+ * @typedef {'Size20' | 'Size40' | 'Size40HC' | 'Size45'} ShipmentContainerType
+ */
+
+/**
+ * VGM ("Verified Gross Mass") record for one container in a `Shipment` —
+ * a shipment has one or more containers, so it has one or more of these
+ * (1:N). Unlike every other child entity in this feature, VGM records
+ * support delete (BE-kt-xnk). `sequenceNumber` is backend-assigned,
+ * purely for stable ordering — `containerNumber` is already the natural
+ * human-facing identifier, so there is no computed "code" the way
+ * `Shipment.shipmentCode` works. `grossWeight`/`vgm` are computed by the
+ * backend from the record's own fields (`grossWeight = netWeight +
+ * packagingWeight`, `vgm = grossWeight + tare`) and never editable.
+ * @typedef {Object} ShipmentVgm
+ * @property {string} id
+ * @property {string} shipmentId
+ * @property {number} sequenceNumber
+ * @property {string} containerNumber
+ * @property {string} sealNumber
+ * @property {ShipmentContainerType} containerType
+ * @property {number} tare
+ * @property {number} payload
+ * @property {number} maxGross
+ * @property {number} netWeight
+ * @property {number} packagingWeight
+ * @property {number} grossWeight
+ * @property {number} vgm
+ * @property {string} packingDate
+ * @property {string | null} plannedPackingTime
+ * @property {string | null} actualPackingTime
+ * @property {string | null} truckArrivalTime
+ * @property {string} carrierCustomerId
+ * @property {string | null} note
+ */
+
+/**
+ * @typedef {Object} ShipmentVgmFormValues
+ * @property {string} containerNumber
+ * @property {string} sealNumber
+ * @property {ShipmentContainerType | ''} containerType
+ * @property {number | undefined} tare
+ * @property {number | undefined} payload
+ * @property {number | undefined} maxGross
+ * @property {number | undefined} netWeight
+ * @property {number | undefined} packagingWeight
+ * @property {string} packingDate
+ * @property {string} plannedPackingTime
+ * @property {string} actualPackingTime
+ * @property {string} truckArrivalTime
+ * @property {string} carrierCustomerId
+ * @property {string} note
+ */

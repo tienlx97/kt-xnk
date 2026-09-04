@@ -1,0 +1,436 @@
+'use client';
+
+import { Button } from '@astryxdesign/core/Button';
+import { DialogHeader } from '@astryxdesign/core/Dialog';
+import { HStack } from '@astryxdesign/core/HStack';
+import { Icon } from '@astryxdesign/core/Icon';
+import { Layout, LayoutContent, LayoutFooter } from '@astryxdesign/core/Layout';
+import { Selector } from '@astryxdesign/core/Selector';
+import { pixel, proportional, useTableRowExpansion } from '@astryxdesign/core/Table';
+import { Heading } from '@astryxdesign/core/Text';
+import { VStack } from '@astryxdesign/core/VStack';
+import { Plus } from 'lucide-react';
+import { useMemo, useState } from 'react';
+
+import {
+  AdvanceTable,
+  AdvanceTableErrorBanner,
+} from '@/shared/components/advance-table.jsx';
+import { CommonDialog } from '@/shared/components/common-dialog.jsx';
+import { createRowExpansionInteractionPlugin } from '@/shared/components/expandable-row-styles.jsx';
+
+import { formatMoney } from '../config/currencies.js';
+import { labelForShipmentQuantityUnit } from '../config/shipment-quantity-units.js';
+import { labelForShipmentType } from '../config/shipment-types.js';
+import { useContractsQuery } from '../hooks/use-contracts-query.js';
+import { useCustomersQuery } from '../hooks/use-customers-query.js';
+import { useShipmentsListQuery } from '../hooks/use-shipments-list-query.js';
+import { ShipmentExpandedDetails } from './shipment-expanded-details.jsx';
+import { ShipmentFormDialog } from './shipment-form-dialog.jsx';
+import { ShipmentVgmFormDialog } from './shipment-vgm-form-dialog.jsx';
+
+/** @param {string | null | undefined} value */
+function orDash(value) {
+  return value == null || value === '' ? '—' : value;
+}
+
+/** @satisfies {ReadonlyArray<import('@astryxdesign/core/PowerSearch').FieldDefinition>} */
+const SEARCH_FIELD_DEFS = [
+  { key: 'shipmentCode', type: 'string', label: 'Mã' },
+  { key: 'name', type: 'string', label: 'Tên lô hàng' },
+  { key: 'contractNumber', type: 'string', label: 'Số hợp đồng' },
+  { key: 'projectName', type: 'string', label: 'Dự án' },
+  { key: 'bookingNumber', type: 'string', label: 'Booking' },
+];
+
+const COLUMN_OPTIONS = [
+  { key: 'shipmentCode', label: 'Mã', isAlwaysVisible: true },
+  { key: 'contractNumber', label: 'Số hợp đồng' },
+  { key: 'projectName', label: 'Dự án' },
+  { key: 'name', label: 'Tên lô hàng' },
+  { key: 'type', label: 'Loại hình' },
+  { key: 'quantity', label: 'Số lượng' },
+  { key: 'bookingNumber', label: 'Booking' },
+  { key: 'supplier', label: 'Forwarder' },
+  { key: 'invoiceValue', label: 'Giá trị invoice' },
+];
+// Narrow default, same "start narrow, opt in via Tuỳ chọn hiển thị"
+// convention as `contracts-list.jsx`'s `DEFAULT_COLUMN_KEYS`.
+const DEFAULT_COLUMN_KEYS = [
+  'shipmentCode',
+  'contractNumber',
+  'name',
+  'type',
+  'invoiceValue',
+];
+
+const SKELETON_ROW_COUNT = 6;
+const DEFAULT_PAGE_SIZE = 25;
+const PAGE_SIZE_OPTIONS = ['10', '25', '50', '100'];
+
+/**
+ * A `Shipment` plus fields resolved client-side for display — same reason
+ * as `ServiceAgreementListRow` in `service-agreements-list.jsx`: the
+ * system-wide `GET /api/v1/shipments` response doesn't carry the parent
+ * contract's number/project or the forwarder's name.
+ * @typedef {import('../types/index.js').Shipment & {
+ *   contractNumber: string,
+ *   projectName: string,
+ *   supplierName: string,
+ * }} ShipmentListRow
+ */
+
+/** @type {ShipmentListRow[]} */
+const skeletonRows = Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => ({
+  id: `skeleton-${index}`,
+  contractId: '',
+  shipmentNumber: 0,
+  shipmentCode: '',
+  supplierCustomerId: '',
+  bookingNumber: '',
+  billOfLadingNumber: null,
+  shippingLine: null,
+  vesselName: null,
+  type: 'LCL',
+  name: '',
+  paymentCondition: 'TT',
+  invoiceValue: 0,
+  invoiceCurrency: '',
+  declarationValue: 0,
+  declarationCurrency: '',
+  declarationExchangeRate: 0,
+  quantityAmount: 0,
+  quantityUnit: 'Kien',
+  declarationWeightKg: 0,
+  contractNumber: '',
+  projectName: '',
+  supplierName: '',
+}));
+
+export function ShipmentsList() {
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [pageIndex, setPageIndex] = useState(1);
+  const [expandedShipmentId, setExpandedShipmentId] = useState(
+    /** @type {string | null} */ (null),
+  );
+
+  // Dialogs are all rendered as siblings of `AdvanceTable` below, never
+  // inside `renderExpanded` — `contracts-list.jsx`'s big comment above
+  // `ContractsList` explains why: a `Selector`-bearing dialog opened from
+  // inside a table row's expanded content portals its dropdown underneath
+  // the dialog itself (clicks land on the trigger instead of the option).
+  const [isPickingContract, setIsPickingContract] = useState(false);
+  const [pickedContractId, setPickedContractId] = useState(
+    /** @type {string | null} */ (null),
+  );
+  const [shipmentDialog, setShipmentDialog] = useState(
+    /** @type {{ contractId: string, shipment?: import('../types/index.js').Shipment } | null} */ (
+      null
+    ),
+  );
+  const [vgmDialog, setVgmDialog] = useState(
+    /** @type {{ contractId: string, shipmentId: string, vgm?: import('../types/index.js').ShipmentVgm } | null} */ (
+      null
+    ),
+  );
+
+  const shipmentsQuery = useShipmentsListQuery({ page: pageIndex, pageSize });
+  const listResult = shipmentsQuery.data;
+  const shipments = listResult?.success ? listResult.shipments : [];
+
+  // Neither field the table needs alongside a Shipment — the parent
+  // contract's number/project, and the forwarder's company name — comes
+  // back on `ShipmentResponse` itself, so both are resolved client-side
+  // from the Contract/Customer catalogs, same pattern as
+  // `contractsById`/`customersById` in `service-agreements-list.jsx`.
+  // `pageSize: 100` is that same list's own effective ceiling — fine
+  // while every contract fits on one page.
+  const contractsQuery = useContractsQuery({ page: 1, pageSize: 100 });
+  const contracts = useMemo(
+    () =>
+      contractsQuery.data?.success ? contractsQuery.data.contracts : [],
+    [contractsQuery.data],
+  );
+  const contractsById = useMemo(
+    () => new Map(contracts.map((contract) => [contract.id, contract])),
+    [contracts],
+  );
+
+  const customersQuery = useCustomersQuery();
+  const customersById = useMemo(
+    () =>
+      new Map(
+        (customersQuery.data?.success ? customersQuery.data.customers : []).map(
+          (customer) => [customer.id, customer],
+        ),
+      ),
+    [customersQuery.data],
+  );
+
+  const searchableShipments = shipments.map((shipment) => {
+    const contract = contractsById.get(shipment.contractId);
+    return {
+      ...shipment,
+      contractNumber: contract?.contractNumber ?? '',
+      projectName: contract?.projectName ?? '',
+      supplierName:
+        customersById.get(shipment.supplierCustomerId)?.companyName ?? '',
+    };
+  });
+
+  /** @type {import('@astryxdesign/core/Table').TableColumn<ShipmentListRow>[]} */
+  const columns = [
+    {
+      key: 'shipmentCode',
+      header: 'Mã',
+      width: pixel(120),
+      filter: 'shipmentCode',
+      renderCell: (row) => row.shipmentCode,
+    },
+    {
+      key: 'contractNumber',
+      header: 'Số hợp đồng',
+      width: pixel(140),
+      filter: 'contractNumber',
+      renderCell: (row) => orDash(row.contractNumber),
+    },
+    {
+      key: 'projectName',
+      header: 'Dự án',
+      width: proportional(1.2),
+      filter: 'projectName',
+      renderCell: (row) => orDash(row.projectName),
+    },
+    {
+      key: 'name',
+      header: 'Tên lô hàng',
+      width: proportional(1.2),
+      filter: 'name',
+      renderCell: (row) => row.name,
+    },
+    {
+      key: 'type',
+      header: 'Loại hình',
+      width: pixel(90),
+      renderCell: (row) => labelForShipmentType(row.type),
+    },
+    {
+      key: 'quantity',
+      header: 'Số lượng',
+      width: pixel(110),
+      renderCell: (row) =>
+        `${row.quantityAmount} ${labelForShipmentQuantityUnit(row.quantityUnit)}`,
+    },
+    {
+      key: 'bookingNumber',
+      header: 'Booking',
+      width: pixel(140),
+      filter: 'bookingNumber',
+      renderCell: (row) => row.bookingNumber,
+    },
+    {
+      key: 'supplier',
+      header: 'Forwarder',
+      width: proportional(1),
+      renderCell: (row) => orDash(row.supplierName),
+    },
+    {
+      key: 'invoiceValue',
+      header: 'Giá trị invoice',
+      width: pixel(140),
+      align: 'end',
+      renderCell: (row) => formatMoney(row.invoiceValue, row.invoiceCurrency),
+    },
+  ];
+
+  const expandedKeys = useMemo(
+    () => new Set(expandedShipmentId ? [expandedShipmentId] : []),
+    [expandedShipmentId],
+  );
+  const expansionPlugin =
+    /** @type {import('@astryxdesign/core/Table').TablePlugin<ShipmentListRow>} */ (
+      useTableRowExpansion({
+        expandedKeys,
+        onToggle: (id) =>
+          setExpandedShipmentId((current) => (current === id ? null : id)),
+        getRowKey: (row) => row.id,
+        getIsItemExpandable: (row) => !row.id.startsWith('skeleton-'),
+        renderExpanded: (row) => (
+          <ShipmentExpandedDetails
+            contractId={row.contractId}
+            shipment={row}
+            supplierName={row.supplierName}
+            customersById={customersById}
+            onAddVgm={() =>
+              setVgmDialog({ contractId: row.contractId, shipmentId: row.id })
+            }
+            onEditVgm={(vgm) =>
+              setVgmDialog({ contractId: row.contractId, shipmentId: row.id, vgm })
+            }
+            onEdit={() =>
+              setShipmentDialog({ contractId: row.contractId, shipment: row })
+            }
+          />
+        ),
+      })
+    );
+  const rowInteractionPlugin = useMemo(
+    /** @returns {import('@astryxdesign/core/Table').TablePlugin<ShipmentListRow>} */
+    () =>
+      createRowExpansionInteractionPlugin({
+        expandedId: expandedShipmentId,
+        onToggle: (id) =>
+          setExpandedShipmentId((current) => (current === id ? null : id)),
+        isExpandable: (row) => !row.id.startsWith('skeleton-'),
+      }),
+    [expandedShipmentId],
+  );
+
+  const totalShipments = listResult?.success ? listResult.totalCount : 0;
+  const totalPages = Math.max(
+    1,
+    listResult?.success ? listResult.totalPages : 1,
+  );
+
+  function handleContinuePickingContract() {
+    if (!pickedContractId) return;
+    setIsPickingContract(false);
+    setShipmentDialog({ contractId: pickedContractId });
+    setPickedContractId(null);
+  }
+
+  return (
+    <VStack gap={4} hAlign="stretch">
+      <HStack hAlign="between" vAlign="center" wrap="wrap" gap={3}>
+        <Heading level={1}>Shipment</Heading>
+        <Button
+          label="Thêm Shipment"
+          variant="primary"
+          icon={<Icon icon={Plus} />}
+          onClick={() => setIsPickingContract(true)}
+        />
+      </HStack>
+
+      {listResult && !listResult.success ? (
+        <AdvanceTableErrorBanner message={listResult.message} />
+      ) : null}
+
+      <AdvanceTable
+        toolbarLabel="Thao tác danh sách Shipment"
+        searchFieldDefs={SEARCH_FIELD_DEFS}
+        entityLabel="Shipment"
+        contentSearchFieldKey="shipmentCode"
+        searchPlaceholder="Tìm mã, tên lô hàng, số hợp đồng..."
+        columnOptions={COLUMN_OPTIONS}
+        initialColumnKeys={DEFAULT_COLUMN_KEYS}
+        defaultColumnKeys={DEFAULT_COLUMN_KEYS}
+        tableColumns={columns}
+        data={searchableShipments}
+        idKey="id"
+        isLoading={shipmentsQuery.isLoading}
+        skeletonRows={skeletonRows}
+        extraPlugins={{
+          expansion: expansionPlugin,
+          rowInteraction: rowInteractionPlugin,
+        }}
+        onRefresh={() => shipmentsQuery.refetch()}
+        isRefreshing={shipmentsQuery.isFetching}
+        pagination={{
+          pageIndex,
+          pageSize,
+          totalCount: totalShipments,
+          totalPages,
+          onPageIndexChange: setPageIndex,
+          onPageSizeChange: setPageSize,
+          pageSizeOptions: PAGE_SIZE_OPTIONS,
+        }}
+      />
+
+      {isPickingContract ? (
+        <CommonDialog
+          isOpen={isPickingContract}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) {
+              setIsPickingContract(false);
+              setPickedContractId(null);
+            }
+          }}
+          width={480}
+        >
+          <Layout
+            header={
+              <DialogHeader
+                title="Chọn hợp đồng"
+                onOpenChange={() => setIsPickingContract(false)}
+              />
+            }
+            content={
+              <LayoutContent padding={6}>
+                <Selector
+                  label="Hợp đồng"
+                  hasSearch
+                  hasClear
+                  placeholder="Chọn hợp đồng cần thêm Shipment"
+                  value={pickedContractId}
+                  onChange={setPickedContractId}
+                  options={contracts.map((contract) => ({
+                    value: contract.id,
+                    label: `${contract.contractNumber} · ${contract.projectName}`,
+                  }))}
+                  width="100%"
+                />
+              </LayoutContent>
+            }
+            footer={
+              <LayoutFooter>
+                <HStack hAlign="end" gap={2}>
+                  <Button
+                    label="Hủy"
+                    variant="secondary"
+                    onClick={() => {
+                      setIsPickingContract(false);
+                      setPickedContractId(null);
+                    }}
+                  />
+                  <Button
+                    label="Tiếp tục"
+                    variant="primary"
+                    isDisabled={!pickedContractId}
+                    onClick={handleContinuePickingContract}
+                  />
+                </HStack>
+              </LayoutFooter>
+            }
+          />
+        </CommonDialog>
+      ) : null}
+
+      {shipmentDialog ? (
+        <ShipmentFormDialog
+          key={shipmentDialog.shipment?.id ?? 'create'}
+          isOpen
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setShipmentDialog(null);
+          }}
+          contractId={shipmentDialog.contractId}
+          shipment={shipmentDialog.shipment}
+          onSuccess={() => setShipmentDialog(null)}
+        />
+      ) : null}
+
+      {vgmDialog ? (
+        <ShipmentVgmFormDialog
+          key={vgmDialog.vgm?.id ?? 'create'}
+          isOpen
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setVgmDialog(null);
+          }}
+          contractId={vgmDialog.contractId}
+          shipmentId={vgmDialog.shipmentId}
+          vgm={vgmDialog.vgm}
+          onSuccess={() => setVgmDialog(null)}
+        />
+      ) : null}
+    </VStack>
+  );
+}

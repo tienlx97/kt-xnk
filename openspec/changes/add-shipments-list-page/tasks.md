@@ -1,0 +1,13 @@
+# Tasks: Shipments List Page
+
+- [x] 1.1 Add `listAllShipments` to `api/shipments.js` — verify: `pnpm run typecheck` passes.
+- [x] 1.2 Add `hooks/use-shipments-list-query.js` — verify: lint clean.
+- [x] 1.3 Build `components/shipments-list.jsx` (list + join + row expansion + contract-picker create flow) — verify: lint + typecheck clean.
+- [x] 1.4 Export `ShipmentsList` from `features/logistics-contracts/index.js`.
+- [x] 1.5 Add `app/(protected)/logistics/shipments/page.jsx`.
+- [x] 1.6 Wire nav (`sidebarLogistics.json`) and route gating (`route-access.js`).
+- [x] 1.7 Live-verify in browser: list loads with contract/forwarder columns resolved (`GET /api/v1/shipments` returns 200 with real data), create-via-contract-picker opens the right dialog, row expansion shows metadata + VGM, "Thêm VGM" dialog's `Selector` dropdown is mouse-clickable (no portal-stacking regression) — verify: `./harness/verify.sh` full pass + manual browser check, evidence `harness/runs/20260904-085546-700649/`.
+
+## 2. Follow-up fix found during live verification
+
+- [x] 2.1 `AdvanceTable` drops any `tableColumns` key not also declared in `columnOptions` — the originally-planned per-row "Sửa" icon column silently disappeared. Removed that column; added an optional `onEdit` prop to `ShipmentExpandedDetails` (unused by `contracts-list.jsx`, which keeps its own row-level icon on a plain, non-`AdvanceTable` `<Table>`) rendering a "Sửa Shipment" footer button, same spot pattern as `ContractExpandedDetails`'s "Sửa hợp đồng" — verify: live-clicked it, edit dialog opens pre-filled with the row's data.

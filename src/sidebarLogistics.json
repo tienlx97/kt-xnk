@@ -7,6 +7,10 @@
       "path": "/logistics/contracts"
     },
     {
+      "title": "Shipment",
+      "path": "/logistics/shipments"
+    },
+    {
       "title": "Service Agreement",
       "path": "/logistics/service-agreements"
     },
