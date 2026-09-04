@@ -7,20 +7,20 @@ import { NumberInput } from '@astryxdesign/core/NumberInput';
 import { Selector } from '@astryxdesign/core/Selector';
 import { VStack } from '@astryxdesign/core/VStack';
 
-import { serviceAgreementAnnexTypeOptions } from '../config/service-agreement-annex-types.js';
+import { commissionAnnexTypeOptions } from '../config/commission-annex-types.js';
 
 /**
- * `ServiceAgreementAnnex` field-set. `annexNumber`/`annexCode` are
+ * `CommissionAnnex` field-set. `annexNumber`/`annexCode` are
  * backend-assigned and never editable, so they have no fields here — shown
  * read-only in the dialog header when editing (see
- * `ServiceAgreementAnnexFormDialog`).
+ * `CommissionAnnexFormDialog`).
  * @param {{
- *   values: import('../types/index.js').ServiceAgreementAnnexFormValues,
- *   setField: <K extends keyof import('../types/index.js').ServiceAgreementAnnexFormValues>(field: K, value: import('../types/index.js').ServiceAgreementAnnexFormValues[K]) => void,
+ *   values: import('../types/index.js').CommissionAnnexFormValues,
+ *   setField: <K extends keyof import('../types/index.js').CommissionAnnexFormValues>(field: K, value: import('../types/index.js').CommissionAnnexFormValues[K]) => void,
  *   fieldStatuses: Record<string, { type: 'error', message: string } | undefined>,
  * }} props
  */
-export function ServiceAgreementAnnexFields({
+export function CommissionAnnexFields({
   values,
   setField,
   fieldStatuses,
@@ -34,12 +34,12 @@ export function ServiceAgreementAnnexFields({
         onChange={(value) =>
           setField(
             'type',
-            /** @type {import('../types/index.js').ServiceAgreementAnnexType | ''} */ (
+            /** @type {import('../types/index.js').CommissionAnnexType | ''} */ (
               value ?? ''
             ),
           )
         }
-        options={serviceAgreementAnnexTypeOptions}
+        options={commissionAnnexTypeOptions}
         isRequired
         status={fieldStatuses.type}
         statusVariant="tooltip"

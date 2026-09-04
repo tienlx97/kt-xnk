@@ -1,0 +1,139 @@
+import { apiRequest } from '@/shared/api/api-client.js';
+
+const GENERIC_LIST_ERROR = 'Không thể tải danh sách Commission';
+const GENERIC_GET_ERROR = 'Không thể tải Commission';
+const GENERIC_CREATE_ERROR = 'Không thể tạo Commission';
+const GENERIC_UPDATE_ERROR = 'Không thể cập nhật Commission';
+
+/**
+ * System-wide list across every contract (unlike the other functions here,
+ * not scoped under `/contracts/{contractId}`) — non-Admin callers only see
+ * commissions whose parent contract's `CompanyId` they have
+ * `logistics:contracts:view` on; Admin sees all (see
+ * `docs/api/Commissions.md`, BE-kt-xnk).
+ * @param {{ page?: number, pageSize?: number }} [options]
+ * @returns {Promise<{ success: true, commissions: import('../types/index.js').Commission[], page: number, pageSize: number, totalCount: number, totalPages: number } | { success: false, message: string }>}
+ */
+export async function listCommissions({ page = 1, pageSize = 25 } = {}) {
+  const result = await apiRequest(
+    `/api/v1/commissions?page=${page}&pageSize=${pageSize}`,
+    { errorMessage: GENERIC_LIST_ERROR },
+  );
+
+  if (!result.success) {
+    return { success: false, message: result.message };
+  }
+
+  return {
+    success: true,
+    commissions: result.data?.items ?? [],
+    page: result.data?.page ?? page,
+    pageSize: result.data?.pageSize ?? pageSize,
+    totalCount: result.data?.totalCount ?? 0,
+    totalPages: result.data?.totalPages ?? 0,
+  };
+}
+
+/**
+ * At most one per contract. A `404` means the contract has none yet —
+ * not an error the UI should show, so it is folded into `exists: false`
+ * rather than `success: false`.
+ * @param {string} contractId
+ * @returns {Promise<{ success: true, exists: true, commission: import('../types/index.js').Commission } | { success: true, exists: false } | { success: false, message: string }>}
+ */
+export async function getCommission(contractId) {
+  const result = await apiRequest(`/api/v1/contracts/${contractId}/commission`, {
+    errorMessage: GENERIC_GET_ERROR,
+  });
+
+  if (!result.success) {
+    if (result.status === 404) {
+      return { success: true, exists: false };
+    }
+    return { success: false, message: result.message };
+  }
+
+  return { success: true, exists: true, commission: result.data };
+}
+
+/**
+ * @param {string} contractId
+ * @param {import('../types/index.js').CommissionFormValues} values
+ * @param {{ paymentRatioPercent: number, paymentCondition: string }[]} paymentTerms
+ * @param {{ paymentDate: string, amount: number, note: string }[]} [paymentHistory]
+ * @returns {Promise<{ success: true, commission: import('../types/index.js').Commission } | { success: false, message: string }>}
+ */
+export async function createCommission(
+  contractId,
+  values,
+  paymentTerms,
+  paymentHistory = [],
+) {
+  const result = await apiRequest(`/api/v1/contracts/${contractId}/commission`, {
+    method: 'POST',
+    errorMessage: GENERIC_CREATE_ERROR,
+    body: {
+      SignedDate: values.signedDate,
+      PartyCustomerId: values.partyCustomerId,
+      Value: values.value,
+      SellerSigned: values.sellerSigned,
+      PartySigned: values.partySigned,
+      PaymentTerms: paymentTerms.map((term) => ({
+        PaymentRatioPercent: term.paymentRatioPercent,
+        PaymentCondition: term.paymentCondition,
+      })),
+      PaymentHistory: paymentHistory.map((payment) => ({
+        PaymentDate: payment.paymentDate,
+        Amount: payment.amount,
+        Note: payment.note || null,
+      })),
+    },
+  });
+
+  if (!result.success) {
+    return { success: false, message: result.message };
+  }
+
+  return { success: true, commission: result.data };
+}
+
+/**
+ * @param {string} contractId
+ * @param {import('../types/index.js').CommissionFormValues} values
+ * @param {{ paymentRatioPercent: number, paymentCondition: string }[]} paymentTerms
+ * @param {{ paymentDate: string, amount: number, note: string }[]} [paymentHistory]
+ * @returns {Promise<{ success: true, commission: import('../types/index.js').Commission } | { success: false, message: string }>}
+ */
+export async function updateCommission(
+  contractId,
+  values,
+  paymentTerms,
+  paymentHistory = [],
+) {
+  const result = await apiRequest(`/api/v1/contracts/${contractId}/commission`, {
+    method: 'PUT',
+    errorMessage: GENERIC_UPDATE_ERROR,
+    body: {
+      SignedDate: values.signedDate,
+      PartyCustomerId: values.partyCustomerId,
+      Value: values.value,
+      SellerSigned: values.sellerSigned,
+      PartySigned: values.partySigned,
+      PaymentTerms: paymentTerms.map((term) => ({
+        PaymentRatioPercent: term.paymentRatioPercent,
+        PaymentCondition: term.paymentCondition,
+      })),
+      PaymentHistory: paymentHistory.map((payment) => ({
+        PaymentDate: payment.paymentDate,
+        Amount: payment.amount,
+        Note: payment.note || null,
+      })),
+    },
+  });
+
+  if (!result.success) {
+    return { success: false, message: result.message };
+  }
+
+  return { success: true, commission: result.data };
+}

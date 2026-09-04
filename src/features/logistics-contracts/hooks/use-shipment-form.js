@@ -27,6 +27,9 @@ function emptyValues() {
     declarationExchangeRate: undefined,
     quantityAmount: undefined,
     declarationWeightKg: undefined,
+    coNumber: '',
+    coDeclarationDate: '',
+    coIssuedDate: '',
   };
 }
 
@@ -48,6 +51,9 @@ function valuesFromShipment(shipment) {
     declarationExchangeRate: shipment.declarationExchangeRate,
     quantityAmount: shipment.quantityAmount,
     declarationWeightKg: shipment.declarationWeightKg,
+    coNumber: shipment.coNumber ?? '',
+    coDeclarationDate: shipment.coDeclarationDate ?? '',
+    coIssuedDate: shipment.coIssuedDate ?? '',
   };
 }
 

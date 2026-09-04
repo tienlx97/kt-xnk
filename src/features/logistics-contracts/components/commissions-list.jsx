@@ -23,14 +23,14 @@ import {
   UnderlinedMetadataListItem as MetadataListItem,
 } from '@/shared/components/expandable-row-styles.jsx';
 
+import { labelForCommissionAnnexType } from '../config/commission-annex-types.js';
 import { formatMoney } from '../config/currencies.js';
-import { labelForServiceAgreementAnnexType } from '../config/service-agreement-annex-types.js';
+import { useCommissionAnnexesQuery } from '../hooks/use-commission-annexes-query.js';
+import { useCommissionsQuery } from '../hooks/use-commissions-query.js';
 import { useContractsQuery } from '../hooks/use-contracts-query.js';
 import { useCustomersQuery } from '../hooks/use-customers-query.js';
-import { useServiceAgreementAnnexesQuery } from '../hooks/use-service-agreement-annexes-query.js';
-import { useServiceAgreementsQuery } from '../hooks/use-service-agreements-query.js';
-import { ServiceAgreementAnnexFormDialog } from './service-agreement-annex-form-dialog.jsx';
-import { ServiceAgreementFormDialog } from './service-agreement-form-dialog.jsx';
+import { CommissionAnnexFormDialog } from './commission-annex-form-dialog.jsx';
+import { CommissionFormDialog } from './commission-form-dialog.jsx';
 
 /** @param {string | null | undefined} value */
 function orDash(value) {
@@ -41,7 +41,7 @@ function orDash(value) {
  * Signed amount label for one annex row — same sign convention as
  * `grandTotal`'s `AmountIncrease`/`AmountDecrease` math below:
  * `InfoChange` never represents a value change, so it gets no sign.
- * @param {import('../types/index.js').ServiceAgreementAnnex} annex
+ * @param {import('../types/index.js').CommissionAnnex} annex
  * @param {string} currency
  */
 function annexAmountLabel(annex, currency) {
@@ -85,18 +85,18 @@ const DEFAULT_PAGE_SIZE = 25;
 const PAGE_SIZE_OPTIONS = ['10', '25', '50', '100'];
 
 /**
- * A `ServiceAgreement` plus the fields resolved client-side for display —
- * see the comment above `contractsById` in `ServiceAgreementsList` for why
+ * A `Commission` plus the fields resolved client-side for display —
+ * see the comment above `contractsById` in `CommissionsList` for why
  * these aren't already on the API response.
- * @typedef {import('../types/index.js').ServiceAgreement & {
+ * @typedef {import('../types/index.js').Commission & {
  *   contractNumber: string,
  *   projectName: string,
  *   currency: string,
  *   partyCustomerName: string,
- * }} ServiceAgreementListRow
+ * }} CommissionListRow
  */
 
-/** @type {ServiceAgreementListRow[]} */
+/** @type {CommissionListRow[]} */
 const skeletonRows = Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => ({
   id: `skeleton-${index}`,
   contractId: '',
@@ -109,6 +109,7 @@ const skeletonRows = Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => ({
   sellerSigned: false,
   partySigned: false,
   paymentTerms: [],
+  paymentHistory: [],
   contractNumber: '',
   projectName: '',
   currency: '',
@@ -116,35 +117,35 @@ const skeletonRows = Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => ({
 }));
 
 /**
- * Expanded row for one Service Agreement — same layout/actions as the
- * "Service Agreement" tab in `ContractExpandedDetails`
+ * Expanded row for one Commission — same layout/actions as the
+ * "Commission" tab in `ContractExpandedDetails`
  * (`contracts-list.jsx`), just entered from this system-wide list instead
  * of from a specific contract's row.
  *
- * Dialog-opening is forwarded up to `ServiceAgreementsList` via
+ * Dialog-opening is forwarded up to `CommissionsList` via
  * `onEdit`/`onAddAnnex`/`onEditAnnex` rather than owned here — see the
- * "Selector popover stacking" note above `ServiceAgreementsList` for why.
+ * "Selector popover stacking" note above `CommissionsList` for why.
  * @param {{
- *   row: ServiceAgreementListRow,
+ *   row: CommissionListRow,
  *   onEdit: () => void,
  *   onAddAnnex: () => void,
- *   onEditAnnex: (annex: import('../types/index.js').ServiceAgreementAnnex) => void,
+ *   onEditAnnex: (annex: import('../types/index.js').CommissionAnnex) => void,
  * }} props
  */
-function ServiceAgreementExpandedDetails({
+function CommissionExpandedDetails({
   row,
   onEdit,
   onAddAnnex,
   onEditAnnex,
 }) {
-  const annexesQuery = useServiceAgreementAnnexesQuery(row.contractId);
+  const annexesQuery = useCommissionAnnexesQuery(row.contractId);
   const annexes = annexesQuery.data?.success ? annexesQuery.data.annexes : [];
 
-  // "Tổng cộng" = the agreement's own `value` plus every annex's `amount`,
+  // "Tổng cộng" = the commission's own `value` plus every annex's `amount`,
   // signed by its `type` — `AmountIncrease` adds, `AmountDecrease`
   // subtracts, `InfoChange` doesn't touch the value (matches
-  // `docs/api/ServiceAgreements.md`'s note that annexes never mutate the
-  // agreement's own `Value`, so this total is a display-only rollup, not
+  // `docs/api/Commissions.md`'s note that annexes never mutate the
+  // commission's own `Value`, so this total is a display-only rollup, not
   // something the backend also computes).
   const annexesTotal = annexes.reduce((total, annex) => {
     if (annex.type === 'AmountIncrease') return total + annex.amount;
@@ -218,6 +219,23 @@ function ServiceAgreementExpandedDetails({
         )}
       </MetadataList>
 
+      <MetadataList
+        title="Lịch sử thanh toán"
+        columns={4}
+        label={{ position: 'top' }}
+      >
+        {row.paymentHistory.length === 0 ? (
+          <MetadataListItem label="Lịch sử thanh toán">—</MetadataListItem>
+        ) : (
+          row.paymentHistory.map((payment) => (
+            <MetadataListItem key={payment.id} label={payment.paymentDate}>
+              {formatMoney(payment.amount, row.currency)}
+              {payment.note ? ` · ${payment.note}` : ''}
+            </MetadataListItem>
+          ))
+        )}
+      </MetadataList>
+
       <HStack hAlign="between" vAlign="center">
         <Text weight="semibold">Phụ lục</Text>
         <Button
@@ -236,7 +254,7 @@ function ServiceAgreementExpandedDetails({
           {annexes.map((annex) => (
             <ListItem
               key={annex.id}
-              label={`${annex.annexCode} · ${labelForServiceAgreementAnnexType(annex.type)}`}
+              label={`${annex.annexCode} · ${labelForCommissionAnnexType(annex.type)}`}
               description={[
                 `Ký ${annex.signedDate}`,
                 `Bên bán: ${annex.sellerSigned ? 'đã ký' : 'chưa ký'}`,
@@ -271,7 +289,7 @@ function ServiceAgreementExpandedDetails({
 
       <HStack hAlign="end">
         <Button
-          label="Sửa Service Agreement"
+          label="Sửa Commission"
           variant="secondary"
           size="sm"
           icon={<Icon icon={Pencil} />}
@@ -288,42 +306,42 @@ function ServiceAgreementExpandedDetails({
  * `Selector` portals its dropdown outside the nearest "unsafe host"
  * ancestor (`<table>`, `<tr>`, ...), so a `*FormDialog` with a `Selector`
  * field declared inside this table's own `renderExpanded` callback
- * (`ServiceAgreementFormDialog` and `ServiceAgreementAnnexFormDialog` both
+ * (`CommissionFormDialog` and `CommissionAnnexFormDialog` both
  * have one) gets its dropdown portaled to the table's scroll wrapper and
  * stacked underneath the dialog — clicks land on the dialog instead of the
  * option. Both dialogs are therefore rendered HERE, a sibling of
  * `AdvanceTable`, with only trigger callbacks (`onEdit`, `onAddAnnex`,
- * `onEditAnnex`) passed down to `ServiceAgreementExpandedDetails`. Do not
+ * `onEditAnnex`) passed down to `CommissionExpandedDetails`. Do not
  * move a `*FormDialog` back inside `renderExpanded`.
  */
-export function ServiceAgreementsList() {
+export function CommissionsList() {
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [pageIndex, setPageIndex] = useState(1);
-  const [expandedAgreementId, setExpandedAgreementId] = useState(
+  const [expandedCommissionId, setExpandedCommissionId] = useState(
     /** @type {string | null} */ (null),
   );
-  const [editingAgreementRow, setEditingAgreementRow] = useState(
-    /** @type {ServiceAgreementListRow | null} */ (null),
+  const [editingCommissionRow, setEditingCommissionRow] = useState(
+    /** @type {CommissionListRow | null} */ (null),
   );
   const [annexDialog, setAnnexDialog] = useState(
-    /** @type {{ contractId: string, annex?: import('../types/index.js').ServiceAgreementAnnex } | null} */ (
+    /** @type {{ contractId: string, annex?: import('../types/index.js').CommissionAnnex } | null} */ (
       null
     ),
   );
 
-  const serviceAgreementsQuery = useServiceAgreementsQuery({
+  const commissionsQuery = useCommissionsQuery({
     page: pageIndex,
     pageSize,
   });
-  const listResult = serviceAgreementsQuery.data;
-  const serviceAgreements = listResult?.success
-    ? listResult.serviceAgreements
+  const listResult = commissionsQuery.data;
+  const commissions = listResult?.success
+    ? listResult.commissions
     : [];
 
-  // Neither field the table needs to display alongside a Service Agreement
+  // Neither field the table needs to display alongside a Commission
   // — the parent contract's number/project/currency, and the commission
-  // recipient's name — comes back on `ServiceAgreementResponse` itself
-  // (see `docs/api/ServiceAgreements.md`, BE-kt-xnk); both are resolved
+  // recipient's name — comes back on `CommissionResponse` itself
+  // (see `docs/api/Commissions.md`, BE-kt-xnk); both are resolved
   // client-side from the Contract/Customer catalogs, same pattern as
   // `banksById`/`countriesById` in `contracts-list.jsx`. `pageSize: 100` is
   // the contracts list's own effective ceiling — fine while every contract
@@ -351,19 +369,19 @@ export function ServiceAgreementsList() {
     [customersQuery.data],
   );
 
-  const searchableServiceAgreements = serviceAgreements.map((agreement) => {
-    const contract = contractsById.get(agreement.contractId);
+  const searchableCommissions = commissions.map((commission) => {
+    const contract = contractsById.get(commission.contractId);
     return {
-      ...agreement,
+      ...commission,
       contractNumber: contract?.contractNumber ?? '',
       projectName: contract?.projectName ?? '',
       currency: contract?.currency ?? '',
       partyCustomerName:
-        customersById.get(agreement.partyCustomerId)?.companyName ?? '',
+        customersById.get(commission.partyCustomerId)?.companyName ?? '',
     };
   });
 
-  /** @type {import('@astryxdesign/core/Table').TableColumn<ServiceAgreementListRow>[]} */
+  /** @type {import('@astryxdesign/core/Table').TableColumn<CommissionListRow>[]} */
   const columns = [
     {
       key: 'code',
@@ -421,21 +439,21 @@ export function ServiceAgreementsList() {
   ];
 
   const expandedKeys = useMemo(
-    () => new Set(expandedAgreementId ? [expandedAgreementId] : []),
-    [expandedAgreementId],
+    () => new Set(expandedCommissionId ? [expandedCommissionId] : []),
+    [expandedCommissionId],
   );
   const expansionPlugin =
-    /** @type {import('@astryxdesign/core/Table').TablePlugin<ServiceAgreementListRow>} */ (
+    /** @type {import('@astryxdesign/core/Table').TablePlugin<CommissionListRow>} */ (
       useTableRowExpansion({
         expandedKeys,
         onToggle: (id) =>
-          setExpandedAgreementId((current) => (current === id ? null : id)),
+          setExpandedCommissionId((current) => (current === id ? null : id)),
         getRowKey: (row) => row.id,
         getIsItemExpandable: (row) => !row.id.startsWith('skeleton-'),
         renderExpanded: (row) => (
-          <ServiceAgreementExpandedDetails
+          <CommissionExpandedDetails
             row={row}
-            onEdit={() => setEditingAgreementRow(row)}
+            onEdit={() => setEditingCommissionRow(row)}
             onAddAnnex={() => setAnnexDialog({ contractId: row.contractId })}
             onEditAnnex={(annex) =>
               setAnnexDialog({ contractId: row.contractId, annex })
@@ -445,18 +463,18 @@ export function ServiceAgreementsList() {
       })
     );
   const rowInteractionPlugin = useMemo(
-    /** @returns {import('@astryxdesign/core/Table').TablePlugin<ServiceAgreementListRow>} */
+    /** @returns {import('@astryxdesign/core/Table').TablePlugin<CommissionListRow>} */
     () =>
       createRowExpansionInteractionPlugin({
-        expandedId: expandedAgreementId,
+        expandedId: expandedCommissionId,
         onToggle: (id) =>
-          setExpandedAgreementId((current) => (current === id ? null : id)),
+          setExpandedCommissionId((current) => (current === id ? null : id)),
         isExpandable: (row) => !row.id.startsWith('skeleton-'),
       }),
-    [expandedAgreementId],
+    [expandedCommissionId],
   );
 
-  const totalServiceAgreements = listResult?.success
+  const totalCommissions = listResult?.success
     ? listResult.totalCount
     : 0;
   const totalPages = Math.max(
@@ -466,36 +484,36 @@ export function ServiceAgreementsList() {
 
   return (
     <VStack gap={4} hAlign="stretch">
-      <Heading level={1}>Service Agreement</Heading>
+      <Heading level={1}>Commission</Heading>
 
       {listResult && !listResult.success ? (
         <AdvanceTableErrorBanner message={listResult.message} />
       ) : null}
 
       <AdvanceTable
-        toolbarLabel="Thao tác danh sách Service Agreement"
+        toolbarLabel="Thao tác danh sách Commission"
         searchFieldDefs={SEARCH_FIELD_DEFS}
-        entityLabel="Service Agreement"
+        entityLabel="Commission"
         contentSearchFieldKey="code"
         searchPlaceholder="Tìm mã, số hợp đồng..."
         columnOptions={COLUMN_OPTIONS}
         initialColumnKeys={DEFAULT_COLUMN_KEYS}
         defaultColumnKeys={DEFAULT_COLUMN_KEYS}
         tableColumns={columns}
-        data={searchableServiceAgreements}
+        data={searchableCommissions}
         idKey="id"
-        isLoading={serviceAgreementsQuery.isLoading}
+        isLoading={commissionsQuery.isLoading}
         skeletonRows={skeletonRows}
         extraPlugins={{
           expansion: expansionPlugin,
           rowInteraction: rowInteractionPlugin,
         }}
-        onRefresh={() => serviceAgreementsQuery.refetch()}
-        isRefreshing={serviceAgreementsQuery.isFetching}
+        onRefresh={() => commissionsQuery.refetch()}
+        isRefreshing={commissionsQuery.isFetching}
         pagination={{
           pageIndex,
           pageSize,
-          totalCount: totalServiceAgreements,
+          totalCount: totalCommissions,
           totalPages,
           onPageIndexChange: setPageIndex,
           onPageSizeChange: setPageSize,
@@ -506,22 +524,22 @@ export function ServiceAgreementsList() {
       {/* Rendered here, a sibling of `AdvanceTable`, rather than inside
           `renderExpanded` — see the note above this component for why. */}
 
-      {editingAgreementRow ? (
-        <ServiceAgreementFormDialog
-          key={editingAgreementRow.id}
+      {editingCommissionRow ? (
+        <CommissionFormDialog
+          key={editingCommissionRow.id}
           isOpen
           onOpenChange={(isOpen) => {
-            if (!isOpen) setEditingAgreementRow(null);
+            if (!isOpen) setEditingCommissionRow(null);
           }}
-          contractId={editingAgreementRow.contractId}
-          currency={editingAgreementRow.currency}
-          serviceAgreement={editingAgreementRow}
-          onSuccess={() => setEditingAgreementRow(null)}
+          contractId={editingCommissionRow.contractId}
+          currency={editingCommissionRow.currency}
+          commission={editingCommissionRow}
+          onSuccess={() => setEditingCommissionRow(null)}
         />
       ) : null}
 
       {annexDialog ? (
-        <ServiceAgreementAnnexFormDialog
+        <CommissionAnnexFormDialog
           key={annexDialog.annex?.id ?? 'create'}
           isOpen
           onOpenChange={(isOpen) => {

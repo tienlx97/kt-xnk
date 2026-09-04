@@ -8,34 +8,34 @@ import { Layout, LayoutContent, LayoutFooter } from '@astryxdesign/core/Layout';
 
 import { CommonDialog } from '@/shared/components/common-dialog.jsx';
 
-import { useServiceAgreementForm } from '../hooks/use-service-agreement-form.js';
-import { ServiceAgreementFields } from './service-agreement-fields.jsx';
+import { useCommissionForm } from '../hooks/use-commission-form.js';
+import { CommissionFields } from './commission-fields.jsx';
 
 /**
- * Create/edit dialog for one `Contract`'s `ServiceAgreement` — opened from
- * `ContractExpandedDetails`'s "Service Agreement" tab (`contracts-list.jsx`).
- * A contract has at most one, so pass `serviceAgreement` to edit the
+ * Create/edit dialog for one `Contract`'s `Commission` — opened from
+ * `ContractExpandedDetails`'s "Commission" tab (`contracts-list.jsx`).
+ * A contract has at most one, so pass `commission` to edit the
  * existing one; omit it to create the first (and only) one.
  * @param {{
  *   isOpen: boolean,
  *   onOpenChange: (isOpen: boolean) => void,
  *   contractId: string,
  *   currency: string,
- *   serviceAgreement?: import('../types/index.js').ServiceAgreement | null,
- *   onSuccess?: (serviceAgreement: import('../types/index.js').ServiceAgreement) => void,
+ *   commission?: import('../types/index.js').Commission | null,
+ *   onSuccess?: (commission: import('../types/index.js').Commission) => void,
  * }} props
  */
-export function ServiceAgreementFormDialog({
+export function CommissionFormDialog({
   isOpen,
   onOpenChange,
   contractId,
   currency,
-  serviceAgreement = null,
+  commission = null,
   onSuccess,
 }) {
-  const form = useServiceAgreementForm({
+  const form = useCommissionForm({
     contractId,
-    serviceAgreement,
+    commission,
     onSuccess: (saved) => {
       onOpenChange(false);
       onSuccess?.(saved);
@@ -43,7 +43,7 @@ export function ServiceAgreementFormDialog({
   });
 
   return (
-    <CommonDialog isOpen={isOpen} onOpenChange={onOpenChange} width={560}>
+    <CommonDialog isOpen={isOpen} onOpenChange={onOpenChange} width={720}>
       <form onSubmit={form.handleSubmit}>
         <Layout
           header={
@@ -54,13 +54,14 @@ export function ServiceAgreementFormDialog({
               {form.submitError ? (
                 <Banner status="error" title={form.submitError} container="card" />
               ) : null}
-              <ServiceAgreementFields
+              <CommissionFields
                 values={form.values}
                 setField={form.setField}
                 fieldStatuses={form.fieldStatuses}
                 customers={form.customers}
                 currency={currency}
                 paymentTermRows={form.paymentTermRows}
+                paymentHistoryRows={form.paymentHistoryRows}
               />
             </LayoutContent>
           }

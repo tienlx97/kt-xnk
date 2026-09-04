@@ -6,7 +6,11 @@ import { HStack } from '@astryxdesign/core/HStack';
 import { Icon } from '@astryxdesign/core/Icon';
 import { Layout, LayoutContent, LayoutFooter } from '@astryxdesign/core/Layout';
 import { Selector } from '@astryxdesign/core/Selector';
-import { pixel, proportional, useTableRowExpansion } from '@astryxdesign/core/Table';
+import {
+  pixel,
+  proportional,
+  useTableRowExpansion,
+} from '@astryxdesign/core/Table';
 import { Heading } from '@astryxdesign/core/Text';
 import { VStack } from '@astryxdesign/core/VStack';
 import { Plus } from 'lucide-react';
@@ -70,7 +74,7 @@ const PAGE_SIZE_OPTIONS = ['10', '25', '50', '100'];
 
 /**
  * A `Shipment` plus fields resolved client-side for display — same reason
- * as `ServiceAgreementListRow` in `service-agreements-list.jsx`: the
+ * as `CommissionListRow` in `commissions-list.jsx`: the
  * system-wide `GET /api/v1/shipments` response doesn't carry the parent
  * contract's number/project or the forwarder's name.
  * @typedef {import('../types/index.js').Shipment & {
@@ -102,6 +106,9 @@ const skeletonRows = Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => ({
   quantityAmount: 0,
   quantityUnit: 'Kien',
   declarationWeightKg: 0,
+  coNumber: null,
+  coDeclarationDate: null,
+  coIssuedDate: null,
   contractNumber: '',
   projectName: '',
   supplierName: '',
@@ -142,13 +149,12 @@ export function ShipmentsList() {
   // contract's number/project, and the forwarder's company name — comes
   // back on `ShipmentResponse` itself, so both are resolved client-side
   // from the Contract/Customer catalogs, same pattern as
-  // `contractsById`/`customersById` in `service-agreements-list.jsx`.
+  // `contractsById`/`customersById` in `commissions-list.jsx`.
   // `pageSize: 100` is that same list's own effective ceiling — fine
   // while every contract fits on one page.
   const contractsQuery = useContractsQuery({ page: 1, pageSize: 100 });
   const contracts = useMemo(
-    () =>
-      contractsQuery.data?.success ? contractsQuery.data.contracts : [],
+    () => (contractsQuery.data?.success ? contractsQuery.data.contracts : []),
     [contractsQuery.data],
   );
   const contractsById = useMemo(
@@ -183,14 +189,14 @@ export function ShipmentsList() {
     {
       key: 'shipmentCode',
       header: 'Mã',
-      width: pixel(120),
+      width: pixel(160),
       filter: 'shipmentCode',
       renderCell: (row) => row.shipmentCode,
     },
     {
       key: 'contractNumber',
       header: 'Số hợp đồng',
-      width: pixel(140),
+      width: pixel(160),
       filter: 'contractNumber',
       renderCell: (row) => orDash(row.contractNumber),
     },
@@ -265,7 +271,11 @@ export function ShipmentsList() {
               setVgmDialog({ contractId: row.contractId, shipmentId: row.id })
             }
             onEditVgm={(vgm) =>
-              setVgmDialog({ contractId: row.contractId, shipmentId: row.id, vgm })
+              setVgmDialog({
+                contractId: row.contractId,
+                shipmentId: row.id,
+                vgm,
+              })
             }
             onEdit={() =>
               setShipmentDialog({ contractId: row.contractId, shipment: row })

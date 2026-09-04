@@ -8,30 +8,30 @@ import { Layout, LayoutContent, LayoutFooter } from '@astryxdesign/core/Layout';
 
 import { CommonDialog } from '@/shared/components/common-dialog.jsx';
 
-import { useServiceAgreementAnnexForm } from '../hooks/use-service-agreement-annex-form.js';
-import { ServiceAgreementAnnexFields } from './service-agreement-annex-fields.jsx';
+import { useCommissionAnnexForm } from '../hooks/use-commission-annex-form.js';
+import { CommissionAnnexFields } from './commission-annex-fields.jsx';
 
 /**
- * Create/edit dialog for one `ServiceAgreement`'s annexes — opened from
- * `ContractExpandedDetails`'s "Service Agreement" tab (`contracts-list.jsx`).
+ * Create/edit dialog for one `Commission`'s annexes — opened from
+ * `ContractExpandedDetails`'s "Commission" tab (`contracts-list.jsx`).
  * Pass `annex` to edit an existing one; omit it to create a new one (its
  * `annexNumber`/`annexCode` are assigned by the backend on success).
  * @param {{
  *   isOpen: boolean,
  *   onOpenChange: (isOpen: boolean) => void,
  *   contractId: string,
- *   annex?: import('../types/index.js').ServiceAgreementAnnex | null,
- *   onSuccess?: (annex: import('../types/index.js').ServiceAgreementAnnex) => void,
+ *   annex?: import('../types/index.js').CommissionAnnex | null,
+ *   onSuccess?: (annex: import('../types/index.js').CommissionAnnex) => void,
  * }} props
  */
-export function ServiceAgreementAnnexFormDialog({
+export function CommissionAnnexFormDialog({
   isOpen,
   onOpenChange,
   contractId,
   annex = null,
   onSuccess,
 }) {
-  const form = useServiceAgreementAnnexForm({
+  const form = useCommissionAnnexForm({
     contractId,
     annex,
     onSuccess: (savedAnnex) => {
@@ -63,7 +63,7 @@ export function ServiceAgreementAnnexFormDialog({
               {form.submitError ? (
                 <Banner status="error" title={form.submitError} container="card" />
               ) : null}
-              <ServiceAgreementAnnexFields
+              <CommissionAnnexFields
                 values={form.values}
                 setField={form.setField}
                 fieldStatuses={form.fieldStatuses}

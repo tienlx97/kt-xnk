@@ -29,7 +29,7 @@ Raising the version creates cleanup work: see harness/ENTROPY.md.
 
 - v3 (2026-09-04): rule #12 — the Selector-in-dialog portal-stacking bug had
   already been found and fixed once (`contracts-list.jsx`), then found again
-  independently in `service-agreements-list.jsx` (per
+  independently in `commissions-list.jsx` (per
   `harness/ENTROPY.md`'s "caught twice → mechanical rule" policy). Both
   known offenders were fixed in the same change that added the rule, so
   nothing needed to be graded C. See

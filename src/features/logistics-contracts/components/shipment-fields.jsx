@@ -1,5 +1,6 @@
 'use client';
 
+import { DateInput } from '@astryxdesign/core/DateInput';
 import { HStack } from '@astryxdesign/core/HStack';
 import { NumberInput } from '@astryxdesign/core/NumberInput';
 import { Selector } from '@astryxdesign/core/Selector';
@@ -111,6 +112,51 @@ export function ShipmentFields({
               onChange={(value) => setField('vesselName', value)}
               isOptional
               status={fieldStatuses.vesselName}
+              statusVariant="tooltip"
+            />
+          </StackItem>
+        </HStack>
+
+        <Text weight="semibold">C/O (Certificate of Origin)</Text>
+
+        <TextInput
+          label="Mã C/O"
+          placeholder="Do hải quan cấp, tự nhập"
+          value={values.coNumber}
+          onChange={(value) => setField('coNumber', value)}
+          isOptional
+          status={fieldStatuses.coNumber}
+          statusVariant="tooltip"
+        />
+
+        <HStack gap={3}>
+          <StackItem size="fill">
+            <DateInput
+              label="Ngày khai C/O"
+              value={
+                /** @type {import('@astryxdesign/core/Calendar').ISODateString} */ (
+                  values.coDeclarationDate || null
+                )
+              }
+              onChange={(value) => setField('coDeclarationDate', value ?? '')}
+              format="system_date"
+              isOptional
+              status={fieldStatuses.coDeclarationDate}
+              statusVariant="tooltip"
+            />
+          </StackItem>
+          <StackItem size="fill">
+            <DateInput
+              label="Ngày có C/O"
+              value={
+                /** @type {import('@astryxdesign/core/Calendar').ISODateString} */ (
+                  values.coIssuedDate || null
+                )
+              }
+              onChange={(value) => setField('coIssuedDate', value ?? '')}
+              format="system_date"
+              isOptional
+              status={fieldStatuses.coIssuedDate}
               statusVariant="tooltip"
             />
           </StackItem>

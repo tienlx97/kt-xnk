@@ -59,4 +59,7 @@ export const shipmentSchema = z.object({
   declarationWeightKg: z
     .number({ error: 'Vui lòng nhập khối lượng tờ khai' })
     .positive('Khối lượng phải lớn hơn 0'),
+  coNumber: z.string().trim().max(50, 'Tối đa 50 ký tự'),
+  coDeclarationDate: z.string(),
+  coIssuedDate: z.string(),
 });

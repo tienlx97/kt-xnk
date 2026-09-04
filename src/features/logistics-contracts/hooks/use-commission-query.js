@@ -3,43 +3,44 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
-  createServiceAgreement,
-  getServiceAgreement,
-  updateServiceAgreement,
-} from '../api/service-agreements.js';
+  createCommission,
+  getCommission,
+  updateCommission,
+} from '../api/commissions.js';
 
 /** @param {string} contractId */
 const queryKey = (contractId) => [
   'logistics-contracts',
-  'service-agreement',
+  'commission',
   contractId,
 ];
 
 /**
  * At most one per contract, optional — a 404 folds into
- * `{ success: true, exists: false }` (see `api/service-agreements.js`), not
+ * `{ success: true, exists: false }` (see `api/commissions.js`), not
  * a query error. Disabled until `contractId` is set.
  * @param {string | undefined} contractId
  */
-export function useServiceAgreementQuery(contractId) {
+export function useCommissionQuery(contractId) {
   return useQuery({
     queryKey: queryKey(contractId ?? ''),
-    queryFn: () => getServiceAgreement(/** @type {string} */ (contractId)),
+    queryFn: () => getCommission(/** @type {string} */ (contractId)),
     enabled: Boolean(contractId),
   });
 }
 
 /** @param {string} contractId */
-export function useCreateServiceAgreementMutation(contractId) {
+export function useCreateCommissionMutation(contractId) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (
-      /** @type {{ values: import('../types/index.js').ServiceAgreementFormValues, paymentTerms: Parameters<typeof createServiceAgreement>[2] }} */ {
+      /** @type {{ values: import('../types/index.js').CommissionFormValues, paymentTerms: Parameters<typeof createCommission>[2], paymentHistory: Parameters<typeof createCommission>[3] }} */ {
         values,
         paymentTerms,
+        paymentHistory,
       },
-    ) => createServiceAgreement(contractId, values, paymentTerms),
+    ) => createCommission(contractId, values, paymentTerms, paymentHistory),
     onSuccess: (result) => {
       if (result.success) {
         queryClient.invalidateQueries({ queryKey: queryKey(contractId) });
@@ -49,16 +50,17 @@ export function useCreateServiceAgreementMutation(contractId) {
 }
 
 /** @param {string} contractId */
-export function useUpdateServiceAgreementMutation(contractId) {
+export function useUpdateCommissionMutation(contractId) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (
-      /** @type {{ values: import('../types/index.js').ServiceAgreementFormValues, paymentTerms: Parameters<typeof updateServiceAgreement>[2] }} */ {
+      /** @type {{ values: import('../types/index.js').CommissionFormValues, paymentTerms: Parameters<typeof updateCommission>[2], paymentHistory: Parameters<typeof updateCommission>[3] }} */ {
         values,
         paymentTerms,
+        paymentHistory,
       },
-    ) => updateServiceAgreement(contractId, values, paymentTerms),
+    ) => updateCommission(contractId, values, paymentTerms, paymentHistory),
     onSuccess: (result) => {
       if (result.success) {
         queryClient.invalidateQueries({ queryKey: queryKey(contractId) });

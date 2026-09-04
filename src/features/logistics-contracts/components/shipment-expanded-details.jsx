@@ -260,6 +260,15 @@ export function ShipmentExpandedDetails({
         <MetadataListItem label="Tên tàu">
           {orDash(shipment.vesselName)}
         </MetadataListItem>
+        <MetadataListItem label="Mã C/O">
+          {orDash(shipment.coNumber)}
+        </MetadataListItem>
+        <MetadataListItem label="Ngày khai C/O">
+          {orDash(shipment.coDeclarationDate)}
+        </MetadataListItem>
+        <MetadataListItem label="Ngày có C/O">
+          {orDash(shipment.coIssuedDate)}
+        </MetadataListItem>
       </MetadataList>
 
       <HStack hAlign="between" vAlign="center">

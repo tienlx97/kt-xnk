@@ -5,7 +5,7 @@ const test = require("node:test");
 
 // Mechanical enforcement for the "Selector popover stacking" bug documented
 // above `ContractsList` (src/features/logistics-contracts/components/
-// contracts-list.jsx) and `ServiceAgreementsList` (service-agreements-list.jsx):
+// contracts-list.jsx) and `CommissionsList` (commissions-list.jsx):
 // Astryx's `Selector` portals its dropdown to the nearest ancestor outside any
 // "unsafe host" (`<table>`, `<tr>`, ...). A `*FormDialog` declared inside a
 // table's own `renderExpanded` callback is still a DOM descendant of that
@@ -14,7 +14,7 @@ const test = require("node:test");
 // above it — clicks land on the dialog, not the option.
 //
 // Found twice by hand (contracts-list.jsx / shipments-list.jsx fixed it;
-// service-agreements-list.jsx quietly carried the same bug for a while
+// commissions-list.jsx quietly carried the same bug for a while
 // after). This test makes a third occurrence fail CI instead of waiting for
 // someone to notice a Selector "not responding to clicks".
 //
@@ -93,7 +93,7 @@ test("no *FormDialog is rendered inside a table's renderExpanded callback", () =
       "field inside it will portal underneath the dialog instead of above " +
       "it (see the comment atop this test). Render the dialog as a sibling " +
       "of the table instead, passing trigger callbacks down to the " +
-      "expanded-row component — see ContractsList/ServiceAgreementsList for " +
+      "expanded-row component — see ContractsList/CommissionsList for " +
       "the pattern.\n" +
       violations.join("\n"),
   );

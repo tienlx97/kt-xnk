@@ -27,6 +27,9 @@ function toCreateRequestBody(values) {
     DeclarationExchangeRate: values.declarationExchangeRate,
     QuantityAmount: values.quantityAmount,
     DeclarationWeightKg: values.declarationWeightKg,
+    CoNumber: values.coNumber || null,
+    CoDeclarationDate: values.coDeclarationDate || null,
+    CoIssuedDate: values.coIssuedDate || null,
   };
 }
 
@@ -51,6 +54,9 @@ function toUpdateRequestBody(values) {
     DeclarationExchangeRate: values.declarationExchangeRate,
     QuantityAmount: values.quantityAmount,
     DeclarationWeightKg: values.declarationWeightKg,
+    CoNumber: values.coNumber || null,
+    CoDeclarationDate: values.coDeclarationDate || null,
+    CoIssuedDate: values.coIssuedDate || null,
   };
 }
 

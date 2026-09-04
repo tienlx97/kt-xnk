@@ -2,17 +2,18 @@
 
 import { useState } from 'react';
 
-import { serviceAgreementSchema } from '../config/service-agreement-schema.js';
-import { useCustomersQuery } from './use-customers-query.js';
-import { usePaymentTermRows } from './use-payment-term-rows.js';
+import { commissionSchema } from '../config/commission-schema.js';
 import {
-  useCreateServiceAgreementMutation,
-  useUpdateServiceAgreementMutation,
-} from './use-service-agreement-query.js';
+  useCreateCommissionMutation,
+  useUpdateCommissionMutation,
+} from './use-commission-query.js';
+import { useCustomersQuery } from './use-customers-query.js';
+import { usePaymentHistoryRows } from './use-payment-history-rows.js';
+import { usePaymentTermRows } from './use-payment-term-rows.js';
 
 const TODAY_ISO = new Date().toISOString().slice(0, 10);
 
-/** @returns {import('../types/index.js').ServiceAgreementFormValues} */
+/** @returns {import('../types/index.js').CommissionFormValues} */
 function emptyValues() {
   return {
     signedDate: TODAY_ISO,
@@ -23,14 +24,14 @@ function emptyValues() {
   };
 }
 
-/** @param {import('../types/index.js').ServiceAgreement} serviceAgreement */
-function valuesFromServiceAgreement(serviceAgreement) {
+/** @param {import('../types/index.js').Commission} commission */
+function valuesFromCommission(commission) {
   return {
-    signedDate: serviceAgreement.signedDate,
-    partyCustomerId: serviceAgreement.partyCustomerId,
-    value: serviceAgreement.value,
-    sellerSigned: serviceAgreement.sellerSigned,
-    partySigned: serviceAgreement.partySigned,
+    signedDate: commission.signedDate,
+    partyCustomerId: commission.partyCustomerId,
+    value: commission.value,
+    sellerSigned: commission.sellerSigned,
+    partySigned: commission.partySigned,
   };
 }
 
@@ -40,26 +41,26 @@ function fieldStatus(message) {
 }
 
 /**
- * Single hook backing both the create and edit Service Agreement dialog —
- * mirrors `useContractForm`'s create/edit merge. Pass `serviceAgreement` to
+ * Single hook backing both the create and edit Commission dialog —
+ * mirrors `useContractForm`'s create/edit merge. Pass `commission` to
  * edit the existing one — a contract has at most one, so there is no list
  * to pick from, only "create" (none yet) or "edit" (one exists).
  * @param {{
  *   contractId: string,
- *   serviceAgreement?: import('../types/index.js').ServiceAgreement | null,
- *   onSuccess?: (serviceAgreement: import('../types/index.js').ServiceAgreement) => void,
+ *   commission?: import('../types/index.js').Commission | null,
+ *   onSuccess?: (commission: import('../types/index.js').Commission) => void,
  * }} options
  */
-export function useServiceAgreementForm({
+export function useCommissionForm({
   contractId,
-  serviceAgreement = null,
+  commission = null,
   onSuccess,
 }) {
-  const isEdit = Boolean(serviceAgreement);
+  const isEdit = Boolean(commission);
 
   const [values, setValues] = useState(
-    serviceAgreement
-      ? valuesFromServiceAgreement(serviceAgreement)
+    commission
+      ? valuesFromCommission(commission)
       : emptyValues(),
   );
   const [fieldErrors, setFieldErrors] = useState(
@@ -70,8 +71,8 @@ export function useServiceAgreementForm({
   const customersQuery = useCustomersQuery();
 
   const paymentTermRows = usePaymentTermRows(
-    serviceAgreement
-      ? serviceAgreement.paymentTerms.map((term) => ({
+    commission
+      ? commission.paymentTerms.map((term) => ({
           rowKey: term.id,
           paymentRatioPercent: term.paymentRatioPercent,
           paymentCondition: term.paymentCondition,
@@ -79,13 +80,24 @@ export function useServiceAgreementForm({
       : undefined,
   );
 
-  const createMutation = useCreateServiceAgreementMutation(contractId);
-  const updateMutation = useUpdateServiceAgreementMutation(contractId);
+  const paymentHistoryRows = usePaymentHistoryRows(
+    commission
+      ? commission.paymentHistory.map((payment) => ({
+          rowKey: payment.id,
+          paymentDate: payment.paymentDate,
+          amount: payment.amount,
+          note: payment.note ?? '',
+        }))
+      : undefined,
+  );
+
+  const createMutation = useCreateCommissionMutation(contractId);
+  const updateMutation = useUpdateCommissionMutation(contractId);
 
   /**
-   * @template {keyof import('../types/index.js').ServiceAgreementFormValues} K
+   * @template {keyof import('../types/index.js').CommissionFormValues} K
    * @param {K} field
-   * @param {import('../types/index.js').ServiceAgreementFormValues[K]} value
+   * @param {import('../types/index.js').CommissionFormValues[K]} value
    */
   function setField(field, value) {
     setValues((current) => ({ ...current, [field]: value }));
@@ -102,9 +114,14 @@ export function useServiceAgreementForm({
         paymentRatioPercent: row.paymentRatioPercent,
         paymentCondition: row.paymentCondition,
       })),
+      paymentHistory: paymentHistoryRows.rows.map((row) => ({
+        paymentDate: row.paymentDate,
+        amount: row.amount,
+        note: row.note,
+      })),
     };
 
-    const result = serviceAgreementSchema.safeParse(candidate);
+    const result = commissionSchema.safeParse(candidate);
     if (!result.success) {
       /** @type {Record<string, string>} */
       const nextFieldErrors = {};
@@ -120,15 +137,17 @@ export function useServiceAgreementForm({
 
     setFieldErrors({});
 
-    const { paymentTerms, ...submittedValues } = result.data;
-    const mutationResult = serviceAgreement
+    const { paymentTerms, paymentHistory, ...submittedValues } = result.data;
+    const mutationResult = commission
       ? await updateMutation.mutateAsync({
           values: submittedValues,
           paymentTerms,
+          paymentHistory,
         })
       : await createMutation.mutateAsync({
           values: submittedValues,
           paymentTerms,
+          paymentHistory,
         });
 
     if (!mutationResult.success) {
@@ -136,13 +155,13 @@ export function useServiceAgreementForm({
       return;
     }
 
-    onSuccess?.(mutationResult.serviceAgreement);
+    onSuccess?.(mutationResult.commission);
   }
 
   return {
     mode: isEdit ? 'edit' : 'create',
-    title: isEdit ? 'CẬP NHẬT SERVICE AGREEMENT' : 'TẠO SERVICE AGREEMENT',
-    submitLabel: isEdit ? 'Lưu thay đổi' : 'Tạo Service Agreement',
+    title: isEdit ? 'CẬP NHẬT COMMISSION' : 'TẠO COMMISSION',
+    submitLabel: isEdit ? 'Lưu thay đổi' : 'Tạo Commission',
     values,
     setField,
     fieldStatuses: Object.fromEntries(
@@ -155,6 +174,7 @@ export function useServiceAgreementForm({
       ? customersQuery.data.customers
       : [],
     paymentTermRows,
+    paymentHistoryRows,
     submitError,
     isSubmitting: createMutation.isPending || updateMutation.isPending,
     handleSubmit,

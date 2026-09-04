@@ -164,10 +164,7 @@ export function ContractFormDialog({
                   />
                 ) : null}
 
-                <CollapsibleGroup
-                  type="multiple"
-                  defaultValue={['general', 'seller', 'buyer']}
-                >
+                <CollapsibleGroup type="multiple" defaultValue={['general']}>
                   <VStack gap={3} hAlign="stretch">
                     <FormSection value="general" title="Thông tin chung">
                       <HStack gap={3}>
@@ -517,9 +514,10 @@ export function ContractFormDialog({
                           }
                         />
                       </HStack>
-                    </FormSection>
 
-                    <FormSection value="seller" title="Bên bán">
+                      <Text type="label" color="secondary">
+                        Bên bán
+                      </Text>
                       <SellerPickerFields
                         sellers={sellers}
                         sourceSellerId={values.sourceSellerId}
@@ -531,9 +529,10 @@ export function ContractFormDialog({
                         onInlineFieldChange={setSellerInlineField}
                         extraFieldRows={sellerExtraFieldRows}
                       />
-                    </FormSection>
 
-                    <FormSection value="buyer" title="Buyer (Khách hàng)">
+                      <Text type="label" color="secondary">
+                        Buyer (Khách hàng)
+                      </Text>
                       <BuyerFields
                         customers={customers}
                         sourceCustomerId={values.sourceCustomerId}

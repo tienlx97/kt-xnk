@@ -13,7 +13,7 @@ is a native `<dialog>` element (`showModal()`), not a portal — it stays
 exactly where it is declared in the DOM tree and relies on the browser's own
 top-layer promotion to render above everything else.
 
-Every list page in this app (`ContractsList`, `ServiceAgreementsList`, ...)
+Every list page in this app (`ContractsList`, `CommissionsList`, ...)
 uses `AdvanceTable`'s `renderExpanded` to render a row's detail panel, which
 can open a `*FormDialog`. When a `*FormDialog` containing a `Selector` field
 is declared *inside* that `renderExpanded` callback, it is still, in the
@@ -32,7 +32,7 @@ throws, nothing looks wrong in a screenshot, and it only surfaces when a
 person actually clicks an option with a mouse. It was found and fixed once
 in `contracts-list.jsx` (see the "Selector popover stacking" comment above
 `ContractsList`), then found again — independently, months later — as a
-live bug in `service-agreements-list.jsx`, which had copied the
+live bug in `commissions-list.jsx`, which had copied the
 `renderExpanded`-owns-its-dialogs shape before the fix pattern existed.
 
 The library-level root cause (`resolveLayerPortalTarget` walking past an
@@ -52,8 +52,8 @@ it. The expanded-row component only receives trigger callbacks
 dialog's open/closed state and renders the dialog next to `<AdvanceTable
 .../>` in its own JSX, keyed by the edited record's id (or `'create'`).
 
-`ContractsList` (`contracts-list.jsx`) and `ServiceAgreementsList`
-(`service-agreements-list.jsx`) are the reference implementations of this
+`ContractsList` (`contracts-list.jsx`) and `CommissionsList`
+(`commissions-list.jsx`) are the reference implementations of this
 shape.
 
 ## Consequences

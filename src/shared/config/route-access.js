@@ -25,7 +25,7 @@ export const routeAccessRules = [
     allowedPermissions: ['logistics:contracts:view'],
   },
   {
-    pathPrefix: '/logistics/service-agreements',
+    pathPrefix: '/logistics/commissions',
     allowedPermissions: ['logistics:contracts:view'],
   },
   {

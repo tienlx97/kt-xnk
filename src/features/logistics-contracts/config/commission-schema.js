@@ -10,12 +10,20 @@ const paymentTermSchema = z.object({
     .min(1, 'Vui lòng nhập điều kiện thanh toán'),
 });
 
+const commissionPaymentSchema = z.object({
+  paymentDate: z.string().trim().min(1, 'Vui lòng chọn ngày thanh toán'),
+  amount: z
+    .number({ error: 'Vui lòng nhập giá trị' })
+    .positive('Giá trị phải lớn hơn 0'),
+  note: z.string().trim().max(500, 'Tối đa 500 ký tự'),
+});
+
 /**
- * Mirrors the backend's `CreateServiceAgreementCommandValidator`/
- * `UpdateServiceAgreementCommandValidator` (BE-kt-xnk). `year`/`number`/
+ * Mirrors the backend's `CreateCommissionCommandValidator`/
+ * `UpdateCommissionCommandValidator` (BE-kt-xnk). `year`/`number`/
  * `code` are backend-assigned, never part of this form.
  */
-export const serviceAgreementSchema = z.object({
+export const commissionSchema = z.object({
   signedDate: z.string().trim().min(1, 'Vui lòng chọn ngày ký'),
   partyCustomerId: z.string().trim().min(1, 'Vui lòng chọn bên nhận hoa hồng'),
   value: z
@@ -32,4 +40,5 @@ export const serviceAgreementSchema = z.object({
         0.01,
       { message: 'Tổng tỷ lệ các đợt thanh toán phải bằng 100%' },
     ),
+  paymentHistory: z.array(commissionPaymentSchema),
 });

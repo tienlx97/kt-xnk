@@ -5,6 +5,45 @@ Append-only session log. Newest entry FIRST.
 This file is the handoff between sessions/agents — write for a reader with zero conversation context.
 -->
 
+## 2026-09-04 — Rename frontend Service Agreement to Commission
+
+**Context:** The BE-kt-xnk resource was renamed end-to-end from
+`ServiceAgreement` to `Commission`, including breaking API routes and annex
+wire field names. User asked to apply the same rename in this frontend.
+
+**Shipped:** Renamed the logistics-contracts feature types, schemas, constants,
+API functions, React Query hooks/keys, form hooks, components, state, and
+exports to Commission terminology. Moved the standalone Next page from
+`/logistics/service-agreements` to `/logistics/commissions`; updated sidebar
+navigation and protected-route access. The client now calls
+`GET /api/v1/commissions`, contract-scoped `/commission` and
+`/commission/annexes` routes, and consumes annex `commissionId`. Updated code
+examples from `26SAxx` to `26CMxx`, plus current ADR/golden-rule/OpenSpec
+references whose source paths changed. Historical progress/memsearch text was
+left untouched.
+
+**Tests:** Added `api/commissions.test.js` (3 tests) covering the system-wide
+list route, contract-scoped GET/POST/PUT routes, all annex routes, and
+preservation of `commissionId`. Full `pnpm test`: 111/111 passed.
+
+**Live verification:** Against the running BE Docker API, logged in through
+the real UI as the documented dev Admin, opened `/logistics/commissions`, and
+observed proxy `GET /api/backend/api/v1/commissions` → 200. Page title,
+breadcrumb, sidebar, and table use Commission terminology; seeded row
+`26CM03` is visible. Screenshot:
+`harness/runs/20260904-113926-commission-rename/commissions-page.png`.
+
+**Verification:** `./harness/verify.sh` passed every step (readiness, memory
+safety, theme build, lint, typecheck, dependency structure, harness/unit tests,
+production build, quality thresholds). Evidence:
+`harness/runs/20260904-113945-1565/`.
+
+**Discovered:** The Windows checkout had CRLF on five shell scripts, causing
+WSL Bash to read `pipefail\r`; normalized those worktree files to LF with no
+textual Git diff. WSL also cannot resolve Windows `node.exe`; lifecycle and
+gate commands were therefore run through the installed Git Bash, where the
+repo's Node/pnpm toolchain is available. No product-code workaround was added.
+
 ## 2026-09-04 — Fix the Selector-in-dialog portal-stacking bug (again), then make it mechanical
 
 **Context:** User request: "Fix portal-stacking ở dự án, sau nó note lại".

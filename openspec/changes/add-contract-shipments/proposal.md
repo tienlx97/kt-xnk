@@ -32,7 +32,7 @@ asked (in this frontend session) to build the FE for this feature.
 - New `hooks/use-shipments-query.js` (per-contract list query +
   create/update mutations), `hooks/use-shipment-form.js` (create-or-update
   form state, pulls `customers` from `useCustomersQuery` for the
-  supplier picker — same pattern as `use-service-agreement-form.js`).
+  supplier picker — same pattern as `use-commission-form.js`).
 - New `components/shipment-fields.jsx` (two sections: "Thông tin Book",
   "Thông tin lô hàng" — no cost-info section, deferred), `components/shipment-form-dialog.jsx`.
 - `components/contracts-list.jsx`: new `'shipment'` `ExpandedTab`, a

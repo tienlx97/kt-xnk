@@ -18,6 +18,17 @@ export {};
  */
 
 /**
+ * One recorded payment ("lịch sử thanh toán") against a `Commission` — what
+ * was actually paid to the third party, separate from `PaymentTerm` (the
+ * agreed schedule).
+ * @typedef {Object} CommissionPayment
+ * @property {string} id
+ * @property {string} paymentDate - ISO date (YYYY-MM-DD)
+ * @property {number} amount
+ * @property {string | null} note
+ */
+
+/**
  * @typedef {Object} Customer
  * @property {string} id
  * @property {string} companyName
@@ -161,15 +172,15 @@ export {};
  */
 
 /**
- * Commission agreement with a third party ("hoa hồng") for one specific
+ * Commission commission with a third party ("hoa hồng") for one specific
  * contract — at most one per contract, optional. `year`/`number`/`code`
- * are backend-assigned (BE-kt-xnk): `code` is `{year%100}SA{number}`
- * (e.g. "26SA01"), a system-wide sequence scoped by the year it was
+ * are backend-assigned (BE-kt-xnk): `code` is `{year%100}CM{number}`
+ * (e.g. "26CM01"), a system-wide sequence scoped by the year it was
  * created in (not `signedDate`). Uses the parent contract's `currency` —
  * no currency of its own. `sellerSigned` tracks whether the *contract's*
  * own Seller signed (not a separate snapshot); `partySigned` tracks
  * `partyCustomerId` (the commission recipient).
- * @typedef {Object} ServiceAgreement
+ * @typedef {Object} Commission
  * @property {string} id
  * @property {string} contractId
  * @property {number} year
@@ -181,10 +192,11 @@ export {};
  * @property {boolean} sellerSigned
  * @property {boolean} partySigned
  * @property {PaymentTerm[]} paymentTerms
+ * @property {CommissionPayment[]} paymentHistory
  */
 
 /**
- * @typedef {Object} ServiceAgreementFormValues
+ * @typedef {Object} CommissionFormValues
  * @property {string} signedDate - ISO date (YYYY-MM-DD)
  * @property {string} partyCustomerId
  * @property {number | undefined} value
@@ -193,31 +205,31 @@ export {};
  */
 
 /**
- * @typedef {'AmountIncrease' | 'AmountDecrease' | 'InfoChange'} ServiceAgreementAnnexType
+ * @typedef {'AmountIncrease' | 'AmountDecrease' | 'InfoChange'} CommissionAnnexType
  */
 
 /**
- * Amendment to a {@link ServiceAgreement} — a historical record only,
+ * Amendment to a {@link Commission} — a historical record only,
  * never changes `value`/`paymentTerms`. `annexNumber` is backend-assigned,
- * sequential per service agreement; `annexCode` is
- * `{serviceAgreement.code}/AN-{annexNumber}` (e.g. "26SA01/AN-01"),
+ * sequential per commission; `annexCode` is
+ * `{commission.code}/AN-{annexNumber}` (e.g. "26CM01/AN-01"),
  * computed by the backend, not stored.
- * @typedef {Object} ServiceAgreementAnnex
+ * @typedef {Object} CommissionAnnex
  * @property {string} id
- * @property {string} serviceAgreementId
+ * @property {string} commissionId
  * @property {number} annexNumber
  * @property {string} annexCode
  * @property {string} signedDate - ISO date (YYYY-MM-DD)
- * @property {ServiceAgreementAnnexType} type
+ * @property {CommissionAnnexType} type
  * @property {number} amount
  * @property {boolean} sellerSigned
  * @property {boolean} partySigned
  */
 
 /**
- * @typedef {Object} ServiceAgreementAnnexFormValues
+ * @typedef {Object} CommissionAnnexFormValues
  * @property {string} signedDate - ISO date (YYYY-MM-DD)
- * @property {ServiceAgreementAnnexType | ''} type
+ * @property {CommissionAnnexType | ''} type
  * @property {number | undefined} amount
  * @property {boolean} sellerSigned
  * @property {boolean} partySigned
@@ -248,6 +260,14 @@ export {};
  * @property {string} rowKey
  * @property {number | undefined} paymentRatioPercent
  * @property {string} paymentCondition
+ */
+
+/**
+ * @typedef {Object} CommissionPaymentRow
+ * @property {string} rowKey
+ * @property {string} paymentDate - ISO date (YYYY-MM-DD)
+ * @property {number | undefined} amount
+ * @property {string} note
  */
 
 /**
@@ -371,7 +391,7 @@ export {};
  * never independently settable.
  * `supplierCustomerId` ("Forwarder") is a live reference into the
  * {@link Customer} catalog (not a snapshot), same pattern as
- * `ServiceAgreement.partyCustomerId`.
+ * `Commission.partyCustomerId`.
  * @typedef {Object} Shipment
  * @property {string} id
  * @property {string} contractId
@@ -393,6 +413,9 @@ export {};
  * @property {number} quantityAmount
  * @property {ShipmentQuantityUnit} quantityUnit
  * @property {number} declarationWeightKg
+ * @property {string | null} coNumber - customs-issued, manually entered
+ * @property {string | null} coDeclarationDate - ISO date, "ngày khai C/O"
+ * @property {string | null} coIssuedDate - ISO date, "ngày có C/O"
  */
 
 /**
@@ -412,6 +435,9 @@ export {};
  * @property {number | undefined} declarationExchangeRate
  * @property {number | undefined} quantityAmount
  * @property {number | undefined} declarationWeightKg
+ * @property {string} coNumber
+ * @property {string} coDeclarationDate
+ * @property {string} coIssuedDate
  */
 
 /**

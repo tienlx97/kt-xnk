@@ -43,27 +43,27 @@ import {
 } from '@/shared/components/expandable-row-styles.jsx';
 import { useFullscreenToggle } from '@/shared/components/fullscreen-panel.jsx';
 
+import { labelForCommissionAnnexType } from '../config/commission-annex-types.js';
 import { labelForContractAnnexType } from '../config/contract-annex-types.js';
 import { currencyOptions, formatMoney } from '../config/currencies.js';
 import { incotermOptions } from '../config/incoterms.js';
 import { labelForPaymentType } from '../config/payment-schedule-types.js';
-import { labelForServiceAgreementAnnexType } from '../config/service-agreement-annex-types.js';
 import { labelForShipmentQuantityUnit } from '../config/shipment-quantity-units.js';
 import { labelForShipmentType } from '../config/shipment-types.js';
+import { useCommissionAnnexesQuery } from '../hooks/use-commission-annexes-query.js';
+import { useCommissionQuery } from '../hooks/use-commission-query.js';
 import { useContractAnnexesQuery } from '../hooks/use-contract-annexes-query.js';
 import { useContractBanksQuery } from '../hooks/use-contract-banks-query.js';
 import { useContractsQuery } from '../hooks/use-contracts-query.js';
 import { useCountriesQuery } from '../hooks/use-countries-query.js';
 import { useCustomersQuery } from '../hooks/use-customers-query.js';
 import { usePaymentSchedulesQuery } from '../hooks/use-payment-schedules-query.js';
-import { useServiceAgreementAnnexesQuery } from '../hooks/use-service-agreement-annexes-query.js';
-import { useServiceAgreementQuery } from '../hooks/use-service-agreement-query.js';
 import { useShipmentsQuery } from '../hooks/use-shipments-query.js';
+import { CommissionAnnexFormDialog } from './commission-annex-form-dialog.jsx';
+import { CommissionFormDialog } from './commission-form-dialog.jsx';
 import { ContractAnnexFormDialog } from './contract-annex-form-dialog.jsx';
 import { ContractFormDialog } from './contract-form-dialog.jsx';
 import { PaymentScheduleFormDialog } from './payment-schedule-form-dialog.jsx';
-import { ServiceAgreementAnnexFormDialog } from './service-agreement-annex-form-dialog.jsx';
-import { ServiceAgreementFormDialog } from './service-agreement-form-dialog.jsx';
 import { ShipmentExpandedDetails } from './shipment-expanded-details.jsx';
 import { ShipmentFormDialog } from './shipment-form-dialog.jsx';
 import { ShipmentVgmFormDialog } from './shipment-vgm-form-dialog.jsx';
@@ -182,7 +182,7 @@ function formatPaymentTerms(terms) {
  * panel's info grid a *single* `columns={4}` `MetadataList` — so every
  * row's 4 columns are the same width and line up with each other — while
  * still visually grouping fields onto their own row even when a row has
- * fewer than 4 fields (see `service-agreements-list.jsx`'s identical
+ * fewer than 4 fields (see `commissions-list.jsx`'s identical
  * technique). Uses the raw (unwrapped) `MetadataListItem` so the spacer
  * doesn't pick up the field underline every real item gets — an empty
  * underlined box would read as a broken field, not blank padding.
@@ -199,7 +199,7 @@ function metadataSpacer(key) {
 /**
  * Signed amount label for one contract-annex row — `ValueChange` never
  * represents an amount change, so it gets no sign (same sign convention as
- * `service-agreements-list.jsx`'s `annexAmountLabel`).
+ * `commissions-list.jsx`'s `annexAmountLabel`).
  * @param {import('../types/index.js').ContractAnnex} annex
  * @param {string} currency
  */
@@ -211,14 +211,14 @@ function contractAnnexAmountLabel(annex, currency) {
 }
 
 /**
- * Signed amount label for one Service Agreement annex row — same
- * convention as `contractAnnexAmountLabel`/`service-agreements-list.jsx`'s
+ * Signed amount label for one Commission annex row — same
+ * convention as `contractAnnexAmountLabel`/`commissions-list.jsx`'s
  * `annexAmountLabel`: `InfoChange` never represents a value change, so it
  * gets no sign.
- * @param {import('../types/index.js').ServiceAgreementAnnex} annex
+ * @param {import('../types/index.js').CommissionAnnex} annex
  * @param {string} currency
  */
-function serviceAgreementAnnexAmountLabel(annex, currency) {
+function commissionAnnexAmountLabel(annex, currency) {
   const formatted = formatMoney(annex.amount, currency);
   if (annex.type === 'AmountIncrease') return `+ ${formatted}`;
   if (annex.type === 'AmountDecrease') return `− ${formatted}`;
@@ -276,11 +276,11 @@ const skeletonRows = Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => ({
   buyerSigned: false,
 }));
 
-/** @typedef {'info' | 'seller' | 'customer' | 'paymentSchedule' | 'shipment' | 'serviceAgreement'} ExpandedTab */
+/** @typedef {'info' | 'paymentSchedule' | 'shipment' | 'commission'} ExpandedTab */
 
 /**
  * All dialogs opened from within this component's own tabs (Shipment,
- * Payment Schedule, Annex, Service Agreement, VGM) are deliberately owned
+ * Payment Schedule, Annex, Commission, VGM) are deliberately owned
  * and rendered by `ContractsList`, not here — see the "Selector popover
  * stacking" note above `ContractsList` for why. This component only
  * forwards trigger callbacks (`onAddShipment`, `onEditShipment`, ...) up to
@@ -302,9 +302,9 @@ const skeletonRows = Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => ({
  * @param {(shipment: import('../types/index.js').Shipment) => void} props.onEditShipment
  * @param {(payload: { contractId: string, shipmentId: string }) => void} props.onAddVgm
  * @param {(payload: { contractId: string, shipmentId: string, vgm: import('../types/index.js').ShipmentVgm }) => void} props.onEditVgm
- * @param {(payload: { contractId: string, currency: string, serviceAgreement: import('../types/index.js').ServiceAgreement | null }) => void} props.onOpenServiceAgreement
- * @param {() => void} props.onAddServiceAgreementAnnex
- * @param {(annex: import('../types/index.js').ServiceAgreementAnnex) => void} props.onEditServiceAgreementAnnex
+ * @param {(payload: { contractId: string, currency: string, commission: import('../types/index.js').Commission | null }) => void} props.onOpenCommission
+ * @param {() => void} props.onAddCommissionAnnex
+ * @param {(annex: import('../types/index.js').CommissionAnnex) => void} props.onEditCommissionAnnex
  */
 function ContractExpandedDetails({
   contract,
@@ -322,9 +322,9 @@ function ContractExpandedDetails({
   onEditShipment,
   onAddVgm,
   onEditVgm,
-  onOpenServiceAgreement,
-  onAddServiceAgreementAnnex,
-  onEditServiceAgreementAnnex,
+  onOpenCommission,
+  onAddCommissionAnnex,
+  onEditCommissionAnnex,
 }) {
   const [expandedShipmentId, setExpandedShipmentId] = useState(
     /** @type {string | null} */ (null),
@@ -334,8 +334,8 @@ function ContractExpandedDetails({
   const annexes = annexesQuery.data?.success ? annexesQuery.data.annexes : [];
 
   // "Tổng cộng" = the contract's own `contractValue` plus every annex's
-  // `amount`, signed by its `type` — same rollup as the Service Agreement
-  // tab's `serviceAgreementGrandTotal` below.
+  // `amount`, signed by its `type` — same rollup as the Commission
+  // tab's `commissionGrandTotal` below.
   const contractAnnexesTotal = annexes.reduce((total, annex) => {
     if (annex.type === 'AmountIncrease') return total + annex.amount;
     if (annex.type === 'AmountDecrease') return total - annex.amount;
@@ -354,12 +354,136 @@ function ContractExpandedDetails({
     ? shipmentsQuery.data.shipments
     : [];
 
+  const paymentTermRows = contract.paymentTerms.map((term, index) => ({
+    ...term,
+    orderLabel: `Đợt ${index + 1}`,
+  }));
+
+  /** @type {import('@astryxdesign/core/Table').TableColumn<(typeof paymentTermRows)[number]>[]} */
+  const paymentTermColumns = [
+    {
+      key: 'orderLabel',
+      header: 'Đợt',
+      width: pixel(80),
+      renderCell: (term) => term.orderLabel,
+    },
+    {
+      key: 'paymentRatioPercent',
+      header: 'Tỷ lệ',
+      width: pixel(100),
+      align: 'end',
+      renderCell: (term) => `${term.paymentRatioPercent}%`,
+    },
+    {
+      key: 'paymentCondition',
+      header: 'Điều kiện thanh toán',
+      width: proportional(1),
+      renderCell: (term) => orDash(term.paymentCondition),
+    },
+  ];
+
+  /** @type {import('@astryxdesign/core/Table').TableColumn<import('../types/index.js').ContractAnnex & Record<string, unknown>>[]} */
+  const annexColumns = [
+    {
+      key: 'annexCode',
+      header: 'Mã phụ lục',
+      width: proportional(1.2),
+      renderCell: (annex) =>
+        `${annex.annexCode} · ${labelForContractAnnexType(annex.type)}`,
+    },
+    {
+      key: 'signedDate',
+      header: 'Ngày ký',
+      width: pixel(120),
+      renderCell: (annex) => annex.signedDate,
+    },
+    {
+      key: 'buyerSigned',
+      header: 'Mua ký',
+      width: pixel(90),
+      renderCell: (annex) => (annex.buyerSigned ? 'Đã ký' : 'Chưa ký'),
+    },
+    {
+      key: 'sellerSigned',
+      header: 'Bán ký',
+      width: pixel(90),
+      renderCell: (annex) => (annex.sellerSigned ? 'Đã ký' : 'Chưa ký'),
+    },
+    {
+      key: 'amount',
+      header: 'Số tiền',
+      width: pixel(140),
+      align: 'end',
+      renderCell: (annex) => contractAnnexAmountLabel(annex, contract.currency),
+    },
+    {
+      key: 'actions',
+      header: '',
+      width: pixel(60),
+      renderCell: (annex) => (
+        <IconButton
+          label={`Sửa ${annex.annexCode}`}
+          tooltip="Sửa phụ lục"
+          icon={<Icon icon={Pencil} size="sm" />}
+          variant="ghost"
+          size="sm"
+          onClick={() => onEditAnnex(annex)}
+        />
+      ),
+    },
+  ];
+
+  /** @type {import('@astryxdesign/core/Table').TableColumn<import('../types/index.js').PaymentSchedule & Record<string, unknown>>[]} */
+  const paymentScheduleColumns = [
+    {
+      key: 'paymentCode',
+      header: 'Mã',
+      width: proportional(1),
+      renderCell: (schedule) =>
+        `${schedule.paymentCode} · ${labelForPaymentType(schedule.type)}`,
+    },
+    {
+      key: 'paymentDate',
+      header: 'Ngày',
+      width: pixel(120),
+      renderCell: (schedule) => schedule.paymentDate,
+    },
+    {
+      key: 'note',
+      header: 'Ghi chú',
+      width: proportional(1),
+      renderCell: (schedule) => orDash(schedule.note),
+    },
+    {
+      key: 'amount',
+      header: 'Số tiền',
+      width: pixel(140),
+      align: 'end',
+      renderCell: (schedule) => formatMoney(schedule.amount, contract.currency),
+    },
+    {
+      key: 'actions',
+      header: '',
+      width: pixel(60),
+      renderCell: (schedule) => (
+        <IconButton
+          label={`Sửa ${schedule.paymentCode}`}
+          tooltip="Sửa đợt thanh toán"
+          icon={<Icon icon={Pencil} size="sm" />}
+          variant="ghost"
+          size="sm"
+          onClick={() => onEditPaymentSchedule(schedule)}
+        />
+      ),
+    },
+  ];
+
   /** @type {import('@astryxdesign/core/Table').TableColumn<import('../types/index.js').Shipment & Record<string, unknown>>[]} */
   const shipmentColumns = [
     {
       key: 'shipmentCode',
       header: 'Mã',
-      width: pixel(120),
+      width: pixel(160),
       renderCell: (shipment) => shipment.shipmentCode,
     },
     {
@@ -470,34 +594,31 @@ function ContractExpandedDetails({
     [expandedShipmentId],
   );
 
-  const serviceAgreementQuery = useServiceAgreementQuery(contract.id);
-  const serviceAgreementResult = serviceAgreementQuery.data;
-  const serviceAgreement =
-    serviceAgreementResult?.success && serviceAgreementResult.exists
-      ? serviceAgreementResult.serviceAgreement
+  const commissionQuery = useCommissionQuery(contract.id);
+  const commissionResult = commissionQuery.data;
+  const commission =
+    commissionResult?.success && commissionResult.exists
+      ? commissionResult.commission
       : null;
-  const hasServiceAgreement = serviceAgreement !== null;
+  const hasCommission = commission !== null;
 
-  const serviceAgreementAnnexesQuery = useServiceAgreementAnnexesQuery(
-    hasServiceAgreement ? contract.id : undefined,
+  const commissionAnnexesQuery = useCommissionAnnexesQuery(
+    hasCommission ? contract.id : undefined,
   );
-  const serviceAgreementAnnexes = serviceAgreementAnnexesQuery.data?.success
-    ? serviceAgreementAnnexesQuery.data.annexes
+  const commissionAnnexes = commissionAnnexesQuery.data?.success
+    ? commissionAnnexesQuery.data.annexes
     : [];
 
-  // "Tổng cộng" = the agreement's own `value` plus every annex's `amount`,
-  // signed by its `type` — same rollup as `service-agreements-list.jsx`'s
+  // "Tổng cộng" = the commission's own `value` plus every annex's `amount`,
+  // signed by its `type` — same rollup as `commissions-list.jsx`'s
   // `grandTotal`.
-  const serviceAgreementAnnexesTotal = serviceAgreementAnnexes.reduce(
-    (total, annex) => {
-      if (annex.type === 'AmountIncrease') return total + annex.amount;
-      if (annex.type === 'AmountDecrease') return total - annex.amount;
-      return total;
-    },
-    0,
-  );
-  const serviceAgreementGrandTotal = serviceAgreement
-    ? serviceAgreement.value + serviceAgreementAnnexesTotal
+  const commissionAnnexesTotal = commissionAnnexes.reduce((total, annex) => {
+    if (annex.type === 'AmountIncrease') return total + annex.amount;
+    if (annex.type === 'AmountDecrease') return total - annex.amount;
+    return total;
+  }, 0);
+  const commissionGrandTotal = commission
+    ? commission.value + commissionAnnexesTotal
     : 0;
 
   return (
@@ -541,13 +662,9 @@ function ContractExpandedDetails({
         size="sm"
       >
         <Tab value="info" label="Thông tin" />
-        <Tab value="seller" label="Bên bán" />
-        <Tab value="customer" label="Khách hàng" />
-        <Tab value="paymentSchedule" label="Đợt thanh toán khách" />
+        <Tab value="paymentSchedule" label="Lịch sử thanh toán" />
         <Tab value="shipment" label="Shipment" />
-        {hasServiceAgreement ? (
-          <Tab value="serviceAgreement" label="Service Agreement" />
-        ) : null}
+        {hasCommission ? <Tab value="commission" label="Commission" /> : null}
       </TabList>
 
       {activeTab === 'info' && (
@@ -615,6 +732,54 @@ function ContractExpandedDetails({
             </MetadataListItem>
           </MetadataList>
 
+          {/* Bên bán — pulled down from the old "Bên bán" tab. */}
+          <VStack gap={2} hAlign="stretch">
+            <Text weight="semibold">Bên bán</Text>
+            <MetadataList columns={4} label={{ position: 'top' }}>
+              <MetadataListItem label="Tên công ty">
+                {contract.seller.companyName}
+              </MetadataListItem>
+              <MetadataListItem label="Người đại diện">
+                {orDash(contract.seller.representativeName)}
+              </MetadataListItem>
+              <MetadataListItem label="Chức vụ">
+                {orDash(contract.seller.representativeTitle)}
+              </MetadataListItem>
+              <MetadataListItem label="Địa chỉ">
+                {orDash(contract.seller.address)}
+              </MetadataListItem>
+              {contract.seller.extraFields.map((field) => (
+                <MetadataListItem key={field.key} label={field.key}>
+                  {orDash(field.value)}
+                </MetadataListItem>
+              ))}
+            </MetadataList>
+          </VStack>
+
+          {/* Khách hàng — pulled down from the old "Khách hàng" tab. */}
+          <VStack gap={2} hAlign="stretch">
+            <Text weight="semibold">Khách hàng</Text>
+            <MetadataList columns={4} label={{ position: 'top' }}>
+              <MetadataListItem label="Tên công ty">
+                {contract.buyer.companyName}
+              </MetadataListItem>
+              <MetadataListItem label="Người đại diện">
+                {orDash(contract.buyer.representativeName)}
+              </MetadataListItem>
+              <MetadataListItem label="Chức vụ">
+                {orDash(contract.buyer.representativeTitle)}
+              </MetadataListItem>
+              <MetadataListItem label="Địa chỉ">
+                {orDash(contract.buyer.address)}
+              </MetadataListItem>
+              {contract.buyer.extraFields.map((field) => (
+                <MetadataListItem key={field.key} label={field.key}>
+                  {orDash(field.value)}
+                </MetadataListItem>
+              ))}
+            </MetadataList>
+          </VStack>
+
           {/* Ngân hàng — pulled down from the old "Ngân hàng" tab. */}
           <VStack gap={2} hAlign="stretch">
             <Text weight="semibold">Ngân hàng</Text>
@@ -646,35 +811,27 @@ function ContractExpandedDetails({
             )}
           </VStack>
 
-          {/* Đợt thanh toán — each term's own row, percent/condition bold
-              and right-aligned instead of the plain MetadataList grid. */}
+          {/* Đợt thanh toán */}
           <VStack gap={2} hAlign="stretch">
-            <Text weight="semibold">Đợt thanh toán</Text>
+            <Text weight="semibold">Đợt thanh toán (Hợp đồng)</Text>
             {contract.paymentTerms.length === 0 ? (
               <Text color="secondary">Chưa có đợt thanh toán</Text>
             ) : (
-              <List hasDividers density="compact">
-                {contract.paymentTerms.map((term, index) => (
-                  <ListItem
-                    key={term.id}
-                    label={`Đợt ${index + 1}`}
-                    endContent={
-                      <Text weight="semibold">
-                        {term.paymentRatioPercent}% ·{' '}
-                        {orDash(term.paymentCondition)}
-                      </Text>
-                    }
-                  />
-                ))}
-              </List>
+              <Table
+                columns={paymentTermColumns}
+                data={paymentTermRows}
+                idKey="id"
+                dividers="rows"
+                density="compact"
+              />
             )}
           </VStack>
 
           {/* Phụ lục — pulled down from the old "Phụ lục" tab, styled to
-              match `service-agreements-list.jsx`'s annex list: label +
+              match `commissions-list.jsx`'s annex list: label +
               signed amount on the top line, sign/dates/parties below. */}
           <HStack hAlign="between" vAlign="center">
-            <Text weight="semibold">Phụ lục</Text>
+            <Text weight="semibold">Phụ lục hợp đồng</Text>
             <Button
               label="Thêm phụ lục"
               variant="secondary"
@@ -687,34 +844,13 @@ function ContractExpandedDetails({
           {annexes.length === 0 ? (
             <Text color="secondary">Chưa có phụ lục</Text>
           ) : (
-            <List hasDividers density="compact">
-              {annexes.map((annex) => (
-                <ListItem
-                  key={annex.id}
-                  label={`${annex.annexCode} · ${labelForContractAnnexType(annex.type)}`}
-                  description={[
-                    `Ký ${annex.signedDate}`,
-                    `Mua: ${annex.buyerSigned ? 'đã ký' : 'chưa ký'}`,
-                    `Bán: ${annex.sellerSigned ? 'đã ký' : 'chưa ký'}`,
-                  ].join(' · ')}
-                  endContent={
-                    <HStack gap={1} vAlign="center">
-                      <Text weight="semibold">
-                        {contractAnnexAmountLabel(annex, contract.currency)}
-                      </Text>
-                      <IconButton
-                        label={`Sửa ${annex.annexCode}`}
-                        tooltip="Sửa phụ lục"
-                        icon={<Icon icon={Pencil} size="sm" />}
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onEditAnnex(annex)}
-                      />
-                    </HStack>
-                  }
-                />
-              ))}
-            </List>
+            <Table
+              columns={annexColumns}
+              data={annexes}
+              idKey="id"
+              dividers="rows"
+              density="compact"
+            />
           )}
 
           <HStack hAlign="between" vAlign="center">
@@ -726,50 +862,6 @@ function ContractExpandedDetails({
         </VStack>
       )}
 
-      {activeTab === 'seller' && (
-        <MetadataList columns={4} label={{ position: 'top' }}>
-          <MetadataListItem label="Tên công ty">
-            {contract.seller.companyName}
-          </MetadataListItem>
-          <MetadataListItem label="Người đại diện">
-            {orDash(contract.seller.representativeName)}
-          </MetadataListItem>
-          <MetadataListItem label="Chức vụ">
-            {orDash(contract.seller.representativeTitle)}
-          </MetadataListItem>
-          <MetadataListItem label="Địa chỉ">
-            {orDash(contract.seller.address)}
-          </MetadataListItem>
-          {contract.seller.extraFields.map((field) => (
-            <MetadataListItem key={field.key} label={field.key}>
-              {orDash(field.value)}
-            </MetadataListItem>
-          ))}
-        </MetadataList>
-      )}
-
-      {activeTab === 'customer' && (
-        <MetadataList columns={4} label={{ position: 'top' }}>
-          <MetadataListItem label="Tên công ty">
-            {contract.buyer.companyName}
-          </MetadataListItem>
-          <MetadataListItem label="Người đại diện">
-            {orDash(contract.buyer.representativeName)}
-          </MetadataListItem>
-          <MetadataListItem label="Chức vụ">
-            {orDash(contract.buyer.representativeTitle)}
-          </MetadataListItem>
-          <MetadataListItem label="Địa chỉ">
-            {orDash(contract.buyer.address)}
-          </MetadataListItem>
-          {contract.buyer.extraFields.map((field) => (
-            <MetadataListItem key={field.key} label={field.key}>
-              {orDash(field.value)}
-            </MetadataListItem>
-          ))}
-        </MetadataList>
-      )}
-
       {activeTab === 'paymentSchedule' && (
         <VStack gap={4} hAlign="stretch">
           {/* Requires the contract to be fully signed to create; the
@@ -777,7 +869,7 @@ function ContractExpandedDetails({
               button + tooltip here is just the UX-level mirror of that
               rule. */}
           <HStack hAlign="between" vAlign="center">
-            <Text weight="semibold">Đợt thanh toán khách</Text>
+            <Text weight="semibold">Lịch sử thanh toán</Text>
             <Button
               label="Thêm đợt thanh toán"
               variant="secondary"
@@ -796,32 +888,13 @@ function ContractExpandedDetails({
           {paymentSchedules.length === 0 ? (
             <Text color="secondary">Chưa có đợt thanh toán</Text>
           ) : (
-            <List hasDividers density="compact">
-              {paymentSchedules.map((schedule) => (
-                <ListItem
-                  key={schedule.id}
-                  label={`${schedule.paymentCode} · ${labelForPaymentType(schedule.type)}`}
-                  description={[`Ngày ${schedule.paymentDate}`, schedule.note]
-                    .filter(Boolean)
-                    .join(' · ')}
-                  endContent={
-                    <HStack gap={1} vAlign="center">
-                      <Text weight="semibold">
-                        {formatMoney(schedule.amount, contract.currency)}
-                      </Text>
-                      <IconButton
-                        label={`Sửa ${schedule.paymentCode}`}
-                        tooltip="Sửa đợt thanh toán"
-                        icon={<Icon icon={Pencil} size="sm" />}
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onEditPaymentSchedule(schedule)}
-                      />
-                    </HStack>
-                  }
-                />
-              ))}
-            </List>
+            <Table
+              columns={paymentScheduleColumns}
+              data={paymentSchedules}
+              idKey="id"
+              dividers="rows"
+              density="compact"
+            />
           )}
         </VStack>
       )}
@@ -857,16 +930,14 @@ function ContractExpandedDetails({
         </VStack>
       )}
 
-      {activeTab === 'serviceAgreement' && serviceAgreement && (
+      {activeTab === 'commission' && commission && (
         <VStack gap={4} hAlign="stretch">
-          {/* Same field set/layout as `service-agreements-list.jsx`'s
-              `ServiceAgreementExpandedDetails` — this tab is that
+          {/* Same field set/layout as `commissions-list.jsx`'s
+              `CommissionExpandedDetails` — this tab is that
               component's content, just entered from a contract's row
-              instead of the system-wide Service Agreement list. */}
+              instead of the system-wide Commission list. */}
           <MetadataList columns={4} label={{ position: 'top' }}>
-            <MetadataListItem label="Mã">
-              {serviceAgreement.code}
-            </MetadataListItem>
+            <MetadataListItem label="Mã">{commission.code}</MetadataListItem>
             <MetadataListItem label="Số hợp đồng">
               {contract.contractNumber}
             </MetadataListItem>
@@ -874,22 +945,21 @@ function ContractExpandedDetails({
               {contract.projectName}
             </MetadataListItem>
             <MetadataListItem label="Giá trị">
-              {formatMoney(serviceAgreement.value, contract.currency)}
+              {formatMoney(commission.value, contract.currency)}
             </MetadataListItem>
             <MetadataListItem label="Trung gian">
               {orDash(
-                customersById.get(serviceAgreement.partyCustomerId)
-                  ?.companyName,
+                customersById.get(commission.partyCustomerId)?.companyName,
               )}
             </MetadataListItem>
             <MetadataListItem label="Ngày ký">
-              {orDash(serviceAgreement.signedDate)}
+              {orDash(commission.signedDate)}
             </MetadataListItem>
             <MetadataListItem label="Bên nhận hoa hồng">
-              {serviceAgreement.partySigned ? 'Đã ký' : 'Chưa ký'}
+              {commission.partySigned ? 'Đã ký' : 'Chưa ký'}
             </MetadataListItem>
             <MetadataListItem label="Bên bán">
-              {serviceAgreement.sellerSigned ? 'Đã ký' : 'Chưa ký'}
+              {commission.sellerSigned ? 'Đã ký' : 'Chưa ký'}
             </MetadataListItem>
           </MetadataList>
 
@@ -898,12 +968,31 @@ function ContractExpandedDetails({
             columns={4}
             label={{ position: 'top' }}
           >
-            {serviceAgreement.paymentTerms.length === 0 ? (
+            {commission.paymentTerms.length === 0 ? (
               <MetadataListItem label="Đợt thanh toán">—</MetadataListItem>
             ) : (
-              serviceAgreement.paymentTerms.map((term, index) => (
+              commission.paymentTerms.map((term, index) => (
                 <MetadataListItem key={term.id} label={`Đợt ${index + 1}`}>
                   {term.paymentRatioPercent}% · {orDash(term.paymentCondition)}
+                </MetadataListItem>
+              ))
+            )}
+          </MetadataList>
+
+          <MetadataList
+            title="Lịch sử thanh toán"
+            columns={4}
+            label={{ position: 'top' }}
+          >
+            {commission.paymentHistory.length === 0 ? (
+              <MetadataListItem label="Lịch sử thanh toán">
+                —
+              </MetadataListItem>
+            ) : (
+              commission.paymentHistory.map((payment) => (
+                <MetadataListItem key={payment.id} label={payment.paymentDate}>
+                  {formatMoney(payment.amount, contract.currency)}
+                  {payment.note ? ` · ${payment.note}` : ''}
                 </MetadataListItem>
               ))
             )}
@@ -916,18 +1005,18 @@ function ContractExpandedDetails({
               variant="secondary"
               size="sm"
               icon={<Icon icon={Plus} />}
-              onClick={onAddServiceAgreementAnnex}
+              onClick={onAddCommissionAnnex}
             />
           </HStack>
 
-          {serviceAgreementAnnexes.length === 0 ? (
+          {commissionAnnexes.length === 0 ? (
             <Text color="secondary">Chưa có phụ lục</Text>
           ) : (
             <List hasDividers density="compact">
-              {serviceAgreementAnnexes.map((annex) => (
+              {commissionAnnexes.map((annex) => (
                 <ListItem
                   key={annex.id}
-                  label={`${annex.annexCode} · ${labelForServiceAgreementAnnexType(annex.type)}`}
+                  label={`${annex.annexCode} · ${labelForCommissionAnnexType(annex.type)}`}
                   description={[
                     `Ký ${annex.signedDate}`,
                     `Bên bán: ${annex.sellerSigned ? 'đã ký' : 'chưa ký'}`,
@@ -936,10 +1025,7 @@ function ContractExpandedDetails({
                   endContent={
                     <HStack gap={1} vAlign="center">
                       <Text weight="semibold">
-                        {serviceAgreementAnnexAmountLabel(
-                          annex,
-                          contract.currency,
-                        )}
+                        {commissionAnnexAmountLabel(annex, contract.currency)}
                       </Text>
                       <IconButton
                         label={`Sửa ${annex.annexCode}`}
@@ -947,7 +1033,7 @@ function ContractExpandedDetails({
                         icon={<Icon icon={Pencil} size="sm" />}
                         variant="ghost"
                         size="sm"
-                        onClick={() => onEditServiceAgreementAnnex(annex)}
+                        onClick={() => onEditCommissionAnnex(annex)}
                       />
                     </HStack>
                   }
@@ -959,7 +1045,7 @@ function ContractExpandedDetails({
           <HStack hAlign="between" vAlign="center">
             <Text weight="semibold">Tổng cộng:</Text>
             <Text weight="semibold">
-              {formatMoney(serviceAgreementGrandTotal, contract.currency)}
+              {formatMoney(commissionGrandTotal, contract.currency)}
             </Text>
           </HStack>
         </VStack>
@@ -978,15 +1064,15 @@ function ContractExpandedDetails({
         />
         <HStack gap={2}>
           <Button
-            label={hasServiceAgreement ? 'Sửa Commission' : 'Tạo Commission'}
+            label={hasCommission ? 'Sửa Commission' : 'Tạo Commission'}
             variant="secondary"
             size="sm"
-            icon={<Icon icon={hasServiceAgreement ? Pencil : Plus} />}
+            icon={<Icon icon={hasCommission ? Pencil : Plus} />}
             onClick={() =>
-              onOpenServiceAgreement({
+              onOpenCommission({
                 contractId: contract.id,
                 currency: contract.currency,
-                serviceAgreement,
+                commission,
               })
             }
           />
@@ -1025,7 +1111,7 @@ function ContractExpandedDetails({
  * dialog's trigger button underneath instead of the option (only keyboard
  * selection worked). Every dialog that has a `Selector` field and is opened
  * from inside a row's expanded content (Shipment, Payment Schedule, Annex,
- * Service Agreement, VGM) is therefore rendered HERE — a sibling of
+ * Commission, VGM) is therefore rendered HERE — a sibling of
  * `AdvanceTable`, not a descendant of it — with only trigger callbacks
  * passed down to `ContractExpandedDetails`/`ShipmentExpandedDetails`. Do not
  * move a `*FormDialog` back inside `renderExpanded`.
@@ -1060,17 +1146,16 @@ export function ContractsList() {
       null
     ),
   );
-  const [serviceAgreementDialog, setServiceAgreementDialog] = useState(
-    /** @type {{ contractId: string, currency: string, serviceAgreement: import('../types/index.js').ServiceAgreement | null } | null} */ (
+  const [commissionDialog, setCommissionDialog] = useState(
+    /** @type {{ contractId: string, currency: string, commission: import('../types/index.js').Commission | null } | null} */ (
       null
     ),
   );
-  const [serviceAgreementAnnexDialog, setServiceAgreementAnnexDialog] =
-    useState(
-      /** @type {{ contractId: string, annex?: import('../types/index.js').ServiceAgreementAnnex } | null} */ (
-        null
-      ),
-    );
+  const [commissionAnnexDialog, setCommissionAnnexDialog] = useState(
+    /** @type {{ contractId: string, annex?: import('../types/index.js').CommissionAnnex } | null} */ (
+      null
+    ),
+  );
   const [vgmDialog, setVgmDialog] = useState(
     /** @type {{ contractId: string, shipmentId: string, vgm?: import('../types/index.js').ShipmentVgm } | null} */ (
       null
@@ -1116,9 +1201,9 @@ export function ContractsList() {
     [countriesQuery.data],
   );
 
-  // `ServiceAgreement.partyCustomerId` is a live FK into the Customer
-  // catalog (`docs/api/ServiceAgreements.md`, BE-kt-xnk) — same
-  // client-side name resolution as `service-agreements-list.jsx`'s
+  // `Commission.partyCustomerId` is a live FK into the Customer
+  // catalog (`docs/api/Commissions.md`, BE-kt-xnk) — same
+  // client-side name resolution as `commissions-list.jsx`'s
   // `customersById`.
   const customersQuery = useCustomersQuery();
   const customersById = useMemo(
@@ -1284,14 +1369,12 @@ export function ContractsList() {
             }
             onAddVgm={(payload) => setVgmDialog(payload)}
             onEditVgm={(payload) => setVgmDialog(payload)}
-            onOpenServiceAgreement={(payload) =>
-              setServiceAgreementDialog(payload)
+            onOpenCommission={(payload) => setCommissionDialog(payload)}
+            onAddCommissionAnnex={() =>
+              setCommissionAnnexDialog({ contractId: contract.id })
             }
-            onAddServiceAgreementAnnex={() =>
-              setServiceAgreementAnnexDialog({ contractId: contract.id })
-            }
-            onEditServiceAgreementAnnex={(annex) =>
-              setServiceAgreementAnnexDialog({ contractId: contract.id, annex })
+            onEditCommissionAnnex={(annex) =>
+              setCommissionAnnexDialog({ contractId: contract.id, annex })
             }
           />
         ),
@@ -1446,32 +1529,32 @@ export function ContractsList() {
         />
       ) : null}
 
-      {serviceAgreementDialog ? (
-        <ServiceAgreementFormDialog
+      {commissionDialog ? (
+        <CommissionFormDialog
           isOpen
           onOpenChange={(isOpen) => {
-            if (!isOpen) setServiceAgreementDialog(null);
+            if (!isOpen) setCommissionDialog(null);
           }}
-          contractId={serviceAgreementDialog.contractId}
-          currency={serviceAgreementDialog.currency}
-          serviceAgreement={serviceAgreementDialog.serviceAgreement}
+          contractId={commissionDialog.contractId}
+          currency={commissionDialog.currency}
+          commission={commissionDialog.commission}
           onSuccess={() => {
-            setExpandedTab('serviceAgreement');
-            setServiceAgreementDialog(null);
+            setExpandedTab('commission');
+            setCommissionDialog(null);
           }}
         />
       ) : null}
 
-      {serviceAgreementAnnexDialog ? (
-        <ServiceAgreementAnnexFormDialog
-          key={serviceAgreementAnnexDialog.annex?.id ?? 'create'}
+      {commissionAnnexDialog ? (
+        <CommissionAnnexFormDialog
+          key={commissionAnnexDialog.annex?.id ?? 'create'}
           isOpen
           onOpenChange={(isOpen) => {
-            if (!isOpen) setServiceAgreementAnnexDialog(null);
+            if (!isOpen) setCommissionAnnexDialog(null);
           }}
-          contractId={serviceAgreementAnnexDialog.contractId}
-          annex={serviceAgreementAnnexDialog.annex}
-          onSuccess={() => setServiceAgreementAnnexDialog(null)}
+          contractId={commissionAnnexDialog.contractId}
+          annex={commissionAnnexDialog.annex}
+          onSuccess={() => setCommissionAnnexDialog(null)}
         />
       ) : null}
 

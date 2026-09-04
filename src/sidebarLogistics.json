@@ -11,8 +11,8 @@
       "path": "/logistics/shipments"
     },
     {
-      "title": "Service Agreement",
-      "path": "/logistics/service-agreements"
+      "title": "Commission",
+      "path": "/logistics/commissions"
     },
     {
       "title": "Khách hàng",

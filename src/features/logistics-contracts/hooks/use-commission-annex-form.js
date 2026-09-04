@@ -2,13 +2,13 @@
 
 import { useState } from 'react';
 
-import { serviceAgreementAnnexSchema } from '../config/service-agreement-annex-schema.js';
+import { commissionAnnexSchema } from '../config/commission-annex-schema.js';
 import {
-  useCreateServiceAgreementAnnexMutation,
-  useUpdateServiceAgreementAnnexMutation,
-} from './use-service-agreement-annexes-query.js';
+  useCreateCommissionAnnexMutation,
+  useUpdateCommissionAnnexMutation,
+} from './use-commission-annexes-query.js';
 
-/** @returns {import('../types/index.js').ServiceAgreementAnnexFormValues} */
+/** @returns {import('../types/index.js').CommissionAnnexFormValues} */
 function emptyValues() {
   return {
     signedDate: '',
@@ -19,7 +19,7 @@ function emptyValues() {
   };
 }
 
-/** @param {import('../types/index.js').ServiceAgreementAnnex} annex */
+/** @param {import('../types/index.js').CommissionAnnex} annex */
 function valuesFromAnnex(annex) {
   return {
     signedDate: annex.signedDate,
@@ -36,16 +36,16 @@ function fieldStatus(message) {
 }
 
 /**
- * Form state for creating/updating a `ServiceAgreementAnnex`. Pass `annex`
+ * Form state for creating/updating a `CommissionAnnex`. Pass `annex`
  * to edit an existing one — `annexNumber`/`annexCode` are never editable
  * (backend-assigned), so they never appear in `values`.
  * @param {{
  *   contractId: string,
- *   annex?: import('../types/index.js').ServiceAgreementAnnex | null,
- *   onSuccess?: (annex: import('../types/index.js').ServiceAgreementAnnex) => void,
+ *   annex?: import('../types/index.js').CommissionAnnex | null,
+ *   onSuccess?: (annex: import('../types/index.js').CommissionAnnex) => void,
  * }} options
  */
-export function useServiceAgreementAnnexForm({
+export function useCommissionAnnexForm({
   contractId,
   annex = null,
   onSuccess,
@@ -58,13 +58,13 @@ export function useServiceAgreementAnnexForm({
   );
   const [submitError, setSubmitError] = useState('');
 
-  const createMutation = useCreateServiceAgreementAnnexMutation(contractId);
-  const updateMutation = useUpdateServiceAgreementAnnexMutation(contractId);
+  const createMutation = useCreateCommissionAnnexMutation(contractId);
+  const updateMutation = useUpdateCommissionAnnexMutation(contractId);
 
   /**
-   * @template {keyof import('../types/index.js').ServiceAgreementAnnexFormValues} K
+   * @template {keyof import('../types/index.js').CommissionAnnexFormValues} K
    * @param {K} field
-   * @param {import('../types/index.js').ServiceAgreementAnnexFormValues[K]} value
+   * @param {import('../types/index.js').CommissionAnnexFormValues[K]} value
    */
   function setField(field, value) {
     setValues((current) => ({ ...current, [field]: value }));
@@ -81,7 +81,7 @@ export function useServiceAgreementAnnexForm({
     event?.preventDefault();
     setSubmitError('');
 
-    const result = serviceAgreementAnnexSchema.safeParse(values);
+    const result = commissionAnnexSchema.safeParse(values);
     if (!result.success) {
       /** @type {Record<string, string>} */
       const nextFieldErrors = {};
