@@ -61,6 +61,7 @@ import { usePaymentSchedulesQuery } from '../hooks/use-payment-schedules-query.j
 import { useShipmentsQuery } from '../hooks/use-shipments-query.js';
 import { CommissionAnnexFormDialog } from './commission-annex-form-dialog.jsx';
 import { CommissionFormDialog } from './commission-form-dialog.jsx';
+import { CommissionPaymentQuickAddDialog } from './commission-payment-quick-add-dialog.jsx';
 import { ContractAnnexFormDialog } from './contract-annex-form-dialog.jsx';
 import { ContractFormDialog } from './contract-form-dialog.jsx';
 import { PaymentScheduleFormDialog } from './payment-schedule-form-dialog.jsx';
@@ -305,6 +306,7 @@ const skeletonRows = Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => ({
  * @param {(payload: { contractId: string, currency: string, commission: import('../types/index.js').Commission | null }) => void} props.onOpenCommission
  * @param {() => void} props.onAddCommissionAnnex
  * @param {(annex: import('../types/index.js').CommissionAnnex) => void} props.onEditCommissionAnnex
+ * @param {(commission: import('../types/index.js').Commission) => void} props.onAddCommissionPayment
  */
 function ContractExpandedDetails({
   contract,
@@ -325,6 +327,7 @@ function ContractExpandedDetails({
   onOpenCommission,
   onAddCommissionAnnex,
   onEditCommissionAnnex,
+  onAddCommissionPayment,
 }) {
   const [expandedShipmentId, setExpandedShipmentId] = useState(
     /** @type {string | null} */ (null),
@@ -979,11 +982,18 @@ function ContractExpandedDetails({
             )}
           </MetadataList>
 
-          <MetadataList
-            title="Lịch sử thanh toán"
-            columns={4}
-            label={{ position: 'top' }}
-          >
+          <HStack hAlign="between" vAlign="center">
+            <Text weight="semibold">Lịch sử thanh toán</Text>
+            <Button
+              label="Thêm nhanh"
+              variant="secondary"
+              size="sm"
+              icon={<Icon icon={Plus} />}
+              onClick={() => onAddCommissionPayment(commission)}
+            />
+          </HStack>
+
+          <MetadataList columns={4} label={{ position: 'top' }}>
             {commission.paymentHistory.length === 0 ? (
               <MetadataListItem label="Lịch sử thanh toán">
                 —
@@ -1153,6 +1163,11 @@ export function ContractsList() {
   );
   const [commissionAnnexDialog, setCommissionAnnexDialog] = useState(
     /** @type {{ contractId: string, annex?: import('../types/index.js').CommissionAnnex } | null} */ (
+      null
+    ),
+  );
+  const [commissionPaymentDialog, setCommissionPaymentDialog] = useState(
+    /** @type {{ contractId: string, currency: string, commission: import('../types/index.js').Commission } | null} */ (
       null
     ),
   );
@@ -1376,6 +1391,13 @@ export function ContractsList() {
             onEditCommissionAnnex={(annex) =>
               setCommissionAnnexDialog({ contractId: contract.id, annex })
             }
+            onAddCommissionPayment={(commission) =>
+              setCommissionPaymentDialog({
+                contractId: contract.id,
+                currency: contract.currency,
+                commission,
+              })
+            }
           />
         ),
       })
@@ -1555,6 +1577,19 @@ export function ContractsList() {
           contractId={commissionAnnexDialog.contractId}
           annex={commissionAnnexDialog.annex}
           onSuccess={() => setCommissionAnnexDialog(null)}
+        />
+      ) : null}
+
+      {commissionPaymentDialog ? (
+        <CommissionPaymentQuickAddDialog
+          isOpen
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setCommissionPaymentDialog(null);
+          }}
+          contractId={commissionPaymentDialog.contractId}
+          commission={commissionPaymentDialog.commission}
+          currency={commissionPaymentDialog.currency}
+          onSuccess={() => setCommissionPaymentDialog(null)}
         />
       ) : null}
 

@@ -10,7 +10,7 @@ const paymentTermSchema = z.object({
     .min(1, 'Vui lòng nhập điều kiện thanh toán'),
 });
 
-const commissionPaymentSchema = z.object({
+export const commissionPaymentSchema = z.object({
   paymentDate: z.string().trim().min(1, 'Vui lòng chọn ngày thanh toán'),
   amount: z
     .number({ error: 'Vui lòng nhập giá trị' })

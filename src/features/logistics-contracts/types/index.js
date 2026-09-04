@@ -236,6 +236,16 @@ export {};
  */
 
 /**
+ * Values for the "Thêm nhanh" (quick-add) single-payment dialog — a
+ * lighter-weight sibling of `CommissionPaymentRow`, used to submit one new
+ * entry without opening the full Commission edit form.
+ * @typedef {Object} CommissionPaymentFormValues
+ * @property {string} paymentDate - ISO date (YYYY-MM-DD)
+ * @property {number | undefined} amount
+ * @property {string} note
+ */
+
+/**
  * @typedef {Object} Company
  * @property {string} id
  * @property {string} name

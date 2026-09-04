@@ -31,6 +31,7 @@ import { useContractsQuery } from '../hooks/use-contracts-query.js';
 import { useCustomersQuery } from '../hooks/use-customers-query.js';
 import { CommissionAnnexFormDialog } from './commission-annex-form-dialog.jsx';
 import { CommissionFormDialog } from './commission-form-dialog.jsx';
+import { CommissionPaymentQuickAddDialog } from './commission-payment-quick-add-dialog.jsx';
 
 /** @param {string | null | undefined} value */
 function orDash(value) {
@@ -130,6 +131,7 @@ const skeletonRows = Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => ({
  *   onEdit: () => void,
  *   onAddAnnex: () => void,
  *   onEditAnnex: (annex: import('../types/index.js').CommissionAnnex) => void,
+ *   onAddPayment: () => void,
  * }} props
  */
 function CommissionExpandedDetails({
@@ -137,6 +139,7 @@ function CommissionExpandedDetails({
   onEdit,
   onAddAnnex,
   onEditAnnex,
+  onAddPayment,
 }) {
   const annexesQuery = useCommissionAnnexesQuery(row.contractId);
   const annexes = annexesQuery.data?.success ? annexesQuery.data.annexes : [];
@@ -219,11 +222,18 @@ function CommissionExpandedDetails({
         )}
       </MetadataList>
 
-      <MetadataList
-        title="Lịch sử thanh toán"
-        columns={4}
-        label={{ position: 'top' }}
-      >
+      <HStack hAlign="between" vAlign="center">
+        <Text weight="semibold">Lịch sử thanh toán</Text>
+        <Button
+          label="Thêm nhanh"
+          variant="secondary"
+          size="sm"
+          icon={<Icon icon={Plus} />}
+          onClick={onAddPayment}
+        />
+      </HStack>
+
+      <MetadataList columns={4} label={{ position: 'top' }}>
         {row.paymentHistory.length === 0 ? (
           <MetadataListItem label="Lịch sử thanh toán">—</MetadataListItem>
         ) : (
@@ -327,6 +337,9 @@ export function CommissionsList() {
     /** @type {{ contractId: string, annex?: import('../types/index.js').CommissionAnnex } | null} */ (
       null
     ),
+  );
+  const [paymentDialog, setPaymentDialog] = useState(
+    /** @type {CommissionListRow | null} */ (null),
   );
 
   const commissionsQuery = useCommissionsQuery({
@@ -458,6 +471,7 @@ export function CommissionsList() {
             onEditAnnex={(annex) =>
               setAnnexDialog({ contractId: row.contractId, annex })
             }
+            onAddPayment={() => setPaymentDialog(row)}
           />
         ),
       })
@@ -548,6 +562,19 @@ export function CommissionsList() {
           contractId={annexDialog.contractId}
           annex={annexDialog.annex}
           onSuccess={() => setAnnexDialog(null)}
+        />
+      ) : null}
+
+      {paymentDialog ? (
+        <CommissionPaymentQuickAddDialog
+          isOpen
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setPaymentDialog(null);
+          }}
+          contractId={paymentDialog.contractId}
+          commission={paymentDialog}
+          currency={paymentDialog.currency}
+          onSuccess={() => setPaymentDialog(null)}
         />
       ) : null}
     </VStack>
