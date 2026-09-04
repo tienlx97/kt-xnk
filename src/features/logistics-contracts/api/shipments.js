@@ -17,6 +17,10 @@ function toCreateRequestBody(values) {
     BillOfLadingNumber: values.billOfLadingNumber || null,
     ShippingLine: values.shippingLine || null,
     VesselName: values.vesselName || null,
+    Etd: values.etd || null,
+    Eta: values.eta || null,
+    PlaceOfLoading: values.placeOfLoading || null,
+    PlaceOfDischarge: values.placeOfDischarge || null,
     Type: values.type,
     Name: values.name,
     PaymentCondition: values.paymentCondition,
@@ -45,6 +49,10 @@ function toUpdateRequestBody(values) {
     BillOfLadingNumber: values.billOfLadingNumber || null,
     ShippingLine: values.shippingLine || null,
     VesselName: values.vesselName || null,
+    Etd: values.etd || null,
+    Eta: values.eta || null,
+    PlaceOfLoading: values.placeOfLoading || null,
+    PlaceOfDischarge: values.placeOfDischarge || null,
     Name: values.name,
     PaymentCondition: values.paymentCondition,
     InvoiceValue: values.invoiceValue,
@@ -66,10 +74,9 @@ function toUpdateRequestBody(values) {
  * @returns {Promise<{ success: true, shipments: import('../types/index.js').Shipment[] } | { success: false, message: string }>}
  */
 export async function listShipments(contractId) {
-  const result = await apiRequest(
-    `/api/v1/contracts/${contractId}/shipments`,
-    { errorMessage: GENERIC_LIST_ERROR },
-  );
+  const result = await apiRequest(`/api/v1/contracts/${contractId}/shipments`, {
+    errorMessage: GENERIC_LIST_ERROR,
+  });
 
   if (!result.success) {
     return { success: false, message: result.message };
@@ -117,14 +124,11 @@ export async function listAllShipments({ page = 1, pageSize = 25 } = {}) {
  * @returns {Promise<{ success: true, shipment: import('../types/index.js').Shipment } | { success: false, message: string }>}
  */
 export async function createShipment(contractId, values) {
-  const result = await apiRequest(
-    `/api/v1/contracts/${contractId}/shipments`,
-    {
-      method: 'POST',
-      errorMessage: GENERIC_CREATE_ERROR,
-      body: toCreateRequestBody(values),
-    },
-  );
+  const result = await apiRequest(`/api/v1/contracts/${contractId}/shipments`, {
+    method: 'POST',
+    errorMessage: GENERIC_CREATE_ERROR,
+    body: toCreateRequestBody(values),
+  });
 
   if (!result.success) {
     return { success: false, message: result.message };

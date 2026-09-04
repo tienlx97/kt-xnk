@@ -9,14 +9,27 @@ import {
   useUpdateShipmentMutation,
 } from './use-shipments-query.js';
 
-/** @returns {import('../types/index.js').ShipmentFormValues} */
-function emptyValues() {
+/**
+ * `placeOfLoading`/`placeOfDischarge` default from the parent Contract's
+ * own fields (client-side only — see the type's own doc comment) so a new
+ * shipment starts pre-filled with the contract's usual ports but can
+ * diverge immediately; `contract` is optional purely so callers that
+ * don't have one loaded yet (or are editing, where `valuesFromShipment`
+ * takes over instead) don't need a placeholder.
+ * @param {import('../types/index.js').Contract | null} [contract]
+ * @returns {import('../types/index.js').ShipmentFormValues}
+ */
+function emptyValues(contract = null) {
   return {
     supplierCustomerId: '',
     bookingNumber: '',
     billOfLadingNumber: '',
     shippingLine: '',
     vesselName: '',
+    etd: '',
+    eta: '',
+    placeOfLoading: contract?.placeOfLoading ?? '',
+    placeOfDischarge: contract?.placeOfDischarge ?? '',
     type: '',
     name: '',
     paymentCondition: '',
@@ -41,6 +54,10 @@ function valuesFromShipment(shipment) {
     billOfLadingNumber: shipment.billOfLadingNumber ?? '',
     shippingLine: shipment.shippingLine ?? '',
     vesselName: shipment.vesselName ?? '',
+    etd: shipment.etd ?? '',
+    eta: shipment.eta ?? '',
+    placeOfLoading: shipment.placeOfLoading ?? '',
+    placeOfDischarge: shipment.placeOfDischarge ?? '',
     type: shipment.type,
     name: shipment.name,
     paymentCondition: shipment.paymentCondition,
@@ -68,13 +85,19 @@ function fieldStatus(message) {
  * (backend-assigned), so they never appear in `values`.
  * @param {{
  *   contractId: string,
+ *   contract?: import('../types/index.js').Contract | null,
  *   shipment?: import('../types/index.js').Shipment | null,
  *   onSuccess?: (shipment: import('../types/index.js').Shipment) => void,
  * }} options
  */
-export function useShipmentForm({ contractId, shipment = null, onSuccess }) {
+export function useShipmentForm({
+  contractId,
+  contract = null,
+  shipment = null,
+  onSuccess,
+}) {
   const [values, setValues] = useState(
-    shipment ? valuesFromShipment(shipment) : emptyValues(),
+    shipment ? valuesFromShipment(shipment) : emptyValues(contract),
   );
   const [fieldErrors, setFieldErrors] = useState(
     /** @type {Record<string, string>} */ ({}),
@@ -95,7 +118,7 @@ export function useShipmentForm({ contractId, shipment = null, onSuccess }) {
   }
 
   function reset() {
-    setValues(shipment ? valuesFromShipment(shipment) : emptyValues());
+    setValues(shipment ? valuesFromShipment(shipment) : emptyValues(contract));
     setFieldErrors({});
     setSubmitError('');
   }

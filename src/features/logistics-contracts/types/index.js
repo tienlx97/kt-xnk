@@ -412,6 +412,10 @@ export {};
  * @property {string | null} billOfLadingNumber
  * @property {string | null} shippingLine
  * @property {string | null} vesselName
+ * @property {string | null} etd - ISO date, "ngày dự kiến khởi hành"
+ * @property {string | null} eta - ISO date, "ngày dự kiến đến"
+ * @property {string | null} placeOfLoading - this shipment's own copy, not a live reference to `Contract.placeOfLoading` — defaults from it client-side on create only (see `use-shipment-form.js`)
+ * @property {string | null} placeOfDischarge - this shipment's own copy, same default-once pattern as `placeOfLoading`
  * @property {ShipmentType} type
  * @property {string} name
  * @property {PaymentType} paymentCondition
@@ -435,6 +439,10 @@ export {};
  * @property {string} billOfLadingNumber
  * @property {string} shippingLine
  * @property {string} vesselName
+ * @property {string} etd
+ * @property {string} eta
+ * @property {string} placeOfLoading
+ * @property {string} placeOfDischarge
  * @property {ShipmentType | ''} type
  * @property {string} name
  * @property {PaymentType | ''} paymentCondition

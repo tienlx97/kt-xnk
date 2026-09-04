@@ -1162,7 +1162,7 @@ export function ContractsList() {
     /** @type {ExpandedTab} */ ('info'),
   );
   const [shipmentDialog, setShipmentDialog] = useState(
-    /** @type {{ contractId: string, shipment?: import('../types/index.js').Shipment } | null} */ (
+    /** @type {{ contractId: string, contract: import('../types/index.js').Contract, shipment?: import('../types/index.js').Shipment } | null} */ (
       null
     ),
   );
@@ -1398,9 +1398,11 @@ export function ContractsList() {
             onEditPaymentSchedule={(schedule) =>
               setPaymentScheduleDialog({ contractId: contract.id, schedule })
             }
-            onAddShipment={() => setShipmentDialog({ contractId: contract.id })}
+            onAddShipment={() =>
+              setShipmentDialog({ contractId: contract.id, contract })
+            }
             onEditShipment={(shipment) =>
-              setShipmentDialog({ contractId: contract.id, shipment })
+              setShipmentDialog({ contractId: contract.id, contract, shipment })
             }
             onAddVgm={(payload) => setVgmDialog(payload)}
             onEditVgm={(payload) => setVgmDialog(payload)}
@@ -1540,6 +1542,7 @@ export function ContractsList() {
             if (!isOpen) setShipmentDialog(null);
           }}
           contractId={shipmentDialog.contractId}
+          contract={shipmentDialog.contract}
           shipment={shipmentDialog.shipment}
           onSuccess={() => setShipmentDialog(null)}
         />

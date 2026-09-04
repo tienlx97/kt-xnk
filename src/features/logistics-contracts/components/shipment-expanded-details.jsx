@@ -260,6 +260,14 @@ export function ShipmentExpandedDetails({
         <MetadataListItem label="Tên tàu">
           {orDash(shipment.vesselName)}
         </MetadataListItem>
+        <MetadataListItem label="ETD">{orDash(shipment.etd)}</MetadataListItem>
+        <MetadataListItem label="ETA">{orDash(shipment.eta)}</MetadataListItem>
+        <MetadataListItem label="Cảng/nơi xếp hàng">
+          {orDash(shipment.placeOfLoading)}
+        </MetadataListItem>
+        <MetadataListItem label="Cảng/nơi đến">
+          {orDash(shipment.placeOfDischarge)}
+        </MetadataListItem>
         <MetadataListItem label="Mã C/O">
           {orDash(shipment.coNumber)}
         </MetadataListItem>

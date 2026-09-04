@@ -21,6 +21,7 @@ import { ShipmentFields } from './shipment-fields.jsx';
  *   isOpen: boolean,
  *   onOpenChange: (isOpen: boolean) => void,
  *   contractId: string,
+ *   contract?: import('../types/index.js').Contract | null,
  *   shipment?: import('../types/index.js').Shipment | null,
  *   onSuccess?: (shipment: import('../types/index.js').Shipment) => void,
  * }} props
@@ -29,11 +30,13 @@ export function ShipmentFormDialog({
   isOpen,
   onOpenChange,
   contractId,
+  contract = null,
   shipment = null,
   onSuccess,
 }) {
   const form = useShipmentForm({
     contractId,
+    contract,
     shipment,
     onSuccess: (savedShipment) => {
       onOpenChange(false);
@@ -64,7 +67,11 @@ export function ShipmentFormDialog({
           content={
             <LayoutContent padding={6}>
               {form.submitError ? (
-                <Banner status="error" title={form.submitError} container="card" />
+                <Banner
+                  status="error"
+                  title={form.submitError}
+                  container="card"
+                />
               ) : null}
               <ShipmentFields
                 values={form.values}

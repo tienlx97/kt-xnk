@@ -95,6 +95,10 @@ const skeletonRows = Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => ({
   billOfLadingNumber: null,
   shippingLine: null,
   vesselName: null,
+  etd: null,
+  eta: null,
+  placeOfLoading: null,
+  placeOfDischarge: null,
   type: 'LCL',
   name: '',
   paymentCondition: 'TT',
@@ -131,7 +135,7 @@ export function ShipmentsList() {
     /** @type {string | null} */ (null),
   );
   const [shipmentDialog, setShipmentDialog] = useState(
-    /** @type {{ contractId: string, shipment?: import('../types/index.js').Shipment } | null} */ (
+    /** @type {{ contractId: string, contract?: import('../types/index.js').Contract, shipment?: import('../types/index.js').Shipment } | null} */ (
       null
     ),
   );
@@ -277,7 +281,11 @@ export function ShipmentsList() {
               })
             }
             onEdit={() =>
-              setShipmentDialog({ contractId: row.contractId, shipment: row })
+              setShipmentDialog({
+                contractId: row.contractId,
+                contract: contractsById.get(row.contractId),
+                shipment: row,
+              })
             }
           />
         ),
@@ -304,7 +312,10 @@ export function ShipmentsList() {
   function handleContinuePickingContract() {
     if (!pickedContractId) return;
     setIsPickingContract(false);
-    setShipmentDialog({ contractId: pickedContractId });
+    setShipmentDialog({
+      contractId: pickedContractId,
+      contract: contractsById.get(pickedContractId),
+    });
     setPickedContractId(null);
   }
 
@@ -422,6 +433,7 @@ export function ShipmentsList() {
             if (!isOpen) setShipmentDialog(null);
           }}
           contractId={shipmentDialog.contractId}
+          contract={shipmentDialog.contract}
           shipment={shipmentDialog.shipment}
           onSuccess={() => setShipmentDialog(null)}
         />

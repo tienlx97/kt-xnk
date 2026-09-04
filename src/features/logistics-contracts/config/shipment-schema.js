@@ -17,10 +17,7 @@ import { SHIPMENT_TYPES } from './shipment-types.js';
  * 3-letter-code regex.
  */
 export const shipmentSchema = z.object({
-  supplierCustomerId: z
-    .string()
-    .trim()
-    .min(1, 'Vui lòng chọn forwarder'),
+  supplierCustomerId: z.string().trim().min(1, 'Vui lòng chọn forwarder'),
   bookingNumber: z
     .string()
     .trim()
@@ -29,6 +26,10 @@ export const shipmentSchema = z.object({
   billOfLadingNumber: z.string().trim().max(100, 'Tối đa 100 ký tự'),
   shippingLine: z.string().trim().max(100, 'Tối đa 100 ký tự'),
   vesselName: z.string().trim().max(200, 'Tối đa 200 ký tự'),
+  etd: z.string(),
+  eta: z.string(),
+  placeOfLoading: z.string().trim().max(200, 'Tối đa 200 ký tự'),
+  placeOfDischarge: z.string().trim().max(200, 'Tối đa 200 ký tự'),
   type: z.enum(SHIPMENT_TYPES, { error: 'Vui lòng chọn loại hình' }),
   name: z
     .string()
