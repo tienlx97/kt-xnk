@@ -21,7 +21,15 @@ import { Heading, Text } from '@astryxdesign/core/Text';
 import { Token } from '@astryxdesign/core/Token';
 import { VStack } from '@astryxdesign/core/VStack';
 import * as stylex from '@stylexjs/stylex';
-import { FileText, Maximize2, Minimize2, Pencil, Plus, Printer, Trash2 } from 'lucide-react';
+import {
+  FileText,
+  Maximize2,
+  Minimize2,
+  Pencil,
+  Plus,
+  Printer,
+  Trash2,
+} from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import {
@@ -432,15 +440,18 @@ function ContractExpandedDetails({
             contractId={contract.id}
             shipment={shipment}
             supplierName={
-              customersById.get(shipment.supplierCustomerId)?.companyName ??
-              ''
+              customersById.get(shipment.supplierCustomerId)?.companyName ?? ''
             }
             customersById={customersById}
             onAddVgm={() =>
               onAddVgm({ contractId: contract.id, shipmentId: shipment.id })
             }
             onEditVgm={(vgm) =>
-              onEditVgm({ contractId: contract.id, shipmentId: shipment.id, vgm })
+              onEditVgm({
+                contractId: contract.id,
+                shipmentId: shipment.id,
+                vgm,
+              })
             }
           />
         ),
@@ -790,10 +801,7 @@ function ContractExpandedDetails({
                 <ListItem
                   key={schedule.id}
                   label={`${schedule.paymentCode} · ${labelForPaymentType(schedule.type)}`}
-                  description={[
-                    `Ngày ${schedule.paymentDate}`,
-                    schedule.note,
-                  ]
+                  description={[`Ngày ${schedule.paymentDate}`, schedule.note]
                     .filter(Boolean)
                     .join(' · ')}
                   endContent={
@@ -856,7 +864,9 @@ function ContractExpandedDetails({
               component's content, just entered from a contract's row
               instead of the system-wide Service Agreement list. */}
           <MetadataList columns={4} label={{ position: 'top' }}>
-            <MetadataListItem label="Mã">{serviceAgreement.code}</MetadataListItem>
+            <MetadataListItem label="Mã">
+              {serviceAgreement.code}
+            </MetadataListItem>
             <MetadataListItem label="Số hợp đồng">
               {contract.contractNumber}
             </MetadataListItem>
@@ -997,7 +1007,6 @@ function ContractExpandedDetails({
           />
         </HStack>
       </HStack>
-
     </VStack>
   );
 }
@@ -1127,21 +1136,21 @@ export function ContractsList() {
     {
       key: 'contractNumber',
       header: 'Số hợp đồng',
-      width: pixel(140),
+      width: pixel(180),
       filter: 'contractNumber',
       renderCell: (contract) => contract.contractNumber,
     },
     {
       key: 'projectName',
       header: 'Dự án',
-      width: proportional(1.4),
+      width: proportional(1),
       filter: 'projectName',
       renderCell: (contract) => contract.projectName,
     },
     {
       key: 'buyer',
       header: 'Khách hàng',
-      width: proportional(1.4),
+      width: proportional(1),
       filter: 'buyerCompanyName',
       renderCell: (contract) => contract.buyer.companyName,
     },
@@ -1154,8 +1163,8 @@ export function ContractsList() {
       // one absorbing slack it doesn't need (see the "Harness gaps" note
       // in `harness/PROGRESS.md` about mixing `pixel()`/`proportional()`).
       header: 'Giá trị',
-      width: pixel(160),
-      align: 'end',
+      width: proportional(1),
+      // align: 'end',
       filter: 'contractValue',
       renderCell: (contract) =>
         formatMoney(contract.contractValue, contract.currency),
@@ -1172,7 +1181,7 @@ export function ContractsList() {
     {
       key: 'createdDate',
       header: 'Ngày tạo',
-      width: pixel(120),
+      width: pixel(150),
       renderCell: (contract) => contract.createdDate,
     },
     {
@@ -1182,7 +1191,7 @@ export function ContractsList() {
       // is longer than its data needs its own pixel floor rather than
       // proportional() — the 120px proportional minimum fits "2026-08-27"
       // fine but clips the label itself.
-      width: pixel(140),
+      width: pixel(150),
       renderCell: (contract) => orDash(contract.quotationDate),
     },
     {
@@ -1315,9 +1324,15 @@ export function ContractsList() {
         </VStack>
         <HStack gap={2}>
           <IconButton
-            label={isFullscreen ? 'Thu nhỏ danh sách hợp đồng' : 'Phóng to danh sách hợp đồng'}
+            label={
+              isFullscreen
+                ? 'Thu nhỏ danh sách hợp đồng'
+                : 'Phóng to danh sách hợp đồng'
+            }
             tooltip={isFullscreen ? 'Thu nhỏ' : 'Phóng to'}
-            icon={<Icon icon={isFullscreen ? Minimize2 : Maximize2} size="sm" />}
+            icon={
+              <Icon icon={isFullscreen ? Minimize2 : Maximize2} size="sm" />
+            }
             variant="secondary"
             onClick={toggleFullscreen}
           />

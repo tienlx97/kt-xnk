@@ -120,17 +120,23 @@ const skeletonRows = Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => ({
  * "Service Agreement" tab in `ContractExpandedDetails`
  * (`contracts-list.jsx`), just entered from this system-wide list instead
  * of from a specific contract's row.
- * @param {{ row: ServiceAgreementListRow }} props
+ *
+ * Dialog-opening is forwarded up to `ServiceAgreementsList` via
+ * `onEdit`/`onAddAnnex`/`onEditAnnex` rather than owned here — see the
+ * "Selector popover stacking" note above `ServiceAgreementsList` for why.
+ * @param {{
+ *   row: ServiceAgreementListRow,
+ *   onEdit: () => void,
+ *   onAddAnnex: () => void,
+ *   onEditAnnex: (annex: import('../types/index.js').ServiceAgreementAnnex) => void,
+ * }} props
  */
-function ServiceAgreementExpandedDetails({ row }) {
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const [isAnnexDialogOpen, setIsAnnexDialogOpen] = useState(false);
-  const [editingAnnex, setEditingAnnex] = useState(
-    /** @type {import('../types/index.js').ServiceAgreementAnnex | null} */ (
-      null
-    ),
-  );
-
+function ServiceAgreementExpandedDetails({
+  row,
+  onEdit,
+  onAddAnnex,
+  onEditAnnex,
+}) {
   const annexesQuery = useServiceAgreementAnnexesQuery(row.contractId);
   const annexes = annexesQuery.data?.success ? annexesQuery.data.annexes : [];
 
@@ -219,7 +225,7 @@ function ServiceAgreementExpandedDetails({ row }) {
           variant="secondary"
           size="sm"
           icon={<Icon icon={Plus} />}
-          onClick={() => setIsAnnexDialogOpen(true)}
+          onClick={onAddAnnex}
         />
       </HStack>
 
@@ -247,7 +253,7 @@ function ServiceAgreementExpandedDetails({ row }) {
                     icon={<Icon icon={Pencil} size="sm" />}
                     variant="ghost"
                     size="sm"
-                    onClick={() => setEditingAnnex(annex)}
+                    onClick={() => onEditAnnex(annex)}
                   />
                 </HStack>
               }
@@ -269,51 +275,40 @@ function ServiceAgreementExpandedDetails({ row }) {
           variant="secondary"
           size="sm"
           icon={<Icon icon={Pencil} />}
-          onClick={() => setIsEditOpen(true)}
+          onClick={onEdit}
         />
       </HStack>
-
-      {isEditOpen ? (
-        <ServiceAgreementFormDialog
-          isOpen={isEditOpen}
-          onOpenChange={setIsEditOpen}
-          contractId={row.contractId}
-          currency={row.currency}
-          serviceAgreement={row}
-          onSuccess={() => setIsEditOpen(false)}
-        />
-      ) : null}
-
-      {isAnnexDialogOpen ? (
-        <ServiceAgreementAnnexFormDialog
-          isOpen={isAnnexDialogOpen}
-          onOpenChange={setIsAnnexDialogOpen}
-          contractId={row.contractId}
-          onSuccess={() => setIsAnnexDialogOpen(false)}
-        />
-      ) : null}
-
-      {editingAnnex ? (
-        <ServiceAgreementAnnexFormDialog
-          key={editingAnnex.id}
-          isOpen={editingAnnex !== null}
-          onOpenChange={(isOpen) => {
-            if (!isOpen) setEditingAnnex(null);
-          }}
-          contractId={row.contractId}
-          annex={editingAnnex}
-          onSuccess={() => setEditingAnnex(null)}
-        />
-      ) : null}
     </VStack>
   );
 }
 
+/**
+ * Selector popover stacking: same bug and fix as `contracts-list.jsx`'s
+ * "Selector popover stacking" note above `ContractsList` — Astryx's
+ * `Selector` portals its dropdown outside the nearest "unsafe host"
+ * ancestor (`<table>`, `<tr>`, ...), so a `*FormDialog` with a `Selector`
+ * field declared inside this table's own `renderExpanded` callback
+ * (`ServiceAgreementFormDialog` and `ServiceAgreementAnnexFormDialog` both
+ * have one) gets its dropdown portaled to the table's scroll wrapper and
+ * stacked underneath the dialog — clicks land on the dialog instead of the
+ * option. Both dialogs are therefore rendered HERE, a sibling of
+ * `AdvanceTable`, with only trigger callbacks (`onEdit`, `onAddAnnex`,
+ * `onEditAnnex`) passed down to `ServiceAgreementExpandedDetails`. Do not
+ * move a `*FormDialog` back inside `renderExpanded`.
+ */
 export function ServiceAgreementsList() {
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [pageIndex, setPageIndex] = useState(1);
   const [expandedAgreementId, setExpandedAgreementId] = useState(
     /** @type {string | null} */ (null),
+  );
+  const [editingAgreementRow, setEditingAgreementRow] = useState(
+    /** @type {ServiceAgreementListRow | null} */ (null),
+  );
+  const [annexDialog, setAnnexDialog] = useState(
+    /** @type {{ contractId: string, annex?: import('../types/index.js').ServiceAgreementAnnex } | null} */ (
+      null
+    ),
   );
 
   const serviceAgreementsQuery = useServiceAgreementsQuery({
@@ -437,7 +432,16 @@ export function ServiceAgreementsList() {
           setExpandedAgreementId((current) => (current === id ? null : id)),
         getRowKey: (row) => row.id,
         getIsItemExpandable: (row) => !row.id.startsWith('skeleton-'),
-        renderExpanded: (row) => <ServiceAgreementExpandedDetails row={row} />,
+        renderExpanded: (row) => (
+          <ServiceAgreementExpandedDetails
+            row={row}
+            onEdit={() => setEditingAgreementRow(row)}
+            onAddAnnex={() => setAnnexDialog({ contractId: row.contractId })}
+            onEditAnnex={(annex) =>
+              setAnnexDialog({ contractId: row.contractId, annex })
+            }
+          />
+        ),
       })
     );
   const rowInteractionPlugin = useMemo(
@@ -498,6 +502,36 @@ export function ServiceAgreementsList() {
           pageSizeOptions: PAGE_SIZE_OPTIONS,
         }}
       />
+
+      {/* Rendered here, a sibling of `AdvanceTable`, rather than inside
+          `renderExpanded` — see the note above this component for why. */}
+
+      {editingAgreementRow ? (
+        <ServiceAgreementFormDialog
+          key={editingAgreementRow.id}
+          isOpen
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setEditingAgreementRow(null);
+          }}
+          contractId={editingAgreementRow.contractId}
+          currency={editingAgreementRow.currency}
+          serviceAgreement={editingAgreementRow}
+          onSuccess={() => setEditingAgreementRow(null)}
+        />
+      ) : null}
+
+      {annexDialog ? (
+        <ServiceAgreementAnnexFormDialog
+          key={annexDialog.annex?.id ?? 'create'}
+          isOpen
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setAnnexDialog(null);
+          }}
+          contractId={annexDialog.contractId}
+          annex={annexDialog.annex}
+          onSuccess={() => setAnnexDialog(null)}
+        />
+      ) : null}
     </VStack>
   );
 }

@@ -8,7 +8,7 @@ A rule with enforcement "manual" is a harness gap — plan to automate it.
 Raising the version creates cleanup work: see harness/ENTROPY.md.
 -->
 
-## v2 — 2026-08-07
+## v3 — 2026-09-04
 
 | # | Rule | Enforcement |
 |---|---|---|
@@ -23,9 +23,17 @@ Raising the version creates cleanup work: see harness/ENTROPY.md.
 | 9 | Quality claims are measurements against `openspec/project.md` thresholds, not adjectives | verify.sh perf steps |
 | 10 | Stale docs are bugs; updating `docs/`/`openspec/` is part of the task that made them stale | cleanup agent scan |
 | 11 | Shared memory must not contain credentials or private keys | `harness/checks/memory-secrets.sh` |
+| 12 | A `*FormDialog` never renders inside a table's `renderExpanded` callback (a `Selector` field inside it would portal underneath the dialog instead of above it — see ADR-0004) | `harness/tests/selector-dialog-stacking.test.cjs` |
 
 ## Changelog
 
+- v3 (2026-09-04): rule #12 — the Selector-in-dialog portal-stacking bug had
+  already been found and fixed once (`contracts-list.jsx`), then found again
+  independently in `service-agreements-list.jsx` (per
+  `harness/ENTROPY.md`'s "caught twice → mechanical rule" policy). Both
+  known offenders were fixed in the same change that added the rule, so
+  nothing needed to be graded C. See
+  `docs/adr/0004-selector-dialog-portal-stacking.md`.
 - v2 (2026-08-07): dropped the backend-oriented repo/service/runtime layers
   (backend now lives in a separate project) in favor of a feature-based
   front-end structure — `src/features/<feature>/` and `src/shared/`, each

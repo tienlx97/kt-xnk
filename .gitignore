@@ -23,3 +23,6 @@ harness/runs/
 !.memsearch/memory/
 *.milvus.db
 milvus.db
+
+# Local Astryx reference scaffolds; application code lives under src/.
+template/

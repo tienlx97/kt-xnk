@@ -119,6 +119,7 @@ const config = [
     ignores: [
       '.next/**',
       'node_modules/**',
+      'template/**',
       'harness/**',
       'babel.config.js',
       'postcss.config.js',

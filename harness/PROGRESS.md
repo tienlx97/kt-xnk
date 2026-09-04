@@ -5,6 +5,73 @@ Append-only session log. Newest entry FIRST.
 This file is the handoff between sessions/agents — write for a reader with zero conversation context.
 -->
 
+## 2026-09-04 — Fix the Selector-in-dialog portal-stacking bug (again), then make it mechanical
+
+**Context:** User request: "Fix portal-stacking ở dự án, sau nó note lại".
+A prior session (this same day, UX review of Contracts/Customers) had found
+and fixed a real bug in `contracts-list.jsx` — Astryx's `Selector` portals
+its dropdown outside the nearest "unsafe host" ancestor (`<table>`, `<tr>`,
+...; see `resolveLayerPortalTarget` in `@astryxdesign/core`'s
+`Layer/layerHost.ts`), but Astryx's `Dialog` is a native `<dialog>` element
+(no portal of its own) — so a `*FormDialog` with a `Selector` field declared
+inside a table's own `renderExpanded` callback is still a DOM descendant of
+that `<table>`, and its `Selector`'s dropdown gets portaled underneath the
+dialog instead of above it: looks fine, but a mouse click on an option lands
+on the dialog instead. That same session's "Standalone Shipments list page"
+note flagged `service-agreements-list.jsx` as "likely carries the same
+latent bug — noted, not fixed, out of scope."
+
+**Investigated and confirmed the bug was real, not hypothetical**:
+`ServiceAgreementExpandedDetails` (in `service-agreements-list.jsx`) rendered
+both `ServiceAgreementFormDialog` and `ServiceAgreementAnnexFormDialog`
+directly inside `renderExpanded` — and both dialogs' `*Fields` components
+(`service-agreement-fields.jsx`, `service-agreement-annex-fields.jsx`) do
+have a `Selector` field ("Bên nhận hoa hồng", "Loại phụ lục").
+
+**What shipped:**
+- `service-agreements-list.jsx`: lifted `editingAgreementRow`/`annexDialog`
+  state out of `ServiceAgreementExpandedDetails` into `ServiceAgreementsList`
+  and render both dialogs as siblings of `AdvanceTable`, mirroring
+  `contracts-list.jsx`'s already-proven `shipmentDialog`/`vgmDialog` pattern
+  exactly. `ServiceAgreementExpandedDetails` now only takes
+  `onEdit`/`onAddAnnex`/`onEditAnnex` trigger callbacks.
+- The library-level root cause lives in `@astryxdesign/core` (a published
+  third-party package, not vendored/patched in this repo) — not fixable from
+  here; a `patch-package` step was judged not worth the maintenance cost.
+  The sibling-rendering pattern is the correct fix on this side of that
+  boundary. Left `resolveLayerPortalTarget` alone.
+- Per `harness/ENTROPY.md`'s "caught twice → mechanical rule, not a note"
+  policy: added `harness/tests/selector-dialog-stacking.test.cjs` (wired
+  into `pnpm run test:harness`, which `verify.sh` already always runs) — a
+  bracket-balance scan that fails if any `.jsx` file under `src/` has a
+  `renderExpanded:` callback containing a `<*FormDialog>` tag. Deliberately
+  flags every `*FormDialog` nested there regardless of whether it currently
+  has a `Selector` field, so a field added later can't silently reintroduce
+  the bug. Recorded as `harness/GOLDEN_RULES.md` v3 rule #12 and
+  `docs/adr/0004-selector-dialog-portal-stacking.md` (context, the
+  alternatives considered, and why upstream-patching was rejected).
+
+**Verification:** `./harness/verify.sh` full pass; evidence in
+`harness/runs/20260904-105112-4612/`. The previously known lint failure from
+the local, untracked `template/filter-table.jsx` Astryx reference scaffold was
+removed from project checks by explicitly ignoring `template/**` in ESLint and
+`template/` in Git; application code lives under `src/`. `pnpm test`: 107/107
+(unchanged — no test file covers this feature area). `pnpm run test:harness`:
+6/6 including the new test. **Live-verified in a
+browser** (`pnpm dev` + the already-running BE-kt-xnk Docker containers):
+opened `/logistics/service-agreements`, expanded the one seeded row, opened
+both "Sửa Service Agreement" and "Thêm phụ lục", and mouse-clicked an option
+in each dialog's `Selector` dropdown — both registered correctly (field
+value updated to the clicked option) instead of the click falling through
+to the dialog underneath. Cancelled both dialogs afterward, no data changed.
+
+**Not done:** did not attempt to patch `@astryxdesign/core` itself (out of
+reach without a `patch-package` step this repo doesn't have — see the ADR).
+Did not add a lint rule for "no Selector rendered inside *anything* that
+isn't outside an unsafe host" in general — the new harness test is scoped
+to this codebase's actual recurring shape (`*FormDialog` inside
+`renderExpanded`), not a general-purpose Astryx-usage linter.
+
 ## 2026-09-04 — Wire up Customer edit ("Sửa khách hàng")
 
 **Context:** User request: "thêm tính năng chỉnh sửa khách hàng ở front
