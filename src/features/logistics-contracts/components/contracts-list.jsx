@@ -236,6 +236,15 @@ const SKELETON_ROW_COUNT = 6;
 const DEFAULT_PAGE_SIZE = 25;
 const PAGE_SIZE_OPTIONS = ['10', '25', '50', '100'];
 
+// Caps each tab's content in the expanded row to its own scroll area (same
+// idiom as `ContractFormDialog`'s fixed-height inner `VStack`) so the
+// action bar below it (Sửa hợp đồng/Xoá/...) stays put right under the
+// tabs instead of sliding to the bottom of whatever the longest tab's
+// content happens to be — per user report (2026-09-04): the "Thông tin"
+// tab in particular is long enough that reaching those buttons meant a
+// lot of scrolling.
+const EXPANDED_TAB_CONTENT_HEIGHT = 520;
+
 /** @type {import('../types/index.js').Contract[]} */
 const skeletonRows = Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => ({
   id: `skeleton-${index}`,
@@ -670,396 +679,407 @@ function ContractExpandedDetails({
         {hasCommission ? <Tab value="commission" label="Commission" /> : null}
       </TabList>
 
-      {activeTab === 'info' && (
-        <VStack gap={4} hAlign="stretch">
-          {/* Rows 1–3: one columns={4} grid, padded with blank cells so
+      <VStack
+        gap={4}
+        hAlign="stretch"
+        height={EXPANDED_TAB_CONTENT_HEIGHT}
+        isScrollable
+      >
+        {activeTab === 'info' && (
+          <VStack gap={4} hAlign="stretch">
+            {/* Rows 1–3: one columns={4} grid, padded with blank cells so
               row 2 (only 2 fields) still lines up under rows 1 and 3 (each
               already exactly 4 fields) — see `metadataSpacer`. */}
-          <MetadataList columns={4} label={{ position: 'top' }}>
-            <MetadataListItem label="Số hợp đồng">
-              {contract.contractNumber}
-            </MetadataListItem>
-            <MetadataListItem label="Dự án">
-              {contract.projectName}
-            </MetadataListItem>
-            <MetadataListItem label="Hạng mục">
-              {orDash(contract.category)}
-            </MetadataListItem>
-            <MetadataListItem label="Nước xuất khẩu">
-              {orDash(countriesById.get(contract.countryId)?.name)}
-            </MetadataListItem>
-            <MetadataListItem label="Ngày tạo">
-              {orDash(contract.createdDate)}
-            </MetadataListItem>
-            <MetadataListItem label="Ngày báo giá">
-              {orDash(contract.quotationDate)}
-            </MetadataListItem>
-            {metadataSpacer('row2-pad-1')}
-            {metadataSpacer('row2-pad-2')}
-            <MetadataListItem label="Incoterm">
-              {contract.incoterm}
-            </MetadataListItem>
-            <MetadataListItem label="Năm">
-              {contract.incotermYear}
-            </MetadataListItem>
-            <MetadataListItem label="Cảng/nơi xếp hàng">
-              {orDash(contract.placeOfLoading)}
-            </MetadataListItem>
-            <MetadataListItem label="Cảng/nơi đến">
-              {orDash(contract.placeOfDischarge)}
-            </MetadataListItem>
-          </MetadataList>
+            <MetadataList columns={4} label={{ position: 'top' }}>
+              <MetadataListItem label="Số hợp đồng">
+                {contract.contractNumber}
+              </MetadataListItem>
+              <MetadataListItem label="Dự án">
+                {contract.projectName}
+              </MetadataListItem>
+              <MetadataListItem label="Hạng mục">
+                {orDash(contract.category)}
+              </MetadataListItem>
+              <MetadataListItem label="Nước xuất khẩu">
+                {orDash(countriesById.get(contract.countryId)?.name)}
+              </MetadataListItem>
+              <MetadataListItem label="Ngày tạo">
+                {orDash(contract.createdDate)}
+              </MetadataListItem>
+              <MetadataListItem label="Ngày báo giá">
+                {orDash(contract.quotationDate)}
+              </MetadataListItem>
+              {metadataSpacer('row2-pad-1')}
+              {metadataSpacer('row2-pad-2')}
+              <MetadataListItem label="Incoterm">
+                {contract.incoterm}
+              </MetadataListItem>
+              <MetadataListItem label="Năm">
+                {contract.incotermYear}
+              </MetadataListItem>
+              <MetadataListItem label="Cảng/nơi xếp hàng">
+                {orDash(contract.placeOfLoading)}
+              </MetadataListItem>
+              <MetadataListItem label="Cảng/nơi đến">
+                {orDash(contract.placeOfDischarge)}
+              </MetadataListItem>
+            </MetadataList>
 
-          {/* Row 4: Giá trị, Ghi chú (chiếm 2 ô) — `MetadataListItem` has
+            {/* Row 4: Giá trị, Ghi chú (chiếm 2 ô) — `MetadataListItem` has
               no colSpan, so this is its own columns={2} block instead:
               each item is 1 of 2 columns here, the same width as 2 of the
               4 columns above, which is the closest approximation of "Ghi
               chú spans 2 cells" the component supports. It doesn't share
               the grid tracks of the rows above (a real limitation, not an
               oversight — see `harness/PROGRESS.md`). */}
-          <MetadataList columns={2} label={{ position: 'top' }}>
-            <MetadataListItem label="Giá trị">
-              {formatMoney(contract.contractValue, contract.currency)}
-            </MetadataListItem>
-            <MetadataListItem label="Ghi chú">
-              {orDash(contract.note)}
-            </MetadataListItem>
-          </MetadataList>
-
-          <MetadataList columns={2} label={{ position: 'top' }}>
-            <MetadataListItem label="Bên bán ký">
-              {contract.sellerSigned ? 'Đã ký' : 'Chưa ký'}
-            </MetadataListItem>
-            <MetadataListItem label="Bên mua ký">
-              {contract.buyerSigned ? 'Đã ký' : 'Chưa ký'}
-            </MetadataListItem>
-          </MetadataList>
-
-          {/* Bên bán — pulled down from the old "Bên bán" tab. */}
-          <VStack gap={2} hAlign="stretch">
-            <Text weight="semibold">Bên bán</Text>
-            <MetadataList columns={4} label={{ position: 'top' }}>
-              <MetadataListItem label="Tên công ty">
-                {contract.seller.companyName}
+            <MetadataList columns={2} label={{ position: 'top' }}>
+              <MetadataListItem label="Giá trị">
+                {formatMoney(contract.contractValue, contract.currency)}
               </MetadataListItem>
-              <MetadataListItem label="Người đại diện">
-                {orDash(contract.seller.representativeName)}
+              <MetadataListItem label="Ghi chú">
+                {orDash(contract.note)}
               </MetadataListItem>
-              <MetadataListItem label="Chức vụ">
-                {orDash(contract.seller.representativeTitle)}
-              </MetadataListItem>
-              <MetadataListItem label="Địa chỉ">
-                {orDash(contract.seller.address)}
-              </MetadataListItem>
-              {contract.seller.extraFields.map((field) => (
-                <MetadataListItem key={field.key} label={field.key}>
-                  {orDash(field.value)}
-                </MetadataListItem>
-              ))}
             </MetadataList>
-          </VStack>
 
-          {/* Khách hàng — pulled down from the old "Khách hàng" tab. */}
-          <VStack gap={2} hAlign="stretch">
-            <Text weight="semibold">Khách hàng</Text>
-            <MetadataList columns={4} label={{ position: 'top' }}>
-              <MetadataListItem label="Tên công ty">
-                {contract.buyer.companyName}
+            <MetadataList columns={2} label={{ position: 'top' }}>
+              <MetadataListItem label="Bên bán ký">
+                {contract.sellerSigned ? 'Đã ký' : 'Chưa ký'}
               </MetadataListItem>
-              <MetadataListItem label="Người đại diện">
-                {orDash(contract.buyer.representativeName)}
+              <MetadataListItem label="Bên mua ký">
+                {contract.buyerSigned ? 'Đã ký' : 'Chưa ký'}
               </MetadataListItem>
-              <MetadataListItem label="Chức vụ">
-                {orDash(contract.buyer.representativeTitle)}
-              </MetadataListItem>
-              <MetadataListItem label="Địa chỉ">
-                {orDash(contract.buyer.address)}
-              </MetadataListItem>
-              {contract.buyer.extraFields.map((field) => (
-                <MetadataListItem key={field.key} label={field.key}>
-                  {orDash(field.value)}
-                </MetadataListItem>
-              ))}
             </MetadataList>
-          </VStack>
 
-          {/* Ngân hàng — pulled down from the old "Ngân hàng" tab. */}
-          <VStack gap={2} hAlign="stretch">
-            <Text weight="semibold">Ngân hàng</Text>
-            {contract.bankIds.length === 0 ? (
-              <Text color="secondary">Chưa có ngân hàng thụ hưởng</Text>
+            {/* Bên bán — pulled down from the old "Bên bán" tab. */}
+            <VStack gap={2} hAlign="stretch">
+              <Text weight="semibold">Bên bán</Text>
+              <MetadataList columns={4} label={{ position: 'top' }}>
+                <MetadataListItem label="Tên công ty">
+                  {contract.seller.companyName}
+                </MetadataListItem>
+                <MetadataListItem label="Người đại diện">
+                  {orDash(contract.seller.representativeName)}
+                </MetadataListItem>
+                <MetadataListItem label="Chức vụ">
+                  {orDash(contract.seller.representativeTitle)}
+                </MetadataListItem>
+                <MetadataListItem label="Địa chỉ">
+                  {orDash(contract.seller.address)}
+                </MetadataListItem>
+                {contract.seller.extraFields.map((field) => (
+                  <MetadataListItem key={field.key} label={field.key}>
+                    {orDash(field.value)}
+                  </MetadataListItem>
+                ))}
+              </MetadataList>
+            </VStack>
+
+            {/* Khách hàng — pulled down from the old "Khách hàng" tab. */}
+            <VStack gap={2} hAlign="stretch">
+              <Text weight="semibold">Khách hàng</Text>
+              <MetadataList columns={4} label={{ position: 'top' }}>
+                <MetadataListItem label="Tên công ty">
+                  {contract.buyer.companyName}
+                </MetadataListItem>
+                <MetadataListItem label="Người đại diện">
+                  {orDash(contract.buyer.representativeName)}
+                </MetadataListItem>
+                <MetadataListItem label="Chức vụ">
+                  {orDash(contract.buyer.representativeTitle)}
+                </MetadataListItem>
+                <MetadataListItem label="Địa chỉ">
+                  {orDash(contract.buyer.address)}
+                </MetadataListItem>
+                {contract.buyer.extraFields.map((field) => (
+                  <MetadataListItem key={field.key} label={field.key}>
+                    {orDash(field.value)}
+                  </MetadataListItem>
+                ))}
+              </MetadataList>
+            </VStack>
+
+            {/* Ngân hàng — pulled down from the old "Ngân hàng" tab. */}
+            <VStack gap={2} hAlign="stretch">
+              <Text weight="semibold">Ngân hàng</Text>
+              {contract.bankIds.length === 0 ? (
+                <Text color="secondary">Chưa có ngân hàng thụ hưởng</Text>
+              ) : (
+                <List hasDividers density="compact">
+                  {contract.bankIds.map((bankId) => {
+                    const bank = banksById.get(bankId);
+                    return (
+                      <ListItem
+                        key={bankId}
+                        label={bank?.bankName || 'Ngân hàng chưa đặt tên'}
+                        description={
+                          bank
+                            ? [
+                                bank.beneficiary,
+                                bank.bankAccountNumber,
+                                bank.branchName,
+                              ]
+                                .filter(Boolean)
+                                .join(' · ') || undefined
+                            : undefined
+                        }
+                      />
+                    );
+                  })}
+                </List>
+              )}
+            </VStack>
+
+            {/* Đợt thanh toán */}
+            <VStack gap={2} hAlign="stretch">
+              <Text weight="semibold">Đợt thanh toán (Hợp đồng)</Text>
+              {contract.paymentTerms.length === 0 ? (
+                <Text color="secondary">Chưa có đợt thanh toán</Text>
+              ) : (
+                <Table
+                  columns={paymentTermColumns}
+                  data={paymentTermRows}
+                  idKey="id"
+                  dividers="rows"
+                  density="compact"
+                />
+              )}
+            </VStack>
+
+            {/* Phụ lục — pulled down from the old "Phụ lục" tab, styled to
+              match `commissions-list.jsx`'s annex list: label +
+              signed amount on the top line, sign/dates/parties below. */}
+            <HStack hAlign="between" vAlign="center">
+              <Text weight="semibold">Phụ lục hợp đồng</Text>
+              <Button
+                label="Thêm phụ lục"
+                variant="secondary"
+                size="sm"
+                icon={<Icon icon={Plus} />}
+                onClick={onAddAnnex}
+              />
+            </HStack>
+
+            {annexes.length === 0 ? (
+              <Text color="secondary">Chưa có phụ lục</Text>
             ) : (
-              <List hasDividers density="compact">
-                {contract.bankIds.map((bankId) => {
-                  const bank = banksById.get(bankId);
-                  return (
-                    <ListItem
-                      key={bankId}
-                      label={bank?.bankName || 'Ngân hàng chưa đặt tên'}
-                      description={
-                        bank
-                          ? [
-                              bank.beneficiary,
-                              bank.bankAccountNumber,
-                              bank.branchName,
-                            ]
-                              .filter(Boolean)
-                              .join(' · ') || undefined
-                          : undefined
-                      }
-                    />
-                  );
-                })}
-              </List>
+              <Table
+                columns={annexColumns}
+                data={annexes}
+                idKey="id"
+                dividers="rows"
+                density="compact"
+              />
             )}
-          </VStack>
 
-          {/* Đợt thanh toán */}
-          <VStack gap={2} hAlign="stretch">
-            <Text weight="semibold">Đợt thanh toán (Hợp đồng)</Text>
-            {contract.paymentTerms.length === 0 ? (
+            <HStack hAlign="between" vAlign="center">
+              <Text weight="semibold">Tổng cộng:</Text>
+              <Text weight="semibold">
+                {formatMoney(contractGrandTotal, contract.currency)}
+              </Text>
+            </HStack>
+          </VStack>
+        )}
+
+        {activeTab === 'paymentSchedule' && (
+          <VStack gap={4} hAlign="stretch">
+            {/* Requires the contract to be fully signed to create; the
+              backend also enforces this (`400` otherwise), the disabled
+              button + tooltip here is just the UX-level mirror of that
+              rule. */}
+            <HStack hAlign="between" vAlign="center">
+              <Text weight="semibold">Lịch sử thanh toán</Text>
+              <Button
+                label="Thêm đợt thanh toán"
+                variant="secondary"
+                size="sm"
+                icon={<Icon icon={Plus} />}
+                isDisabled={!isFullySigned}
+                tooltip={
+                  isFullySigned
+                    ? undefined
+                    : 'Hợp đồng phải được cả 2 bên ký trước khi thêm đợt thanh toán'
+                }
+                onClick={onAddPaymentSchedule}
+              />
+            </HStack>
+
+            {paymentSchedules.length === 0 ? (
               <Text color="secondary">Chưa có đợt thanh toán</Text>
             ) : (
               <Table
-                columns={paymentTermColumns}
-                data={paymentTermRows}
+                columns={paymentScheduleColumns}
+                data={paymentSchedules}
                 idKey="id"
                 dividers="rows"
                 density="compact"
               />
             )}
           </VStack>
+        )}
 
-          {/* Phụ lục — pulled down from the old "Phụ lục" tab, styled to
-              match `commissions-list.jsx`'s annex list: label +
-              signed amount on the top line, sign/dates/parties below. */}
-          <HStack hAlign="between" vAlign="center">
-            <Text weight="semibold">Phụ lục hợp đồng</Text>
-            <Button
-              label="Thêm phụ lục"
-              variant="secondary"
-              size="sm"
-              icon={<Icon icon={Plus} />}
-              onClick={onAddAnnex}
-            />
-          </HStack>
+        {activeTab === 'shipment' && (
+          <VStack gap={4} hAlign="stretch">
+            <HStack hAlign="between" vAlign="center">
+              <Text weight="semibold">Shipment</Text>
+              <Button
+                label="Thêm Shipment"
+                variant="secondary"
+                size="sm"
+                icon={<Icon icon={Plus} />}
+                onClick={onAddShipment}
+              />
+            </HStack>
 
-          {annexes.length === 0 ? (
-            <Text color="secondary">Chưa có phụ lục</Text>
-          ) : (
-            <Table
-              columns={annexColumns}
-              data={annexes}
-              idKey="id"
-              dividers="rows"
-              density="compact"
-            />
-          )}
+            {shipments.length === 0 ? (
+              <Text color="secondary">Chưa có Shipment nào</Text>
+            ) : (
+              <Table
+                columns={shipmentColumns}
+                data={shipments}
+                idKey="id"
+                dividers="rows"
+                density="compact"
+                plugins={{
+                  expansion: shipmentExpansionPlugin,
+                  rowInteraction: shipmentRowInteractionPlugin,
+                }}
+              />
+            )}
+          </VStack>
+        )}
 
-          <HStack hAlign="between" vAlign="center">
-            <Text weight="semibold">Tổng cộng:</Text>
-            <Text weight="semibold">
-              {formatMoney(contractGrandTotal, contract.currency)}
-            </Text>
-          </HStack>
-        </VStack>
-      )}
-
-      {activeTab === 'paymentSchedule' && (
-        <VStack gap={4} hAlign="stretch">
-          {/* Requires the contract to be fully signed to create; the
-              backend also enforces this (`400` otherwise), the disabled
-              button + tooltip here is just the UX-level mirror of that
-              rule. */}
-          <HStack hAlign="between" vAlign="center">
-            <Text weight="semibold">Lịch sử thanh toán</Text>
-            <Button
-              label="Thêm đợt thanh toán"
-              variant="secondary"
-              size="sm"
-              icon={<Icon icon={Plus} />}
-              isDisabled={!isFullySigned}
-              tooltip={
-                isFullySigned
-                  ? undefined
-                  : 'Hợp đồng phải được cả 2 bên ký trước khi thêm đợt thanh toán'
-              }
-              onClick={onAddPaymentSchedule}
-            />
-          </HStack>
-
-          {paymentSchedules.length === 0 ? (
-            <Text color="secondary">Chưa có đợt thanh toán</Text>
-          ) : (
-            <Table
-              columns={paymentScheduleColumns}
-              data={paymentSchedules}
-              idKey="id"
-              dividers="rows"
-              density="compact"
-            />
-          )}
-        </VStack>
-      )}
-
-      {activeTab === 'shipment' && (
-        <VStack gap={4} hAlign="stretch">
-          <HStack hAlign="between" vAlign="center">
-            <Text weight="semibold">Shipment</Text>
-            <Button
-              label="Thêm Shipment"
-              variant="secondary"
-              size="sm"
-              icon={<Icon icon={Plus} />}
-              onClick={onAddShipment}
-            />
-          </HStack>
-
-          {shipments.length === 0 ? (
-            <Text color="secondary">Chưa có Shipment nào</Text>
-          ) : (
-            <Table
-              columns={shipmentColumns}
-              data={shipments}
-              idKey="id"
-              dividers="rows"
-              density="compact"
-              plugins={{
-                expansion: shipmentExpansionPlugin,
-                rowInteraction: shipmentRowInteractionPlugin,
-              }}
-            />
-          )}
-        </VStack>
-      )}
-
-      {activeTab === 'commission' && commission && (
-        <VStack gap={4} hAlign="stretch">
-          {/* Same field set/layout as `commissions-list.jsx`'s
+        {activeTab === 'commission' && commission && (
+          <VStack gap={4} hAlign="stretch">
+            {/* Same field set/layout as `commissions-list.jsx`'s
               `CommissionExpandedDetails` — this tab is that
               component's content, just entered from a contract's row
               instead of the system-wide Commission list. */}
-          <MetadataList columns={4} label={{ position: 'top' }}>
-            <MetadataListItem label="Mã">{commission.code}</MetadataListItem>
-            <MetadataListItem label="Số hợp đồng">
-              {contract.contractNumber}
-            </MetadataListItem>
-            <MetadataListItem label="Dự án">
-              {contract.projectName}
-            </MetadataListItem>
-            <MetadataListItem label="Giá trị">
-              {formatMoney(commission.value, contract.currency)}
-            </MetadataListItem>
-            <MetadataListItem label="Trung gian">
-              {orDash(
-                customersById.get(commission.partyCustomerId)?.companyName,
-              )}
-            </MetadataListItem>
-            <MetadataListItem label="Ngày ký">
-              {orDash(commission.signedDate)}
-            </MetadataListItem>
-            <MetadataListItem label="Bên nhận hoa hồng">
-              {commission.partySigned ? 'Đã ký' : 'Chưa ký'}
-            </MetadataListItem>
-            <MetadataListItem label="Bên bán">
-              {commission.sellerSigned ? 'Đã ký' : 'Chưa ký'}
-            </MetadataListItem>
-          </MetadataList>
-
-          <MetadataList
-            title="Đợt thanh toán"
-            columns={4}
-            label={{ position: 'top' }}
-          >
-            {commission.paymentTerms.length === 0 ? (
-              <MetadataListItem label="Đợt thanh toán">—</MetadataListItem>
-            ) : (
-              commission.paymentTerms.map((term, index) => (
-                <MetadataListItem key={term.id} label={`Đợt ${index + 1}`}>
-                  {term.paymentRatioPercent}% · {orDash(term.paymentCondition)}
-                </MetadataListItem>
-              ))
-            )}
-          </MetadataList>
-
-          <HStack hAlign="between" vAlign="center">
-            <Text weight="semibold">Lịch sử thanh toán</Text>
-            <Button
-              label="Thêm nhanh"
-              variant="secondary"
-              size="sm"
-              icon={<Icon icon={Plus} />}
-              onClick={() => onAddCommissionPayment(commission)}
-            />
-          </HStack>
-
-          <MetadataList columns={4} label={{ position: 'top' }}>
-            {commission.paymentHistory.length === 0 ? (
-              <MetadataListItem label="Lịch sử thanh toán">
-                —
+            <MetadataList columns={4} label={{ position: 'top' }}>
+              <MetadataListItem label="Mã">{commission.code}</MetadataListItem>
+              <MetadataListItem label="Số hợp đồng">
+                {contract.contractNumber}
               </MetadataListItem>
-            ) : (
-              commission.paymentHistory.map((payment) => (
-                <MetadataListItem key={payment.id} label={payment.paymentDate}>
-                  {formatMoney(payment.amount, contract.currency)}
-                  {payment.note ? ` · ${payment.note}` : ''}
+              <MetadataListItem label="Dự án">
+                {contract.projectName}
+              </MetadataListItem>
+              <MetadataListItem label="Giá trị">
+                {formatMoney(commission.value, contract.currency)}
+              </MetadataListItem>
+              <MetadataListItem label="Trung gian">
+                {orDash(
+                  customersById.get(commission.partyCustomerId)?.companyName,
+                )}
+              </MetadataListItem>
+              <MetadataListItem label="Ngày ký">
+                {orDash(commission.signedDate)}
+              </MetadataListItem>
+              <MetadataListItem label="Bên nhận hoa hồng">
+                {commission.partySigned ? 'Đã ký' : 'Chưa ký'}
+              </MetadataListItem>
+              <MetadataListItem label="Bên bán">
+                {commission.sellerSigned ? 'Đã ký' : 'Chưa ký'}
+              </MetadataListItem>
+            </MetadataList>
+
+            <MetadataList
+              title="Đợt thanh toán"
+              columns={4}
+              label={{ position: 'top' }}
+            >
+              {commission.paymentTerms.length === 0 ? (
+                <MetadataListItem label="Đợt thanh toán">—</MetadataListItem>
+              ) : (
+                commission.paymentTerms.map((term, index) => (
+                  <MetadataListItem key={term.id} label={`Đợt ${index + 1}`}>
+                    {term.paymentRatioPercent}% ·{' '}
+                    {orDash(term.paymentCondition)}
+                  </MetadataListItem>
+                ))
+              )}
+            </MetadataList>
+
+            <HStack hAlign="between" vAlign="center">
+              <Text weight="semibold">Lịch sử thanh toán</Text>
+              <Button
+                label="Thêm nhanh"
+                variant="secondary"
+                size="sm"
+                icon={<Icon icon={Plus} />}
+                onClick={() => onAddCommissionPayment(commission)}
+              />
+            </HStack>
+
+            <MetadataList columns={4} label={{ position: 'top' }}>
+              {commission.paymentHistory.length === 0 ? (
+                <MetadataListItem label="Lịch sử thanh toán">
+                  —
                 </MetadataListItem>
-              ))
+              ) : (
+                commission.paymentHistory.map((payment) => (
+                  <MetadataListItem
+                    key={payment.id}
+                    label={payment.paymentDate}
+                  >
+                    {formatMoney(payment.amount, contract.currency)}
+                    {payment.note ? ` · ${payment.note}` : ''}
+                  </MetadataListItem>
+                ))
+              )}
+            </MetadataList>
+
+            <HStack hAlign="between" vAlign="center">
+              <Text weight="semibold">Phụ lục</Text>
+              <Button
+                label="Thêm phụ lục"
+                variant="secondary"
+                size="sm"
+                icon={<Icon icon={Plus} />}
+                onClick={onAddCommissionAnnex}
+              />
+            </HStack>
+
+            {commissionAnnexes.length === 0 ? (
+              <Text color="secondary">Chưa có phụ lục</Text>
+            ) : (
+              <List hasDividers density="compact">
+                {commissionAnnexes.map((annex) => (
+                  <ListItem
+                    key={annex.id}
+                    label={`${annex.annexCode} · ${labelForCommissionAnnexType(annex.type)}`}
+                    description={[
+                      `Ký ${annex.signedDate}`,
+                      `Bên bán: ${annex.sellerSigned ? 'đã ký' : 'chưa ký'}`,
+                      `Bên nhận hoa hồng: ${annex.partySigned ? 'đã ký' : 'chưa ký'}`,
+                    ].join(' · ')}
+                    endContent={
+                      <HStack gap={1} vAlign="center">
+                        <Text weight="semibold">
+                          {commissionAnnexAmountLabel(annex, contract.currency)}
+                        </Text>
+                        <IconButton
+                          label={`Sửa ${annex.annexCode}`}
+                          tooltip="Sửa phụ lục"
+                          icon={<Icon icon={Pencil} size="sm" />}
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onEditCommissionAnnex(annex)}
+                        />
+                      </HStack>
+                    }
+                  />
+                ))}
+              </List>
             )}
-          </MetadataList>
 
-          <HStack hAlign="between" vAlign="center">
-            <Text weight="semibold">Phụ lục</Text>
-            <Button
-              label="Thêm phụ lục"
-              variant="secondary"
-              size="sm"
-              icon={<Icon icon={Plus} />}
-              onClick={onAddCommissionAnnex}
-            />
-          </HStack>
-
-          {commissionAnnexes.length === 0 ? (
-            <Text color="secondary">Chưa có phụ lục</Text>
-          ) : (
-            <List hasDividers density="compact">
-              {commissionAnnexes.map((annex) => (
-                <ListItem
-                  key={annex.id}
-                  label={`${annex.annexCode} · ${labelForCommissionAnnexType(annex.type)}`}
-                  description={[
-                    `Ký ${annex.signedDate}`,
-                    `Bên bán: ${annex.sellerSigned ? 'đã ký' : 'chưa ký'}`,
-                    `Bên nhận hoa hồng: ${annex.partySigned ? 'đã ký' : 'chưa ký'}`,
-                  ].join(' · ')}
-                  endContent={
-                    <HStack gap={1} vAlign="center">
-                      <Text weight="semibold">
-                        {commissionAnnexAmountLabel(annex, contract.currency)}
-                      </Text>
-                      <IconButton
-                        label={`Sửa ${annex.annexCode}`}
-                        tooltip="Sửa phụ lục"
-                        icon={<Icon icon={Pencil} size="sm" />}
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onEditCommissionAnnex(annex)}
-                      />
-                    </HStack>
-                  }
-                />
-              ))}
-            </List>
-          )}
-
-          <HStack hAlign="between" vAlign="center">
-            <Text weight="semibold">Tổng cộng:</Text>
-            <Text weight="semibold">
-              {formatMoney(commissionGrandTotal, contract.currency)}
-            </Text>
-          </HStack>
-        </VStack>
-      )}
+            <HStack hAlign="between" vAlign="center">
+              <Text weight="semibold">Tổng cộng:</Text>
+              <Text weight="semibold">
+                {formatMoney(commissionGrandTotal, contract.currency)}
+              </Text>
+            </HStack>
+          </VStack>
+        )}
+      </VStack>
 
       <Divider />
 

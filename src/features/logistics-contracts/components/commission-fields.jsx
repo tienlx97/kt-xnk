@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@astryxdesign/core/Card';
 import { CheckboxInput } from '@astryxdesign/core/CheckboxInput';
 import { DateInput } from '@astryxdesign/core/DateInput';
 import { HStack } from '@astryxdesign/core/HStack';
@@ -11,6 +12,24 @@ import { VStack } from '@astryxdesign/core/VStack';
 import { formatMoney } from '../config/currencies.js';
 import { PaymentHistoryFields } from './payment-history-fields.jsx';
 import { PaymentTermsFields } from './payment-terms-fields.jsx';
+
+/**
+ * One boxed sub-section of the form (Đợt thanh toán / Lịch sử thanh
+ * toán) — a plain, non-collapsible `Card` with its own title, so the two
+ * editable tables read as distinct groups instead of running straight
+ * into each other with no visual break.
+ * @param {{ title: string, children: import('react').ReactNode }} props
+ */
+function Section({ title, children }) {
+  return (
+    <Card padding={4}>
+      <VStack gap={3} hAlign="stretch">
+        <Text weight="semibold">{title}</Text>
+        {children}
+      </VStack>
+    </Card>
+  );
+}
 
 /**
  * `Commission` field-set. `year`/`number`/`code` are backend-assigned
@@ -37,7 +56,7 @@ export function CommissionFields({
   paymentHistoryRows,
 }) {
   return (
-    <VStack gap={4} hAlign="stretch">
+    <VStack gap={5} hAlign="stretch">
       <DateInput
         label="Ngày ký"
         value={
@@ -94,26 +113,29 @@ export function CommissionFields({
         />
       </HStack>
 
-      <PaymentTermsFields
-        rows={paymentTermRows.rows}
-        totalPercent={paymentTermRows.totalPercent}
-        status={fieldStatuses.paymentTerms}
-        contractValue={values.value}
-        currency={currency}
-        onAddRow={paymentTermRows.addRow}
-        onRemoveRow={paymentTermRows.removeRow}
-        onUpdateRowField={paymentTermRows.updateRowField}
-      />
+      <Section title={'Đợt thanh toán'}>
+        <PaymentTermsFields
+          rows={paymentTermRows.rows}
+          totalPercent={paymentTermRows.totalPercent}
+          status={fieldStatuses.paymentTerms}
+          contractValue={values.value}
+          currency={currency}
+          onAddRow={paymentTermRows.addRow}
+          onRemoveRow={paymentTermRows.removeRow}
+          onUpdateRowField={paymentTermRows.updateRowField}
+        />
+      </Section>
 
-      <Text weight="semibold">Lịch sử thanh toán</Text>
-      <PaymentHistoryFields
-        rows={paymentHistoryRows.rows}
-        status={fieldStatuses.paymentHistory}
-        currency={currency}
-        onAddRow={paymentHistoryRows.addRow}
-        onRemoveRow={paymentHistoryRows.removeRow}
-        onUpdateRowField={paymentHistoryRows.updateRowField}
-      />
+      <Section title="Lịch sử thanh toán">
+        <PaymentHistoryFields
+          rows={paymentHistoryRows.rows}
+          status={fieldStatuses.paymentHistory}
+          currency={currency}
+          onAddRow={paymentHistoryRows.addRow}
+          onRemoveRow={paymentHistoryRows.removeRow}
+          onUpdateRowField={paymentHistoryRows.updateRowField}
+        />
+      </Section>
     </VStack>
   );
 }

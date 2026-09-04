@@ -1,12 +1,15 @@
 'use client';
 
 import { Button } from '@astryxdesign/core/Button';
+import { DialogHeader } from '@astryxdesign/core/Dialog';
 import { Divider } from '@astryxdesign/core/Divider';
 import { HStack } from '@astryxdesign/core/HStack';
 import { Icon } from '@astryxdesign/core/Icon';
 import { IconButton } from '@astryxdesign/core/IconButton';
+import { Layout, LayoutContent, LayoutFooter } from '@astryxdesign/core/Layout';
 import { List, ListItem } from '@astryxdesign/core/List';
 import { MetadataList } from '@astryxdesign/core/MetadataList';
+import { Selector } from '@astryxdesign/core/Selector';
 import { pixel, useTableRowExpansion } from '@astryxdesign/core/Table';
 import { Heading, Text } from '@astryxdesign/core/Text';
 import { VStack } from '@astryxdesign/core/VStack';
@@ -17,6 +20,7 @@ import {
   AdvanceTable,
   AdvanceTableErrorBanner,
 } from '@/shared/components/advance-table.jsx';
+import { CommonDialog } from '@/shared/components/common-dialog.jsx';
 import {
   createRowExpansionInteractionPlugin,
   expandableRowStyles,
@@ -341,15 +345,38 @@ export function CommissionsList() {
   const [paymentDialog, setPaymentDialog] = useState(
     /** @type {CommissionListRow | null} */ (null),
   );
+  const [isPickingContract, setIsPickingContract] = useState(false);
+  const [pickedContractId, setPickedContractId] = useState(
+    /** @type {string | null} */ (null),
+  );
+  const [creatingCommission, setCreatingCommission] = useState(
+    /** @type {{ contractId: string, currency: string } | null} */ (null),
+  );
 
   const commissionsQuery = useCommissionsQuery({
     page: pageIndex,
     pageSize,
   });
   const listResult = commissionsQuery.data;
-  const commissions = listResult?.success
-    ? listResult.commissions
-    : [];
+  const commissions = listResult?.success ? listResult.commissions : [];
+
+  // Every contract's `id` that already has a Commission (at most 1 per
+  // contract, see `docs/api/Commissions.md`, BE-kt-xnk) — a separate,
+  // unpaginated fetch from `commissionsQuery` above (whose `commissions`
+  // is only the current page of the *displayed* table) so "Chọn hợp đồng"
+  // below can exclude contracts that would just 409 on create. Same
+  // `pageSize: 100` ceiling convention as `contractsQuery`.
+  const allCommissionsQuery = useCommissionsQuery({ page: 1, pageSize: 100 });
+  const contractIdsWithCommission = useMemo(
+    () =>
+      new Set(
+        (allCommissionsQuery.data?.success
+          ? allCommissionsQuery.data.commissions
+          : []
+        ).map((commission) => commission.contractId),
+      ),
+    [allCommissionsQuery.data],
+  );
 
   // Neither field the table needs to display alongside a Commission
   // — the parent contract's number/project/currency, and the commission
@@ -361,14 +388,20 @@ export function CommissionsList() {
   // fits on one page; a contract past the first 100 would show its number
   // as "—" here until this grows real cross-page resolution.
   const contractsQuery = useContractsQuery({ page: 1, pageSize: 100 });
-  const contractsById = useMemo(
-    () =>
-      new Map(
-        (contractsQuery.data?.success ? contractsQuery.data.contracts : []).map(
-          (contract) => [contract.id, contract],
-        ),
-      ),
+  const contracts = useMemo(
+    () => (contractsQuery.data?.success ? contractsQuery.data.contracts : []),
     [contractsQuery.data],
+  );
+  const contractsById = useMemo(
+    () => new Map(contracts.map((contract) => [contract.id, contract])),
+    [contracts],
+  );
+  const contractsWithoutCommission = useMemo(
+    () =>
+      contracts.filter(
+        (contract) => !contractIdsWithCommission.has(contract.id),
+      ),
+    [contracts, contractIdsWithCommission],
   );
 
   const customersQuery = useCustomersQuery();
@@ -488,17 +521,34 @@ export function CommissionsList() {
     [expandedCommissionId],
   );
 
-  const totalCommissions = listResult?.success
-    ? listResult.totalCount
-    : 0;
+  const totalCommissions = listResult?.success ? listResult.totalCount : 0;
   const totalPages = Math.max(
     1,
     listResult?.success ? listResult.totalPages : 1,
   );
 
+  function handleContinuePickingContract() {
+    if (!pickedContractId) return;
+    const contract = contractsById.get(pickedContractId);
+    setIsPickingContract(false);
+    setCreatingCommission({
+      contractId: pickedContractId,
+      currency: contract?.currency ?? '',
+    });
+    setPickedContractId(null);
+  }
+
   return (
     <VStack gap={4} hAlign="stretch">
-      <Heading level={1}>Commission</Heading>
+      <HStack hAlign="between" vAlign="center" wrap="wrap" gap={3}>
+        <Heading level={1}>Commission</Heading>
+        <Button
+          label="Tạo Commission"
+          variant="primary"
+          icon={<Icon icon={Plus} />}
+          onClick={() => setIsPickingContract(true)}
+        />
+      </HStack>
 
       {listResult && !listResult.success ? (
         <AdvanceTableErrorBanner message={listResult.message} />
@@ -537,6 +587,83 @@ export function CommissionsList() {
 
       {/* Rendered here, a sibling of `AdvanceTable`, rather than inside
           `renderExpanded` — see the note above this component for why. */}
+
+      {isPickingContract ? (
+        <CommonDialog
+          isOpen={isPickingContract}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) {
+              setIsPickingContract(false);
+              setPickedContractId(null);
+            }
+          }}
+          width={480}
+        >
+          <Layout
+            header={
+              <DialogHeader
+                title="Chọn hợp đồng"
+                onOpenChange={() => setIsPickingContract(false)}
+              />
+            }
+            content={
+              <LayoutContent padding={6}>
+                <Selector
+                  label="Hợp đồng"
+                  hasSearch
+                  hasClear
+                  placeholder="Chọn hợp đồng cần tạo Commission"
+                  value={pickedContractId}
+                  onChange={setPickedContractId}
+                  options={contractsWithoutCommission.map((contract) => ({
+                    value: contract.id,
+                    label: `${contract.contractNumber} · ${contract.projectName}`,
+                  }))}
+                  disabledMessage={
+                    contractsWithoutCommission.length === 0
+                      ? 'Mọi hợp đồng đều đã có Commission'
+                      : undefined
+                  }
+                  isDisabled={contractsWithoutCommission.length === 0}
+                  width="100%"
+                />
+              </LayoutContent>
+            }
+            footer={
+              <LayoutFooter>
+                <HStack hAlign="end" gap={2}>
+                  <Button
+                    label="Hủy"
+                    variant="secondary"
+                    onClick={() => {
+                      setIsPickingContract(false);
+                      setPickedContractId(null);
+                    }}
+                  />
+                  <Button
+                    label="Tiếp tục"
+                    variant="primary"
+                    isDisabled={!pickedContractId}
+                    onClick={handleContinuePickingContract}
+                  />
+                </HStack>
+              </LayoutFooter>
+            }
+          />
+        </CommonDialog>
+      ) : null}
+
+      {creatingCommission ? (
+        <CommissionFormDialog
+          isOpen
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setCreatingCommission(null);
+          }}
+          contractId={creatingCommission.contractId}
+          currency={creatingCommission.currency}
+          onSuccess={() => setCreatingCommission(null)}
+        />
+      ) : null}
 
       {editingCommissionRow ? (
         <CommissionFormDialog

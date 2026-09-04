@@ -17,6 +17,10 @@
 export const routeAccessRules = [
   { pathPrefix: '/admin', allowedPermissions: ['users:manage'] },
   {
+    pathPrefix: '/logistics/contracts-overview',
+    allowedPermissions: ['logistics:contracts:view'],
+  },
+  {
     pathPrefix: '/logistics/contracts',
     allowedPermissions: ['logistics:contracts:view'],
   },
@@ -38,6 +42,10 @@ export const routeAccessRules = [
   },
   {
     pathPrefix: '/logistics/places',
+    allowedPermissions: ['logistics:contracts:view'],
+  },
+  {
+    pathPrefix: '/logistics/config',
     allowedPermissions: ['logistics:contracts:view'],
   },
   { pathPrefix: '/logistics', allowedPermissions: ['logistics:view'] },

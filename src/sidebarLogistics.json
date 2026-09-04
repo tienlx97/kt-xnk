@@ -4,27 +4,39 @@
   "routes": [
     {
       "title": "Hợp đồng",
-      "path": "/logistics/contracts"
+      "path": "/logistics/contracts-overview",
+      "routes": [
+        {
+          "title": "Danh sách",
+          "path": "/logistics/contracts"
+        },
+        {
+          "title": "Shipment",
+          "path": "/logistics/shipments"
+        },
+        {
+          "title": "Commission",
+          "path": "/logistics/commissions"
+        },
+        {
+          "title": "Khách hàng",
+          "path": "/logistics/customers"
+        }
+      ]
     },
     {
-      "title": "Shipment",
-      "path": "/logistics/shipments"
-    },
-    {
-      "title": "Commission",
-      "path": "/logistics/commissions"
-    },
-    {
-      "title": "Khách hàng",
-      "path": "/logistics/customers"
-    },
-    {
-      "title": "Nước",
-      "path": "/logistics/countries"
-    },
-    {
-      "title": "Cảng / Nơi",
-      "path": "/logistics/places"
+      "title": "Cấu hình",
+      "path": "/logistics/config",
+      "routes": [
+        {
+          "title": "Nước",
+          "path": "/logistics/countries"
+        },
+        {
+          "title": "Cảng / Nơi",
+          "path": "/logistics/places"
+        }
+      ]
     }
   ]
 }

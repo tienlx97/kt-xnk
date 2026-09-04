@@ -43,7 +43,7 @@ export function CommissionFormDialog({
   });
 
   return (
-    <CommonDialog isOpen={isOpen} onOpenChange={onOpenChange} width={720}>
+    <CommonDialog isOpen={isOpen} onOpenChange={onOpenChange} width={960}>
       <form onSubmit={form.handleSubmit}>
         <Layout
           header={

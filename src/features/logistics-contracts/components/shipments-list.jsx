@@ -243,8 +243,7 @@ export function ShipmentsList() {
     {
       key: 'invoiceValue',
       header: 'Giá trị invoice',
-      width: pixel(140),
-      align: 'end',
+      width: pixel(200),
       renderCell: (row) => formatMoney(row.invoiceValue, row.invoiceCurrency),
     },
   ];
