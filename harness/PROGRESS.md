@@ -5,6 +5,66 @@ Append-only session log. Newest entry FIRST.
 This file is the handoff between sessions/agents — write for a reader with zero conversation context.
 -->
 
+## 2026-09-04 — Wire up Customer edit ("Sửa khách hàng")
+
+**Context:** User request: "thêm tính năng chỉnh sửa khách hàng ở front
+end". `Customer`/Party A catalog (`customers-list.jsx`) already had a
+"Sửa khách hàng" footer button in the row's expanded panel — permanently
+disabled (`isDisabled`, `tooltip="Chưa hỗ trợ"`) since the backend had no
+Update endpoint. The backend gained `PUT /api/v1/customers/{id}` earlier
+today (separate BE-kt-xnk session/commit `338cc4c`), so this session wires
+the existing button up.
+
+**What shipped**, mirroring `use-shipment-form.js`'s create/edit-in-one-hook
+pattern (the most recent precedent for this shape in the codebase):
+- `api/customers.js`: new `updateCustomer(customerId, values,
+  extraFieldRows)` — same request-body shape as `createCustomer`, `PUT`
+  instead of `POST`. Full `ExtraFields` replacement (matches the BE's
+  full-replace, not merge, per its own docs), so callers must resend every
+  row.
+- `use-customers-query.js`: new `useUpdateCustomerMutation()`, same
+  query-invalidation as the create mutation.
+- `use-customer-form.js`: `useCustomerForm` now takes an optional
+  `customer` — when present, seeds `values` and `extraFieldRows` from it
+  (`valuesFromCustomer`/`extraFieldRowsFromCustomer`, new) and routes
+  `handleSubmit` to the update mutation instead of create.
+  `quick-create-customer-dialog.jsx` (embedded in the Contract form) calls
+  this hook without `customer` — unaffected, still create-only.
+- `customer-form-dialog.jsx`: accepts an optional `customer` prop, flips
+  title ("Sửa khách hàng"/"Thêm khách hàng") and submit-button label
+  ("Lưu"/"Thêm") accordingly — same shape as `ShipmentFormDialog`.
+- `customers-list.jsx`: new `editingCustomer` state; the previously-disabled
+  button now calls `onEdit` (new prop on `CustomerExpandedDetails`), which
+  opens a second `CustomerFormDialog` instance keyed by the customer's id
+  (same as `shipments-list.jsx`'s `shipmentDialog` pattern — a fresh key
+  forces the form to reseed if a different row is edited without the
+  dialog fully unmounting first).
+
+**Verification:** `pnpm lint`/`pnpm typecheck` clean on the touched files
+(repo-wide `pnpm lint` has one pre-existing unrelated failure —
+`template/filter-table.jsx`, a TypeScript-syntax file outside this
+feature's scope, not touched this session). `pnpm test`: 107/107 green
+(unchanged count — no test file covers this feature area yet).
+
+**Live-verified in a browser**, not just tests: `pnpm dev` +
+`docker compose up -d --build api` (BE-kt-xnk) + logged in as
+`DNG26F4A9C2`/`Admin@123456`. First save attempt hit a real bug, not a
+test gap: `PUT /api/v1/customers/{id}` returned `404` — the running
+Docker `api` container was still the image from *before* the backend's
+Update-Customer session had rebuilt it, so the new route didn't exist in
+the served binary yet. Rebuilt (`docker compose up -d --build api`), retried
+→ `200`, row and expanded panel updated to "R1 Updated" in place, **and a
+full page reload still showed the change** (real DB persistence, not just
+client cache). Reverted the test edit back to "R1" afterward so the dev DB
+is unchanged. Lesson: a backend session's own `dotnet test` passing does
+**not** mean the locally-running Docker container has picked up the
+change — always rebuild before FE-side live verification, don't assume.
+
+**Not done:** no automated FE test added for the edit flow (this feature
+area — `customers-list.jsx` and siblings — has no existing test file to
+extend; adding one from scratch was judged out of scope for wiring up an
+already-designed button).
+
 ## 2026-09-04 — Standalone Shipments list page
 
 **Context:** UX review of Contracts/Customers (this session, user asked

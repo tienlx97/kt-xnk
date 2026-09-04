@@ -2,7 +2,11 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { createCustomer, listCustomers } from '../api/customers.js';
+import {
+  createCustomer,
+  listCustomers,
+  updateCustomer,
+} from '../api/customers.js';
 
 const QUERY_KEY = ['logistics-contracts', 'customers'];
 
@@ -23,6 +27,25 @@ export function useCreateCustomerMutation() {
         extraFieldRows,
       },
     ) => createCustomer(values, extraFieldRows),
+    onSuccess: (result) => {
+      if (result.success) {
+        queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      }
+    },
+  });
+}
+
+export function useUpdateCustomerMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (
+      /** @type {{ customerId: string, values: import('../types/index.js').CustomerFormValues, extraFieldRows: import('../types/index.js').ExtraFieldRow[] }} */ {
+        customerId,
+        values,
+        extraFieldRows,
+      },
+    ) => updateCustomer(customerId, values, extraFieldRows),
     onSuccess: (result) => {
       if (result.success) {
         queryClient.invalidateQueries({ queryKey: QUERY_KEY });

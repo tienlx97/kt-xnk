@@ -3,12 +3,39 @@
 import { useState } from 'react';
 
 import { customerSchema } from '../config/customer-schema.js';
-import { useCreateCustomerMutation } from './use-customers-query.js';
+import {
+  useCreateCustomerMutation,
+  useUpdateCustomerMutation,
+} from './use-customers-query.js';
 import { useExtraFieldRows } from './use-extra-field-rows.js';
 
 /** @returns {import('../types/index.js').CustomerFormValues} */
 function emptyValues() {
-  return { companyName: '', representativeName: '', representativeTitle: '', address: '' };
+  return {
+    companyName: '',
+    representativeName: '',
+    representativeTitle: '',
+    address: '',
+  };
+}
+
+/** @param {import('../types/index.js').Customer} customer @returns {import('../types/index.js').CustomerFormValues} */
+function valuesFromCustomer(customer) {
+  return {
+    companyName: customer.companyName,
+    representativeName: customer.representativeName ?? '',
+    representativeTitle: customer.representativeTitle ?? '',
+    address: customer.address ?? '',
+  };
+}
+
+/** @param {import('../types/index.js').Customer} customer @returns {import('../types/index.js').ExtraFieldRow[]} */
+function extraFieldRowsFromCustomer(customer) {
+  return customer.extraFields.map((field) => ({
+    rowKey: crypto.randomUUID(),
+    key: field.key,
+    value: field.value,
+  }));
 }
 
 /** @param {string} [message] @returns {{ type: 'error', message: string } | undefined} */
@@ -17,20 +44,26 @@ function fieldStatus(message) {
 }
 
 /**
- * Form state for creating a `Customer` (Party A catalog entry) — shared by
- * `quick-create-customer-dialog.jsx` (embedded in the Contract form) and
- * `customer-form-dialog.jsx` (the standalone Customers page).
- * @param {{ onSuccess?: (customer: import('../types/index.js').Customer) => void }} [options]
+ * Form state for creating/updating a `Customer` (Party A catalog entry) —
+ * shared by `quick-create-customer-dialog.jsx` (embedded in the Contract
+ * form, create-only) and `customer-form-dialog.jsx` (the standalone
+ * Customers page, create + edit). Pass `customer` to edit an existing one.
+ * @param {{ customer?: import('../types/index.js').Customer | null, onSuccess?: (customer: import('../types/index.js').Customer) => void }} [options]
  */
-export function useCustomerForm({ onSuccess } = {}) {
-  const [values, setValues] = useState(emptyValues());
+export function useCustomerForm({ customer = null, onSuccess } = {}) {
+  const [values, setValues] = useState(
+    customer ? valuesFromCustomer(customer) : emptyValues(),
+  );
   const [fieldErrors, setFieldErrors] = useState(
     /** @type {Record<string, string>} */ ({}),
   );
   const [submitError, setSubmitError] = useState('');
 
-  const extraFieldRows = useExtraFieldRows();
+  const extraFieldRows = useExtraFieldRows(
+    customer ? extraFieldRowsFromCustomer(customer) : [],
+  );
   const createMutation = useCreateCustomerMutation();
+  const updateMutation = useUpdateCustomerMutation();
 
   /**
    * @param {keyof import('../types/index.js').CustomerFormValues} field
@@ -41,10 +74,12 @@ export function useCustomerForm({ onSuccess } = {}) {
   }
 
   function reset() {
-    setValues(emptyValues());
+    setValues(customer ? valuesFromCustomer(customer) : emptyValues());
     setFieldErrors({});
     setSubmitError('');
-    extraFieldRows.clearRows();
+    extraFieldRows.setRows(
+      customer ? extraFieldRowsFromCustomer(customer) : [],
+    );
   }
 
   /** @param {import('react').FormEvent<HTMLFormElement>} [event] Present when used as a `<form onSubmit>`, absent when a quick-create dialog calls it directly from a button `onClick`. */
@@ -64,29 +99,38 @@ export function useCustomerForm({ onSuccess } = {}) {
     }
 
     setFieldErrors({});
-    const createResult = await createMutation.mutateAsync({
-      values: result.data,
-      extraFieldRows: extraFieldRows.rows,
-    });
+    const mutationResult = customer
+      ? await updateMutation.mutateAsync({
+          customerId: customer.id,
+          values: result.data,
+          extraFieldRows: extraFieldRows.rows,
+        })
+      : await createMutation.mutateAsync({
+          values: result.data,
+          extraFieldRows: extraFieldRows.rows,
+        });
 
-    if (!createResult.success) {
-      setSubmitError(createResult.message);
+    if (!mutationResult.success) {
+      setSubmitError(mutationResult.message);
       return;
     }
 
-    onSuccess?.(createResult.customer);
-    reset();
+    onSuccess?.(mutationResult.customer);
+    if (!customer) reset();
   }
 
   return {
     values,
     setField,
     fieldStatuses: Object.fromEntries(
-      Object.entries(fieldErrors).map(([key, message]) => [key, fieldStatus(message)]),
+      Object.entries(fieldErrors).map(([key, message]) => [
+        key,
+        fieldStatus(message),
+      ]),
     ),
     extraFieldRows,
     submitError,
-    isSubmitting: createMutation.isPending,
+    isSubmitting: createMutation.isPending || updateMutation.isPending,
     handleSubmit,
     reset,
   };

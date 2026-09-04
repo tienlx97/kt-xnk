@@ -66,8 +66,9 @@ const styles = stylex.create({
 /**
  * @param {object} props
  * @param {import('../types/index.js').Customer} props.customer
+ * @param {() => void} props.onEdit
  */
-function CustomerExpandedDetails({ customer }) {
+function CustomerExpandedDetails({ customer, onEdit }) {
   return (
     <VStack gap={4} hAlign="stretch" xstyle={expandableRowStyles.expandedPanel}>
       <HStack gap={3} vAlign="center">
@@ -138,8 +139,7 @@ function CustomerExpandedDetails({ customer }) {
             variant="primary"
             size="sm"
             icon={<Icon icon={Pencil} />}
-            isDisabled
-            tooltip="Chưa hỗ trợ"
+            onClick={onEdit}
           />
         </HStack>
       </HStack>
@@ -150,6 +150,9 @@ function CustomerExpandedDetails({ customer }) {
 export function CustomersList() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [hasOpenedCreate, setHasOpenedCreate] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState(
+    /** @type {import('../types/index.js').Customer | null} */ (null),
+  );
   const [expandedCustomerId, setExpandedCustomerId] = useState(
     /** @type {string | null} */ (null),
   );
@@ -223,7 +226,10 @@ export function CustomersList() {
         getRowKey: (customer) => customer.id,
         getIsItemExpandable: (customer) => !customer.id.startsWith('skeleton-'),
         renderExpanded: (customer) => (
-          <CustomerExpandedDetails customer={customer} />
+          <CustomerExpandedDetails
+            customer={customer}
+            onEdit={() => setEditingCustomer(customer)}
+          />
         ),
       })
     );
@@ -285,6 +291,18 @@ export function CustomersList() {
           isOpen={isCreateOpen}
           onOpenChange={setIsCreateOpen}
           onSuccess={() => setIsCreateOpen(false)}
+        />
+      ) : null}
+
+      {editingCustomer ? (
+        <CustomerFormDialog
+          key={editingCustomer.id}
+          isOpen
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setEditingCustomer(null);
+          }}
+          customer={editingCustomer}
+          onSuccess={() => setEditingCustomer(null)}
         />
       ) : null}
     </VStack>
