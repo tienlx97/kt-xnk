@@ -1,5 +1,25 @@
 # Progress Log
 
+## 2026-09-05 — Common formatted numeric TextInput
+
+Completed `format-money-inputs`. Added shared `FormattedNumberTextInput` over
+Astryx `TextInput`/`InputGroupText`, with a pure formatter/parser that keeps
+form and API state as `number | undefined`. Integer groups follow the requested
+left-to-right convention (`1234` → `123,4`); decimal drafts remain editable and
+are limited to two digits.
+
+Migrated Logistics money, payment ratio, shipment quantity, declaration
+weight, and VGM weight fields. `NumberInput` remains only for Incoterm year in
+this feature. Browser checks covered all five requested examples plus `%`,
+quantity, and `kg` fields; no business record was saved. Screenshots:
+`harness/runs/20260905-money-inputs/`. Both audited dialogs reported 0 axe
+violations/incomplete checks.
+
+Gate passed: `harness/runs/20260905-152655-7866/`; 118 tests, build, dependency
+structure, and quality thresholds passed. The pre-existing modified
+`.memsearch/memory/2026-09-05.md` was left untouched and excluded from the
+change.
+
 ## 2026-09-05 — Final UI/UX regression and component map (task 4.1)
 
 Completed `ui-ux-maintainability`. Fixed the remaining 680px column-options

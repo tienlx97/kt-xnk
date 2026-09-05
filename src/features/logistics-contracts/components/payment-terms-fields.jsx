@@ -5,7 +5,6 @@ import { Button } from '@astryxdesign/core/Button';
 import { HStack } from '@astryxdesign/core/HStack';
 import { Icon } from '@astryxdesign/core/Icon';
 import { IconButton } from '@astryxdesign/core/IconButton';
-import { NumberInput } from '@astryxdesign/core/NumberInput';
 import { StatusDot } from '@astryxdesign/core/StatusDot';
 import { pixel, proportional, Table } from '@astryxdesign/core/Table';
 import { Text } from '@astryxdesign/core/Text';
@@ -13,6 +12,7 @@ import { TextInput } from '@astryxdesign/core/TextInput';
 import { Toolbar } from '@astryxdesign/core/Toolbar';
 import { VStack } from '@astryxdesign/core/VStack';
 
+import { FormattedNumberTextInput } from '@/shared/components/formatted-number-text-input.jsx';
 import { IconPlus } from '@/shared/components/icon/icon-plus.jsx';
 import { IconTrash } from '@/shared/components/icon/icon-trash.jsx';
 
@@ -33,7 +33,7 @@ import { formatMoney } from '../config/currencies.js';
  *   currency?: string,
  *   onAddRow: () => void,
  *   onRemoveRow: (rowKey: string) => void,
- *   onUpdateRowField: (rowKey: string, field: 'paymentRatioPercent' | 'paymentCondition', value: number | string) => void,
+ *   onUpdateRowField: (rowKey: string, field: 'paymentRatioPercent' | 'paymentCondition', value: number | string | undefined) => void,
  * }} props
  */
 export function PaymentTermsFields({
@@ -69,18 +69,15 @@ export function PaymentTermsFields({
       header: 'Tỷ lệ (%)',
       width: pixel(128),
       renderCell: (row) => (
-        <NumberInput
+        <FormattedNumberTextInput
           label="Tỷ lệ (%)"
           isLabelHidden
           value={row.paymentRatioPercent}
           onChange={(value) =>
             onUpdateRowField(row.rowKey, 'paymentRatioPercent', value)
           }
-          min={0}
-          max={100}
-          step={0.01}
+          units="%"
           size="sm"
-          width="100%"
         />
       ),
     },
@@ -162,7 +159,9 @@ export function PaymentTermsFields({
           <HStack gap={2} vAlign="center">
             <StatusDot
               variant={isTotalValid ? 'success' : 'error'}
-              label={isTotalValid ? 'Tổng tỷ lệ hợp lệ' : 'Tổng tỷ lệ chưa hợp lệ'}
+              label={
+                isTotalValid ? 'Tổng tỷ lệ hợp lệ' : 'Tổng tỷ lệ chưa hợp lệ'
+              }
             />
             <Text weight="semibold" hasTabularNumbers>
               Tổng tỷ lệ: {totalPercent}% / 100%

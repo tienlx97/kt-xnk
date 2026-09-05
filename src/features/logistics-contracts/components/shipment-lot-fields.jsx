@@ -1,13 +1,13 @@
 'use client';
 
 import { HStack } from '@astryxdesign/core/HStack';
-import { NumberInput } from '@astryxdesign/core/NumberInput';
 import { Selector } from '@astryxdesign/core/Selector';
 import { StackItem } from '@astryxdesign/core/Stack';
 import { TextInput } from '@astryxdesign/core/TextInput';
 
 import { FormGrid } from '@/shared/components/form-grid.jsx';
 import { FormSection } from '@/shared/components/form-section.jsx';
+import { FormattedNumberTextInput } from '@/shared/components/formatted-number-text-input.jsx';
 
 import { currencyOptions } from '../config/currencies.js';
 import { paymentTypeOptions } from '../config/payment-schedule-types.js';
@@ -85,12 +85,10 @@ export function ShipmentLotFields({
 
       <HStack gap={3} vAlign="end">
         <StackItem size="fill">
-          <NumberInput
+          <FormattedNumberTextInput
             label="Giá trị invoice"
             value={values.invoiceValue}
             onChange={(value) => setField('invoiceValue', value)}
-            min={0}
-            step={0.01}
             units={values.invoiceCurrency || undefined}
             isRequired
             status={fieldStatuses.invoiceValue}
@@ -113,12 +111,10 @@ export function ShipmentLotFields({
 
       <HStack gap={3} vAlign="end">
         <StackItem size="fill">
-          <NumberInput
+          <FormattedNumberTextInput
             label="Giá trị tờ khai"
             value={values.declarationValue}
             onChange={(value) => setField('declarationValue', value)}
-            min={0}
-            step={0.01}
             units={values.declarationCurrency || undefined}
             isRequired
             status={fieldStatuses.declarationValue}
@@ -139,24 +135,20 @@ export function ShipmentLotFields({
         </StackItem>
       </HStack>
 
-      <NumberInput
+      <FormattedNumberTextInput
         label="Tỷ giá tờ khai"
         value={values.declarationExchangeRate}
         onChange={(value) => setField('declarationExchangeRate', value)}
-        min={0}
-        step={0.01}
         units="đ"
         isRequired
         status={fieldStatuses.declarationExchangeRate}
         statusVariant="tooltip"
       />
 
-      <NumberInput
+      <FormattedNumberTextInput
         label="Số lượng"
         value={values.quantityAmount}
         onChange={(value) => setField('quantityAmount', value)}
-        min={0}
-        step={1}
         units={
           derivedQuantityUnit
             ? labelForShipmentQuantityUnit(derivedQuantityUnit)
@@ -172,12 +164,10 @@ export function ShipmentLotFields({
         statusVariant="tooltip"
       />
 
-      <NumberInput
+      <FormattedNumberTextInput
         label="Khối lượng tờ khai"
         value={values.declarationWeightKg}
         onChange={(value) => setField('declarationWeightKg', value)}
-        min={0}
-        step={0.01}
         units="kg"
         isRequired
         status={fieldStatuses.declarationWeightKg}

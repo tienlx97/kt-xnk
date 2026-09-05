@@ -35,7 +35,7 @@ export function useShipmentCostLineRows(initialRows = []) {
   /**
    * @param {string} rowKey
    * @param {'costCategoryId' | 'name' | 'amount' | 'note' | 'providerCustomerId'} field
-   * @param {number | string} value
+   * @param {number | string | undefined} value
    */
   function updateRowField(rowKey, field, value) {
     setRows((current) =>

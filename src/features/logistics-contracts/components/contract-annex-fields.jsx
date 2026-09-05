@@ -3,9 +3,10 @@
 import { CheckboxInput } from '@astryxdesign/core/CheckboxInput';
 import { DateInput } from '@astryxdesign/core/DateInput';
 import { HStack } from '@astryxdesign/core/HStack';
-import { NumberInput } from '@astryxdesign/core/NumberInput';
 import { Selector } from '@astryxdesign/core/Selector';
 import { VStack } from '@astryxdesign/core/VStack';
+
+import { FormattedNumberTextInput } from '@/shared/components/formatted-number-text-input.jsx';
 
 import { contractAnnexTypeOptions } from '../config/contract-annex-types.js';
 
@@ -41,10 +42,10 @@ export function ContractAnnexFields({ values, setField, fieldStatuses }) {
       />
 
       <HStack gap={3}>
-        <NumberInput
+        <FormattedNumberTextInput
           label="Số tiền"
           value={values.amount}
-          onChange={(value) => setField('amount', value ?? undefined)}
+          onChange={(value) => setField('amount', value)}
           isRequired
           status={fieldStatuses.amount}
           statusVariant="tooltip"

@@ -6,13 +6,13 @@ import { DateInput } from '@astryxdesign/core/DateInput';
 import { EmptyState } from '@astryxdesign/core/EmptyState';
 import { Icon } from '@astryxdesign/core/Icon';
 import { IconButton } from '@astryxdesign/core/IconButton';
-import { NumberInput } from '@astryxdesign/core/NumberInput';
 import { pixel, proportional, Table } from '@astryxdesign/core/Table';
 import { Text } from '@astryxdesign/core/Text';
 import { TextArea } from '@astryxdesign/core/TextArea';
 import { Toolbar } from '@astryxdesign/core/Toolbar';
 import { VStack } from '@astryxdesign/core/VStack';
 
+import { FormattedNumberTextInput } from '@/shared/components/formatted-number-text-input.jsx';
 import { IconPlus } from '@/shared/components/icon/icon-plus.jsx';
 import { IconTrash } from '@/shared/components/icon/icon-trash.jsx';
 
@@ -30,7 +30,7 @@ import { formatMoney } from '../config/currencies.js';
  *   currency?: string,
  *   onAddRow: () => void,
  *   onRemoveRow: (rowKey: string) => void,
- *   onUpdateRowField: (rowKey: string, field: 'paymentDate' | 'amount' | 'note', value: number | string) => void,
+ *   onUpdateRowField: (rowKey: string, field: 'paymentDate' | 'amount' | 'note', value: number | string | undefined) => void,
  * }} props
  */
 export function PaymentHistoryFields({
@@ -86,16 +86,13 @@ export function PaymentHistoryFields({
       header: 'Giá trị',
       width: pixel(200),
       renderCell: (row) => (
-        <NumberInput
+        <FormattedNumberTextInput
           label="Giá trị"
           isLabelHidden
           value={row.amount}
           onChange={(value) => onUpdateRowField(row.rowKey, 'amount', value)}
-          min={0}
-          step={0.01}
           units={currency || undefined}
           size="sm"
-          width="100%"
         />
       ),
     },

@@ -1,12 +1,12 @@
 'use client';
 
 import { DateInput } from '@astryxdesign/core/DateInput';
-import { NumberInput } from '@astryxdesign/core/NumberInput';
 import { Selector } from '@astryxdesign/core/Selector';
 import { TextArea } from '@astryxdesign/core/TextArea';
 import { VStack } from '@astryxdesign/core/VStack';
 
 import { FormGrid } from '@/shared/components/form-grid.jsx';
+import { FormattedNumberTextInput } from '@/shared/components/formatted-number-text-input.jsx';
 
 import { paymentTypeOptions } from '../config/payment-schedule-types.js';
 
@@ -37,10 +37,10 @@ export function PaymentScheduleFields({ values, setField, fieldStatuses }) {
           status={fieldStatuses.paymentDate}
           statusVariant="tooltip"
         />
-        <NumberInput
+        <FormattedNumberTextInput
           label="Giá trị"
           value={values.amount}
-          onChange={(value) => setField('amount', value ?? undefined)}
+          onChange={(value) => setField('amount', value)}
           isRequired
           status={fieldStatuses.amount}
           statusVariant="tooltip"

@@ -1,9 +1,10 @@
 'use client';
 
 import { DateInput } from '@astryxdesign/core/DateInput';
-import { NumberInput } from '@astryxdesign/core/NumberInput';
 import { TextArea } from '@astryxdesign/core/TextArea';
 import { VStack } from '@astryxdesign/core/VStack';
+
+import { FormattedNumberTextInput } from '@/shared/components/formatted-number-text-input.jsx';
 
 /**
  * Single-`CommissionPayment` field-set, used by the "Thêm nhanh" quick-add
@@ -40,12 +41,10 @@ export function CommissionPaymentFields({
         width="100%"
       />
 
-      <NumberInput
+      <FormattedNumberTextInput
         label="Giá trị"
         value={values.amount}
         onChange={(value) => setField('amount', value)}
-        min={0}
-        step={0.01}
         units={currency || undefined}
         isRequired
         status={fieldStatuses.amount}

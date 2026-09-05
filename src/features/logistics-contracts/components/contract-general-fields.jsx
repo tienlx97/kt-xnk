@@ -14,9 +14,10 @@ import { useState } from 'react';
 
 import { FormGrid } from '@/shared/components/form-grid.jsx';
 import { FormSection } from '@/shared/components/form-section.jsx';
+import { FormattedNumberTextInput } from '@/shared/components/formatted-number-text-input.jsx';
 import { IconPlus } from '@/shared/components/icon/icon-plus.jsx';
 
-import { currencyOptions, formatMoney } from '../config/currencies.js';
+import { currencyOptions } from '../config/currencies.js';
 import { incotermOptions } from '../config/incoterms.js';
 import { BuyerFields } from './buyer-fields.jsx';
 import { QuickCreateCountryDialog } from './quick-create-country-dialog.jsx';
@@ -291,14 +292,11 @@ export function ContractGeneralFields({ form }) {
 
       <HStack gap={3} vAlign="end">
         <StackItem size="fill">
-          <NumberInput
+          <FormattedNumberTextInput
             label="Giá trị hợp đồng"
             value={values.contractValue}
             onChange={(value) => setField('contractValue', value)}
-            min={0}
-            step={0.01}
             units={values.currency || undefined}
-            formatValue={formatMoney}
             isRequired
             status={fieldStatuses.contractValue}
             statusVariant="tooltip"

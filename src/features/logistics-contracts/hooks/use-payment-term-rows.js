@@ -4,7 +4,11 @@ import { useState } from 'react';
 
 /** @returns {import('../types/index.js').PaymentTermRow} */
 function emptyRow() {
-  return { rowKey: crypto.randomUUID(), paymentRatioPercent: undefined, paymentCondition: '' };
+  return {
+    rowKey: crypto.randomUUID(),
+    paymentRatioPercent: undefined,
+    paymentCondition: '',
+  };
 }
 
 /**
@@ -31,11 +35,13 @@ export function usePaymentTermRows(initialRows = []) {
   /**
    * @param {string} rowKey
    * @param {'paymentRatioPercent' | 'paymentCondition'} field
-   * @param {number | string} value
+   * @param {number | string | undefined} value
    */
   function updateRowField(rowKey, field, value) {
     setRows((current) =>
-      current.map((row) => (row.rowKey === rowKey ? { ...row, [field]: value } : row)),
+      current.map((row) =>
+        row.rowKey === rowKey ? { ...row, [field]: value } : row,
+      ),
     );
   }
 

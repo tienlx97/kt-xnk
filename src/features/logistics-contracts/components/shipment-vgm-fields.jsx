@@ -2,7 +2,6 @@
 
 import { DateInput } from '@astryxdesign/core/DateInput';
 import { HStack } from '@astryxdesign/core/HStack';
-import { NumberInput } from '@astryxdesign/core/NumberInput';
 import { Selector } from '@astryxdesign/core/Selector';
 import { StackItem } from '@astryxdesign/core/Stack';
 import { Text } from '@astryxdesign/core/Text';
@@ -12,6 +11,7 @@ import { TimeInput } from '@astryxdesign/core/TimeInput';
 import { VStack } from '@astryxdesign/core/VStack';
 
 import { FormGrid } from '@/shared/components/form-grid.jsx';
+import { FormattedNumberTextInput } from '@/shared/components/formatted-number-text-input.jsx';
 
 import { shipmentContainerTypeOptions } from '../config/shipment-container-types.js';
 
@@ -32,7 +32,12 @@ import { shipmentContainerTypeOptions } from '../config/shipment-container-types
  *   customers: import('../types/index.js').Customer[],
  * }} props
  */
-export function ShipmentVgmFields({ values, setField, fieldStatuses, customers }) {
+export function ShipmentVgmFields({
+  values,
+  setField,
+  fieldStatuses,
+  customers,
+}) {
   const grossWeight = (values.netWeight ?? 0) + (values.packagingWeight ?? 0);
   const vgm = grossWeight + (values.tare ?? 0);
 
@@ -111,12 +116,10 @@ export function ShipmentVgmFields({ values, setField, fieldStatuses, customers }
           />
         </StackItem>
         <StackItem size="fill">
-          <NumberInput
+          <FormattedNumberTextInput
             label="Max gross"
             value={values.maxGross}
             onChange={(value) => setField('maxGross', value)}
-            min={0}
-            step={0.01}
             units="kg"
             isRequired
             status={fieldStatuses.maxGross}
@@ -127,12 +130,10 @@ export function ShipmentVgmFields({ values, setField, fieldStatuses, customers }
 
       <FormGrid>
         <StackItem size="fill">
-          <NumberInput
+          <FormattedNumberTextInput
             label="Tare"
             value={values.tare}
             onChange={(value) => setField('tare', value)}
-            min={0}
-            step={0.01}
             units="kg"
             isRequired
             status={fieldStatuses.tare}
@@ -140,12 +141,10 @@ export function ShipmentVgmFields({ values, setField, fieldStatuses, customers }
           />
         </StackItem>
         <StackItem size="fill">
-          <NumberInput
+          <FormattedNumberTextInput
             label="Payload"
             value={values.payload}
             onChange={(value) => setField('payload', value)}
-            min={0}
-            step={0.01}
             units="kg"
             isRequired
             status={fieldStatuses.payload}
@@ -156,12 +155,10 @@ export function ShipmentVgmFields({ values, setField, fieldStatuses, customers }
 
       <FormGrid>
         <StackItem size="fill">
-          <NumberInput
+          <FormattedNumberTextInput
             label="Net weight"
             value={values.netWeight}
             onChange={(value) => setField('netWeight', value)}
-            min={0}
-            step={0.01}
             units="kg"
             isRequired
             status={fieldStatuses.netWeight}
@@ -169,12 +166,10 @@ export function ShipmentVgmFields({ values, setField, fieldStatuses, customers }
           />
         </StackItem>
         <StackItem size="fill">
-          <NumberInput
+          <FormattedNumberTextInput
             label="Khối lượng bao bì"
             value={values.packagingWeight}
             onChange={(value) => setField('packagingWeight', value)}
-            min={0}
-            step={0.01}
             units="kg"
             isRequired
             status={fieldStatuses.packagingWeight}
@@ -209,7 +204,11 @@ export function ShipmentVgmFields({ values, setField, fieldStatuses, customers }
  *   fieldStatuses: Record<string, { type: 'error', message: string } | undefined>,
  * }} props
  */
-export function ShipmentVgmAdditionalFields({ values, setField, fieldStatuses }) {
+export function ShipmentVgmAdditionalFields({
+  values,
+  setField,
+  fieldStatuses,
+}) {
   return (
     <VStack gap={4} hAlign="stretch">
       <TimeInput

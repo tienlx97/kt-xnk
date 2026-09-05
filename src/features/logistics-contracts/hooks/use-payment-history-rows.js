@@ -34,7 +34,7 @@ export function usePaymentHistoryRows(initialRows = []) {
   /**
    * @param {string} rowKey
    * @param {'paymentDate' | 'amount' | 'note'} field
-   * @param {number | string} value
+   * @param {number | string | undefined} value
    */
   function updateRowField(rowKey, field, value) {
     setRows((current) =>

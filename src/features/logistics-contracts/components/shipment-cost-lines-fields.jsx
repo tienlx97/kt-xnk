@@ -6,7 +6,6 @@ import { HStack } from '@astryxdesign/core/HStack';
 import { Icon } from '@astryxdesign/core/Icon';
 import { IconButton } from '@astryxdesign/core/IconButton';
 import { overlayPaddingReset } from '@astryxdesign/core/Layout';
-import { NumberInput } from '@astryxdesign/core/NumberInput';
 import { Selector } from '@astryxdesign/core/Selector';
 import { pixel, proportional, Table } from '@astryxdesign/core/Table';
 import { Text } from '@astryxdesign/core/Text';
@@ -16,6 +15,7 @@ import { VStack } from '@astryxdesign/core/VStack';
 import * as stylex from '@stylexjs/stylex';
 import { useState } from 'react';
 
+import { FormattedNumberTextInput } from '@/shared/components/formatted-number-text-input.jsx';
 import { IconPlus } from '@/shared/components/icon/icon-plus.jsx';
 import { IconTrash } from '@/shared/components/icon/icon-trash.jsx';
 
@@ -46,7 +46,7 @@ const ADD_COST_CATEGORY_OPTION_VALUE = '__add_cost_category__';
  *   status?: { type: 'error' | 'success', message: string },
  *   onAddRow: () => void,
  *   onRemoveRow: (rowKey: string) => void,
- *   onUpdateRowField: (rowKey: string, field: 'costCategoryId' | 'name' | 'amount' | 'note' | 'providerCustomerId', value: number | string) => void,
+ *   onUpdateRowField: (rowKey: string, field: 'costCategoryId' | 'name' | 'amount' | 'note' | 'providerCustomerId', value: number | string | undefined) => void,
  * }} props
  */
 export function ShipmentCostLinesFields({
@@ -123,14 +123,13 @@ export function ShipmentCostLinesFields({
       header: 'Số tiền',
       width: pixel(160),
       renderCell: (row) => (
-        <NumberInput
+        <FormattedNumberTextInput
           label="Số tiền"
           isLabelHidden
           value={row.amount}
           onChange={(value) => onUpdateRowField(row.rowKey, 'amount', value)}
-          min={0}
-          step={0.01}
           units="đ"
+          size="sm"
         />
       ),
     },

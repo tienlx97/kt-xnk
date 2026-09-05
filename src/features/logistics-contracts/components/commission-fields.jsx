@@ -4,12 +4,12 @@ import { Card } from '@astryxdesign/core/Card';
 import { CheckboxInput } from '@astryxdesign/core/CheckboxInput';
 import { DateInput } from '@astryxdesign/core/DateInput';
 import { HStack } from '@astryxdesign/core/HStack';
-import { NumberInput } from '@astryxdesign/core/NumberInput';
 import { Selector } from '@astryxdesign/core/Selector';
 import { Text } from '@astryxdesign/core/Text';
 import { VStack } from '@astryxdesign/core/VStack';
 
-import { formatMoney } from '../config/currencies.js';
+import { FormattedNumberTextInput } from '@/shared/components/formatted-number-text-input.jsx';
+
 import { PaymentHistoryFields } from './payment-history-fields.jsx';
 import { PaymentTermsFields } from './payment-terms-fields.jsx';
 
@@ -87,14 +87,11 @@ export function CommissionFields({
         width="100%"
       />
 
-      <NumberInput
+      <FormattedNumberTextInput
         label="Giá trị"
         value={values.value}
         onChange={(value) => setField('value', value)}
-        min={0}
-        step={0.01}
         units={currency || undefined}
-        formatValue={formatMoney}
         isRequired
         status={fieldStatuses.value}
         statusVariant="tooltip"
