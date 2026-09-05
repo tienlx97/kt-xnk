@@ -5,6 +5,44 @@ Append-only session log. Newest entry FIRST.
 This file is the handoff between sessions/agents — write for a reader with zero conversation context.
 -->
 
+## 2026-09-05 — Polish Contract and Commission payment editors
+
+**Context:** User reported poor UX in the payment area of Update Contract,
+then explicitly added the Payment History table in Update Commission.
+
+**Change:** Contract's form accordion now keeps one topic open at a time, so
+opening Payment Schedule closes the very long General section. Both shared
+payment grids now put Add and the running summary in a muted toolbar before
+the rows, use compact density and small controls, identify rows with explicit
+`Đợt`/`Lần` columns, and expose a named 96px `Thao tác` column. Payment total
+uses a labeled success/error `StatusDot` instead of a decorative Badge.
+Commission Payment History widens its date and amount columns, uses a one-row
+textarea for notes, and guides the zero-payment case with a compact empty
+state. Validation, calculations, form state, and API payloads are unchanged.
+
+**Live verification:** On seeded Contract `26DN-SAMPLE01`, verified the
+single-open accordion, the valid 100% state, invalid 150% state, derived
+amount recalculation, adding a third numbered row, no table overflow, and a
+visible pinned save footer. On seeded Commission `26CM03`, verified the
+populated history, deletion to the guided empty state, adding a blank row
+back, textarea rendering, totals, and two fully visible 96px action headers.
+No form was saved. Final screenshots and before/interaction evidence:
+`harness/runs/20260905-payment-editors/`.
+
+**Accessibility:** Contract dialog axe scan passed 27 checks with zero
+violations/incomplete checks after naming the action header. Commission's two
+payment tables no longer produce an axe issue; its dialog still reports the
+pre-existing Astryx required `Selector` `aria-required` issue outside these
+tables. No console or page errors occurred.
+
+**Harness gap:** There is no automated visual regression assertion for an
+editable Table control being clipped by a narrow column or for toolbar/footer
+visibility at a short viewport. Browser measurements and screenshots cover
+this change, but a reusable e2e geometry check remains future harness work.
+
+**Verification:** `pnpm test` passed 111/111. `./harness/verify.sh` passed every
+step; evidence: `harness/runs/20260905-141302-7010/`.
+
 ## 2026-09-05 — Fullscreen Contract, Commission, and Admin User dialogs
 
 **Context:** After evaluating the full-viewport create/edit Shipment workflow,

@@ -3,15 +3,17 @@
 import { Banner } from '@astryxdesign/core/Banner';
 import { Button } from '@astryxdesign/core/Button';
 import { DateInput } from '@astryxdesign/core/DateInput';
-import { HStack } from '@astryxdesign/core/HStack';
+import { EmptyState } from '@astryxdesign/core/EmptyState';
 import { Icon } from '@astryxdesign/core/Icon';
 import { IconButton } from '@astryxdesign/core/IconButton';
 import { NumberInput } from '@astryxdesign/core/NumberInput';
 import { pixel, proportional, Table } from '@astryxdesign/core/Table';
 import { Text } from '@astryxdesign/core/Text';
-import { TextInput } from '@astryxdesign/core/TextInput';
+import { TextArea } from '@astryxdesign/core/TextArea';
+import { Toolbar } from '@astryxdesign/core/Toolbar';
 import { VStack } from '@astryxdesign/core/VStack';
 
+import { IconPlus } from '@/shared/components/icon/icon-plus.jsx';
 import { IconTrash } from '@/shared/components/icon/icon-trash.jsx';
 
 import { formatMoney } from '../config/currencies.js';
@@ -40,13 +42,27 @@ export function PaymentHistoryFields({
   onUpdateRowField,
 }) {
   const total = rows.reduce((sum, row) => sum + (row.amount ?? 0), 0);
+  const tableRows = rows.map((row, index) => ({
+    ...row,
+    sequence: index + 1,
+  }));
 
-  /** @type {import('@astryxdesign/core/Table').TableColumn<import('../types/index.js').CommissionPaymentRow & Record<string, unknown>>[]} */
+  /** @type {import('@astryxdesign/core/Table').TableColumn<import('../types/index.js').CommissionPaymentRow & { sequence: number } & Record<string, unknown>>[]} */
   const columns = [
+    {
+      key: 'sequence',
+      header: 'Lần',
+      width: pixel(72),
+      renderCell: (row) => (
+        <Text color="secondary" hasTabularNumbers>
+          {row.sequence}
+        </Text>
+      ),
+    },
     {
       key: 'paymentDate',
       header: 'Ngày thanh toán',
-      width: pixel(180),
+      width: pixel(220),
       renderCell: (row) => (
         <DateInput
           label="Ngày thanh toán"
@@ -60,13 +76,15 @@ export function PaymentHistoryFields({
             onUpdateRowField(row.rowKey, 'paymentDate', value ?? '')
           }
           format="system_date"
+          size="sm"
+          width="100%"
         />
       ),
     },
     {
       key: 'amount',
       header: 'Giá trị',
-      width: pixel(180),
+      width: pixel(200),
       renderCell: (row) => (
         <NumberInput
           label="Giá trị"
@@ -76,27 +94,32 @@ export function PaymentHistoryFields({
           min={0}
           step={0.01}
           units={currency || undefined}
+          size="sm"
+          width="100%"
         />
       ),
     },
     {
       key: 'note',
       header: 'Ghi chú',
-      width: proportional(1),
+      width: proportional(1, { minWidth: 280 }),
       renderCell: (row) => (
-        <TextInput
+        <TextArea
           label="Ghi chú"
           isLabelHidden
           value={row.note}
           onChange={(value) => onUpdateRowField(row.rowKey, 'note', value)}
           placeholder="Ghi chú (không bắt buộc)"
+          rows={1}
+          size="sm"
+          width="100%"
         />
       ),
     },
     {
       key: 'actions',
-      header: '',
-      width: pixel(48),
+      header: 'Thao tác',
+      width: pixel(96),
       align: 'end',
       renderCell: (row) => (
         <IconButton
@@ -114,25 +137,51 @@ export function PaymentHistoryFields({
   return (
     <VStack gap={2} hAlign="stretch">
       {rows.length === 0 ? (
-        <Text color="secondary">Chưa có lần thanh toán nào</Text>
-      ) : (
-        <Table data={rows} columns={columns} idKey="rowKey" dividers="grid" />
-      )}
-
-      <HStack hAlign="between" vAlign="center">
-        <Button
-          label="Thêm lần thanh toán"
-          type="button"
-          variant="secondary"
-          size="sm"
-          onClick={onAddRow}
+        <EmptyState
+          title="Chưa có lần thanh toán"
+          description="Ghi nhận lần thanh toán đầu tiên cho Commission này."
+          isCompact
+          actions={
+            <Button
+              label="Thêm lần thanh toán"
+              type="button"
+              variant="secondary"
+              icon={<Icon icon={IconPlus} size="sm" />}
+              onClick={onAddRow}
+            />
+          }
         />
-        {rows.length > 0 ? (
-          <Text weight="semibold">
-            Tổng đã thanh toán: {formatMoney(total, currency ?? '')}
-          </Text>
-        ) : null}
-      </HStack>
+      ) : (
+        <>
+          <Toolbar
+            label="Thao tác lịch sử thanh toán"
+            size="sm"
+            variant="muted"
+            dividers={['bottom']}
+            startContent={
+              <Button
+                label="Thêm lần thanh toán"
+                type="button"
+                variant="secondary"
+                icon={<Icon icon={IconPlus} size="sm" />}
+                onClick={onAddRow}
+              />
+            }
+            endContent={
+              <Text weight="semibold" hasTabularNumbers>
+                Đã thanh toán: {formatMoney(total, currency ?? '')}
+              </Text>
+            }
+          />
+          <Table
+            data={tableRows}
+            columns={columns}
+            idKey="rowKey"
+            density="compact"
+            dividers="grid"
+          />
+        </>
+      )}
 
       {status ? (
         <Banner status="error" title={status.message} container="card" />

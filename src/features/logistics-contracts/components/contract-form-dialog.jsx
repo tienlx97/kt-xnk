@@ -157,7 +157,7 @@ export function ContractFormDialog({
                   />
                 ) : null}
 
-                <CollapsibleGroup type="multiple" defaultValue={['general']}>
+                <CollapsibleGroup type="single" defaultValue="general">
                   <VStack gap={3} hAlign="stretch">
                     <FormSection value="general" title="Thông tin chung">
                       <HStack gap={3}>
