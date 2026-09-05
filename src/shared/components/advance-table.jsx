@@ -23,16 +23,14 @@ import {
 } from '@astryxdesign/core/Table';
 import { Text } from '@astryxdesign/core/Text';
 import { TextInput } from '@astryxdesign/core/TextInput';
-import {
-  colorVars,
-  spacingVars,
-} from '@astryxdesign/core/theme/tokens.stylex';
+import { colorVars, spacingVars } from '@astryxdesign/core/theme/tokens.stylex';
 import { Toolbar } from '@astryxdesign/core/Toolbar';
 import { VStack } from '@astryxdesign/core/VStack';
 import * as stylex from '@stylexjs/stylex';
 import { useMemo, useState } from 'react';
 
 import { AdvancedFilterBuilder } from '@/shared/components/advanced-filter-builder.jsx';
+import { CommonDialog } from '@/shared/components/common-dialog.jsx';
 import { IconRefresh } from '@/shared/components/icon/icon-refresh.jsx';
 import {
   stickyColumnKeys,
@@ -299,7 +297,9 @@ export function AdvanceTable({
   // conditions (`advancedFilterConditions`) and sends them to its own
   // server-side search API via `onAdvancedFilterChange`; this component only
   // holds the in-dialog draft.
-  const isServerFilterMode = Boolean(filterFieldDefs && filterFieldDefs.length > 0);
+  const isServerFilterMode = Boolean(
+    filterFieldDefs && filterFieldDefs.length > 0,
+  );
 
   const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
   const [advancedSearchDraft, setAdvancedSearchDraft] = useState(
@@ -441,7 +441,8 @@ export function AdvanceTable({
     renderCell: () => <Skeleton height={16} width="70%" index={columnIndex} />,
   }));
 
-  const pageSizeOptions = pagination?.pageSizeOptions ?? DEFAULT_PAGE_SIZE_OPTIONS;
+  const pageSizeOptions =
+    pagination?.pageSizeOptions ?? DEFAULT_PAGE_SIZE_OPTIONS;
   const currentPage = pagination
     ? Math.min(pagination.pageIndex, Math.max(1, pagination.totalPages))
     : 1;
@@ -485,7 +486,8 @@ export function AdvanceTable({
                   onChange={handleQuickSearchChange}
                   xstyle={styles.searchInput}
                 />
-                {isServerFilterMode || advancedSearchFieldsResolved.length > 0 ? (
+                {isServerFilterMode ||
+                advancedSearchFieldsResolved.length > 0 ? (
                   <IconButton
                     label="Bộ lọc nâng cao"
                     tooltip="Bộ lọc nâng cao"
@@ -496,11 +498,11 @@ export function AdvanceTable({
                 ) : null}
               </InputGroup>
               {isServerFilterMode ? (
-                <Dialog
+                <CommonDialog
                   isOpen={isAdvancedSearchOpen}
                   onOpenChange={handleAdvancedSearchOpenChange}
                   purpose="form"
-                  width={560}
+                  width={800}
                 >
                   <Layout
                     header={
@@ -541,7 +543,7 @@ export function AdvanceTable({
                       </LayoutFooter>
                     }
                   />
-                </Dialog>
+                </CommonDialog>
               ) : advancedSearchFieldsResolved.length > 0 ? (
                 <Dialog
                   isOpen={isAdvancedSearchOpen}
@@ -767,7 +769,9 @@ export function AdvanceTable({
                 variant="ghost"
                 size="sm"
                 isDisabled={currentPage === pagination.totalPages}
-                onClick={() => pagination.onPageIndexChange(pagination.totalPages)}
+                onClick={() =>
+                  pagination.onPageIndexChange(pagination.totalPages)
+                }
               />
             </HStack>
           </HStack>

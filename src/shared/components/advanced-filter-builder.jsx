@@ -6,8 +6,10 @@ import { Icon } from '@astryxdesign/core/Icon';
 import { IconButton } from '@astryxdesign/core/IconButton';
 import { NumberInput } from '@astryxdesign/core/NumberInput';
 import { Selector } from '@astryxdesign/core/Selector';
+import { StackItem } from '@astryxdesign/core/Stack';
 import { TextInput } from '@astryxdesign/core/TextInput';
 import { VStack } from '@astryxdesign/core/VStack';
+import * as stylex from '@stylexjs/stylex';
 import { Trash2 } from 'lucide-react';
 
 /** @typedef {'string' | 'enum' | 'number' | 'date'} AdvancedFilterFieldType */
@@ -68,6 +70,27 @@ const OPERATORS_BY_TYPE = {
 };
 
 const VALUELESS_OPERATORS = new Set(['IsEmpty', 'IsNotEmpty']);
+
+// Fixed column widths so every row lines up: the field and value columns are
+// wider than the operator column, which stays a constant width regardless of
+// how long the selected operator's label is (e.g. "Lớn hơn hoặc bằng").
+const FIELD_COLUMN_WIDTH = 220;
+const OPERATOR_COLUMN_WIDTH = 140;
+const VALUE_COLUMN_WIDTH = 220;
+
+// Reserves the connector Selector's width on the first condition row (which
+// has no connector — there's nothing to combine it with) so every row's
+// field/operator/value columns line up regardless of index.
+const styles = stylex.create({
+  connectorSpacer: {
+    flexShrink: 0,
+    width: 100,
+  },
+  valueSpacer: {
+    flexShrink: 0,
+    width: VALUE_COLUMN_WIDTH,
+  },
+});
 
 /** @param {AdvancedFilterFieldType} type */
 function defaultOperatorFor(type) {
@@ -142,7 +165,7 @@ export function AdvancedFilterBuilder({ fields, conditions, onChange }) {
         const showsValue = !VALUELESS_OPERATORS.has(condition.operator);
 
         return (
-          <VStack key={condition.id} gap={2} hAlign="stretch">
+          <HStack key={condition.id} gap={2} vAlign="end" wrap="wrap">
             {index > 0 ? (
               <Selector
                 label="Kết hợp với điều kiện trước"
@@ -155,12 +178,15 @@ export function AdvancedFilterBuilder({ fields, conditions, onChange }) {
                   updateCondition(condition.id, { connector: /** @type {'And' | 'Or'} */ (next ?? 'And') })
                 }
               />
-            ) : null}
-            <HStack gap={2} vAlign="start" wrap="wrap">
+            ) : (
+              <StackItem xstyle={styles.connectorSpacer} />
+            )}
+            <HStack gap={2} vAlign="end" wrap="wrap">
               <Selector
                 label="Trường lọc"
                 isLabelHidden
                 size="sm"
+                width={FIELD_COLUMN_WIDTH}
                 options={[
                   { value: field.key, label: field.label },
                   ...availableFieldOptions,
@@ -183,6 +209,7 @@ export function AdvancedFilterBuilder({ fields, conditions, onChange }) {
                   <DateInput
                     label="Từ ngày"
                     size="sm"
+                    width={FIELD_COLUMN_WIDTH}
                     value={
                       /** @type {import('@astryxdesign/core/Calendar').ISODateString | undefined} */ (
                         condition.value || undefined
@@ -194,6 +221,7 @@ export function AdvancedFilterBuilder({ fields, conditions, onChange }) {
                   <DateInput
                     label="Đến ngày"
                     size="sm"
+                    width={VALUE_COLUMN_WIDTH}
                     value={
                       /** @type {import('@astryxdesign/core/Calendar').ISODateString | undefined} */ (
                         condition.valueTo || undefined
@@ -209,6 +237,7 @@ export function AdvancedFilterBuilder({ fields, conditions, onChange }) {
                     label="Điều kiện"
                     isLabelHidden
                     size="sm"
+                    width={OPERATOR_COLUMN_WIDTH}
                     options={OPERATORS_BY_TYPE[field.type]}
                     value={condition.operator}
                     onChange={(next) =>
@@ -220,6 +249,7 @@ export function AdvancedFilterBuilder({ fields, conditions, onChange }) {
                       label="Giá trị"
                       isLabelHidden
                       size="sm"
+                      width={VALUE_COLUMN_WIDTH}
                       hasClear
                       options={[...(field.options ?? [])]}
                       value={condition.value || null}
@@ -231,6 +261,7 @@ export function AdvancedFilterBuilder({ fields, conditions, onChange }) {
                       label="Giá trị"
                       isLabelHidden
                       size="sm"
+                      width={VALUE_COLUMN_WIDTH}
                       value={condition.value === '' ? null : Number(condition.value)}
                       onChange={(next) =>
                         updateCondition(condition.id, { value: next == null ? '' : String(next) })
@@ -242,11 +273,13 @@ export function AdvancedFilterBuilder({ fields, conditions, onChange }) {
                       label="Giá trị"
                       isLabelHidden
                       size="sm"
+                      width={VALUE_COLUMN_WIDTH}
                       hasClear
                       value={condition.value}
                       onChange={(next) => updateCondition(condition.id, { value: next })}
                     />
                   ) : null}
+                  {!showsValue ? <StackItem xstyle={styles.valueSpacer} /> : null}
                 </>
               )}
               <IconButton
@@ -258,7 +291,7 @@ export function AdvancedFilterBuilder({ fields, conditions, onChange }) {
                 onClick={() => removeCondition(condition.id)}
               />
             </HStack>
-          </VStack>
+          </HStack>
         );
       })}
 
