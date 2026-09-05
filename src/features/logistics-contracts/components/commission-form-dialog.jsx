@@ -5,11 +5,18 @@ import { Button } from '@astryxdesign/core/Button';
 import { DialogHeader } from '@astryxdesign/core/Dialog';
 import { HStack } from '@astryxdesign/core/HStack';
 import { Layout, LayoutContent, LayoutFooter } from '@astryxdesign/core/Layout';
+import * as stylex from '@stylexjs/stylex';
 
 import { CommonDialog } from '@/shared/components/common-dialog.jsx';
 
 import { useCommissionForm } from '../hooks/use-commission-form.js';
 import { CommissionFields } from './commission-fields.jsx';
+
+const styles = stylex.create({
+  form: {
+    height: '100%',
+  },
+});
 
 /**
  * Create/edit dialog for one `Contract`'s `Commission` — opened from
@@ -43,8 +50,12 @@ export function CommissionFormDialog({
   });
 
   return (
-    <CommonDialog isOpen={isOpen} onOpenChange={onOpenChange} width={960}>
-      <form onSubmit={form.handleSubmit}>
+    <CommonDialog
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+      variant="fullscreen"
+    >
+      <form onSubmit={form.handleSubmit} {...stylex.props(styles.form)}>
         <Layout
           header={
             <DialogHeader title={form.title} onOpenChange={onOpenChange} />

@@ -10,6 +10,7 @@ import { Layout, LayoutContent, LayoutFooter } from '@astryxdesign/core/Layout';
 import { Skeleton } from '@astryxdesign/core/Skeleton';
 import { Text } from '@astryxdesign/core/Text';
 import { VStack } from '@astryxdesign/core/VStack';
+import * as stylex from '@stylexjs/stylex';
 
 import { useCreateUserFormV2 } from '../hooks/use-create-user-form-v2.js';
 import { useEditUserFormV2 } from '../hooks/use-edit-user-form-v2.js';
@@ -21,12 +22,11 @@ import { UserOrgFields } from './user-org-fields.jsx';
 import { UserPermissionsFields } from './user-permissions-fields.jsx';
 import { UserSessionFields } from './user-session-fields.jsx';
 
-// v1's 880 was sized for its two-column tab layout (identity fields beside
-// org fields, wide address rows). v2 is a single stack of cards, so it only
-// needs enough room for a two-field row (e.g. Họ/Tên) plus the bank table's
-// columns — a narrower dialog reads as one focused column instead of an
-// empty-feeling wide sheet.
-export const USER_FORM_DIALOG_WIDTH = 1000;
+const styles = stylex.create({
+  form: {
+    height: '100%',
+  },
+});
 
 /**
  * One collapsed section of the dialog. Each is its own Card, which is the
@@ -106,33 +106,25 @@ function UserFormDialogShell({ isOpen, onOpenChange, controller }) {
       isOpen={isOpen}
       onOpenChange={onOpenChange}
       purpose="form"
-      width={USER_FORM_DIALOG_WIDTH}
-      maxHeight="80vh"
+      variant="fullscreen"
     >
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} {...stylex.props(styles.form)}>
         <Layout
           header={<DialogHeader title={title} onOpenChange={onOpenChange} />}
           content={
             <LayoutContent padding={6} isScrollable={false}>
               {/*
-                Fixed height + isScrollable on this inner VStack, not just a
-                min-height floor: `LayoutContent`/`Dialog` size themselves to
-                their content, so without a fixed height here every card
-                expand/collapse changes the content's height, which changes
-                the dialog's height, which — because the dialog is centered —
-                visibly shifts the whole dialog up/down. Pinning this
-                region's height keeps the dialog's overall size constant;
-                anything taller than the region scrolls inside it instead of
-                resizing it. `LayoutContent`'s own `isScrollable` is turned
-                off here — this inner VStack is the sole scroll owner, since
-                leaving both on stacks a second, redundant scrollbar.
+                The fullscreen frame has a fixed viewport height. This inner
+                VStack fills the remaining content region and is its sole
+                scroll owner, so expanding cards never moves the header or
+                footer and doesn't create a redundant nested scrollbar.
 
                 In edit mode the list row is a slim projection, so the form is
                 empty until `GET /users/{id}` lands. Showing the blank form
                 meanwhile would invite a save that erases every field the row
                 omits — see `use-edit-user-form.js`.
               */}
-              <VStack gap={4} hAlign="stretch" height={560} isScrollable>
+              <VStack gap={4} hAlign="stretch" height="100%" isScrollable>
                 {isLoadingUser ? (
                   <>
                     <Text color="secondary">

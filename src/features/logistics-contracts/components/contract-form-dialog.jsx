@@ -34,11 +34,10 @@ import { QuickCreateCountryDialog } from './quick-create-country-dialog.jsx';
 import { QuickCreatePlaceDialog } from './quick-create-place-dialog.jsx';
 import { SellerPickerFields } from './seller-picker-fields.jsx';
 
-export const CONTRACT_FORM_DIALOG_WIDTH = 1100;
-const CONTRACT_FORM_DIALOG_MAX_HEIGHT = '88vh';
-const CONTRACT_FORM_DIALOG_CONTENT_HEIGHT = 680;
-
 const styles = stylex.create({
+  form: {
+    height: '100%',
+  },
   // `StackItem size="fill"` only sets `flexGrow: 1` — flex-basis stays
   // `auto`, so a sibling that grows (e.g. a status icon appearing) steals
   // width from the other "fill" item instead of both staying equal. Basis 0
@@ -134,25 +133,19 @@ export function ContractFormDialog({
     <CommonDialog
       isOpen={isOpen}
       onOpenChange={onOpenChange}
-      width={CONTRACT_FORM_DIALOG_WIDTH}
-      maxHeight={CONTRACT_FORM_DIALOG_MAX_HEIGHT}
+      variant="fullscreen"
     >
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} {...stylex.props(styles.form)}>
         <Layout
           header={<DialogHeader title={title} onOpenChange={onOpenChange} />}
           content={
             // `isScrollable={false}`: the inner VStack below is the sole
-            // scroll owner (fixed height + its own `isScrollable`, so the
-            // dialog doesn't resize as collapsible sections toggle) —
+            // scroll owner (it fills the available content height and owns
+            // overflow as collapsible sections toggle) —
             // `LayoutContent`'s own default `isScrollable={true}` would
             // otherwise stack a second, redundant scrollbar on top of it.
             <LayoutContent padding={6} isScrollable={false}>
-              <VStack
-                gap={4}
-                hAlign="stretch"
-                height={CONTRACT_FORM_DIALOG_CONTENT_HEIGHT}
-                isScrollable
-              >
+              <VStack gap={4} hAlign="stretch" height="100%" isScrollable>
                 {submitError ? (
                   <Banner status="error" title={submitError} container="card" />
                 ) : null}

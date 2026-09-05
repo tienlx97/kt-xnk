@@ -5,6 +5,30 @@ Append-only session log. Newest entry FIRST.
 This file is the handoff between sessions/agents — write for a reader with zero conversation context.
 -->
 
+## 2026-09-05 — Fullscreen Contract, Commission, and Admin User dialogs
+
+**Context:** After evaluating the full-viewport create/edit Shipment workflow,
+the user asked to extend the same MISA-style workspace to create/edit Contract,
+Commission, and User under `/admin`.
+
+**Change:** The shared create/edit dialogs for all three resources now use
+Astryx's native `variant="fullscreen"`. Each form fills the dialog height;
+header and action footer remain pinned while the content region owns overflow.
+Removed the obsolete constrained-dialog width/max-height constants. Only the
+active `/admin/users` `UserFormDialog` was changed; legacy User form components
+and unrelated dialogs remain untouched.
+
+**Live verification:** At a 1272×573 viewport, opened all six create/edit flows.
+Every dialog measured exactly 1272×573 at `(0, 0)`, reported
+`data-variant="fullscreen"`, kept its submit button visible, and caused no
+document-level vertical overflow. The seeded backend had no contract eligible
+for another Commission, so the create-only browser flow temporarily mocked the
+Commission search response as empty; no backend data was changed. Screenshots:
+`harness/runs/20260905-fullscreen-primary-crud/`.
+
+**Verification:** `./harness/verify.sh` passed every step; evidence:
+`harness/runs/20260905-135012-6790/`.
+
 ## 2026-09-05 — Widen Shipment cost Note column
 
 **Context:** User asked for the Note field in the just-polished Logistics
