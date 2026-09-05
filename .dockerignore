@@ -1,0 +1,8 @@
+node_modules
+.next
+.git
+harness/runs
+*.log
+.env
+.env.*
+!.env.example
