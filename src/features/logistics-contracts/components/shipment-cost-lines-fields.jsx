@@ -20,6 +20,13 @@ import { formatMoney } from '../config/currencies.js';
 import { useShipmentCostCategoriesQuery } from '../hooks/use-shipment-cost-categories-query.js';
 import { QuickCreateShipmentCostCategoryDialog } from './quick-create-shipment-cost-category-dialog.jsx';
 
+// Sentinel `Selector` value for the trailing "+ Thêm nhóm chi phí" option —
+// picking it opens `QuickCreateShipmentCostCategoryDialog` instead of
+// assigning it as the row's `costCategoryId`, per user request (2026-09-05)
+// to fold that action into the dropdown itself instead of a separate
+// `IconButton` beside it.
+const ADD_COST_CATEGORY_OPTION_VALUE = '__add_cost_category__';
+
 /**
  * "Thông tin chi phí logistics" grid for a Shipment — mirrors
  * `PaymentHistoryFields` (purely a controlled view over
@@ -65,31 +72,33 @@ export function ShipmentCostLinesFields({
       header: 'Nhóm chi phí',
       width: pixel(220),
       renderCell: (row) => (
-        <HStack gap={2} vAlign="center">
-          <Selector
-            label="Nhóm chi phí"
-            isLabelHidden
-            hasSearch
-            placeholder="Chọn nhóm chi phí"
-            value={row.costCategoryId}
-            onChange={(value) =>
-              onUpdateRowField(row.rowKey, 'costCategoryId', value ?? '')
+        <Selector
+          label="Nhóm chi phí"
+          isLabelHidden
+          hasSearch
+          placeholder="Chọn nhóm chi phí"
+          value={row.costCategoryId}
+          onChange={(value) => {
+            if (value === ADD_COST_CATEGORY_OPTION_VALUE) {
+              setQuickCreateForRowKey(row.rowKey);
+              return;
             }
-            options={costCategories.map((costCategory) => ({
+            onUpdateRowField(row.rowKey, 'costCategoryId', value ?? '');
+          }}
+          options={[
+            ...costCategories.map((costCategory) => ({
               value: costCategory.id,
               label: costCategory.name,
-            }))}
-            width="100%"
-          />
-          <IconButton
-            label="Thêm nhóm chi phí"
-            tooltip="Thêm nhóm chi phí"
-            icon={<Icon icon={IconPlus} size="sm" />}
-            type="button"
-            variant="ghost"
-            onClick={() => setQuickCreateForRowKey(row.rowKey)}
-          />
-        </HStack>
+            })),
+            { type: 'divider' },
+            {
+              value: ADD_COST_CATEGORY_OPTION_VALUE,
+              label: 'Thêm nhóm chi phí',
+              icon: <Icon icon={IconPlus} size="sm" />,
+            },
+          ]}
+          width="100%"
+        />
       ),
     },
     {
@@ -209,7 +218,11 @@ export function ShipmentCostLinesFields({
         }}
         onCreated={(costCategory) => {
           if (quickCreateForRowKey) {
-            onUpdateRowField(quickCreateForRowKey, 'costCategoryId', costCategory.id);
+            onUpdateRowField(
+              quickCreateForRowKey,
+              'costCategoryId',
+              costCategory.id,
+            );
           }
           setQuickCreateForRowKey(null);
         }}

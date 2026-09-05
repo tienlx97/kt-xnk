@@ -51,7 +51,12 @@ export function ShipmentFormDialog({
   }
 
   return (
-    <CommonDialog isOpen={isOpen} onOpenChange={handleOpenChange} width={1200}>
+    <CommonDialog
+      isOpen={isOpen}
+      onOpenChange={handleOpenChange}
+      width={1200}
+      maxHeight="88vh"
+    >
       <form onSubmit={form.handleSubmit}>
         <Layout
           header={
@@ -65,7 +70,11 @@ export function ShipmentFormDialog({
             />
           }
           content={
-            <LayoutContent padding={6}>
+            // See ContractFormDialog for why isScrollable is disabled here
+            // and moved into ShipmentFields' own fixed-height tab panel:
+            // without it, switching tabs (which changes content height)
+            // would resize the dialog itself.
+            <LayoutContent padding={6} isScrollable={false}>
               {form.submitError ? (
                 <Banner
                   status="error"
@@ -80,6 +89,8 @@ export function ShipmentFormDialog({
                 customers={form.customers}
                 isEditing={shipment != null}
                 costLineRows={form.costLineRows}
+                contractId={contractId}
+                shipmentId={shipment?.id ?? null}
               />
             </LayoutContent>
           }
