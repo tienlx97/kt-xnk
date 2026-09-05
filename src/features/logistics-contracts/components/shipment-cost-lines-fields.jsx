@@ -137,7 +137,7 @@ export function ShipmentCostLinesFields({
     {
       key: 'note',
       header: 'Ghi chú',
-      width: pixel(160),
+      width: pixel(300),
       renderCell: (row) => (
         <TextArea
           label="Ghi chú"
@@ -154,7 +154,7 @@ export function ShipmentCostLinesFields({
     {
       key: 'providerCustomerId',
       header: 'Nhà cung cấp',
-      width: pixel(260),
+      width: pixel(300),
       renderCell: (row) => (
         <Selector
           label="Nhà cung cấp"

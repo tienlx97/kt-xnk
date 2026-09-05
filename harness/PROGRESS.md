@@ -5,6 +5,24 @@ Append-only session log. Newest entry FIRST.
 This file is the handoff between sessions/agents — write for a reader with zero conversation context.
 -->
 
+## 2026-09-05 — Widen Shipment cost Note column
+
+**Context:** User asked for the Note field in the just-polished Logistics
+Costs grid to be slightly wider.
+
+**Change:** Increased the fixed Note column from 160px to 200px. Cost Category
+remains 280px and Provider remains 260px; the flexible Cost Name column
+absorbs the 40px adjustment, so no important selector loses space.
+
+**Live verification:** In the edit dialog for `26DN-SAMPLE01/LCL-01` at
+1272×573, the Note cell measured exactly 200px (textarea content width 181px),
+the full table remained 1224px wide, and its client/scroll heights remained
+equal (no vertical overflow). Screenshot:
+`harness/runs/20260905-shipment-note-width/edit-note-200.png`.
+
+**Verification:** `./harness/verify.sh` passed every step; evidence:
+`harness/runs/20260905-133642-6687/`.
+
 ## 2026-09-05 — Polish Shipment Logistics Costs table
 
 **Context:** After the Shipment create/edit form moved fullscreen, the user

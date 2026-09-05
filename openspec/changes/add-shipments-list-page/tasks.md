@@ -19,3 +19,4 @@
 ## 4. Logistics costs table polish
 
 - [x] 4.1 Separate vertical tab scrolling from the table's horizontal overflow, remove the clipped duplicate heading, move add/total into a compact toolbar, use compact table density, change Note to a one-row `TextArea`, and rebalance width toward Cost Category and Provider — verify: create-empty, create-with-row, and edit-with-row browser checks at 1272×573 plus `./harness/verify.sh`; evidence `harness/runs/20260905-shipment-cost-table/` and `harness/runs/20260905-120835-6570/`.
+- [x] 4.2 Widen the Note column from 160px to 200px without reducing Cost Category or Provider — verify: edit-dialog screenshot at 1272×573 and `./harness/verify.sh`; evidence `harness/runs/20260905-shipment-note-width/` and `harness/runs/20260905-133642-6687/`.
