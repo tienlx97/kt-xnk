@@ -11,3 +11,7 @@
 ## 2. Follow-up fix found during live verification
 
 - [x] 2.1 `AdvanceTable` drops any `tableColumns` key not also declared in `columnOptions` — the originally-planned per-row "Sửa" icon column silently disappeared. Removed that column; added an optional `onEdit` prop to `ShipmentExpandedDetails` (unused by `contracts-list.jsx`, which keeps its own row-level icon on a plain, non-`AdvanceTable` `<Table>`) rendering a "Sửa Shipment" footer button, same spot pattern as `ContractExpandedDetails`'s "Sửa hợp đồng" — verify: live-clicked it, edit dialog opens pre-filled with the row's data.
+
+## 3. Fullscreen create/edit experiment
+
+- [x] 3.1 Render the shared `ShipmentFormDialog` as Astryx's fullscreen variant for both create and edit, make the form fill the viewport, and keep its tab body independently scrollable beneath a pinned header/footer — verify: `./harness/verify.sh` full pass and browser checks at 1272×573 and 390×844; evidence `harness/runs/20260905-shipment-fullscreen/` and `harness/runs/20260905-115256-6350/`.

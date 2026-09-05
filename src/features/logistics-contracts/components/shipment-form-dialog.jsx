@@ -5,11 +5,18 @@ import { Button } from '@astryxdesign/core/Button';
 import { DialogHeader } from '@astryxdesign/core/Dialog';
 import { HStack } from '@astryxdesign/core/HStack';
 import { Layout, LayoutContent, LayoutFooter } from '@astryxdesign/core/Layout';
+import * as stylex from '@stylexjs/stylex';
 
 import { CommonDialog } from '@/shared/components/common-dialog.jsx';
 
 import { useShipmentForm } from '../hooks/use-shipment-form.js';
 import { ShipmentFields } from './shipment-fields.jsx';
+
+const styles = stylex.create({
+  form: {
+    height: '100%',
+  },
+});
 
 /**
  * Create/edit dialog for one `Contract`'s shipments — opened from
@@ -54,10 +61,9 @@ export function ShipmentFormDialog({
     <CommonDialog
       isOpen={isOpen}
       onOpenChange={handleOpenChange}
-      width={1200}
-      maxHeight="88vh"
+      variant="fullscreen"
     >
-      <form onSubmit={form.handleSubmit}>
+      <form onSubmit={form.handleSubmit} {...stylex.props(styles.form)}>
         <Layout
           header={
             <DialogHeader

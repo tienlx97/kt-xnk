@@ -11,6 +11,7 @@ import { Tab, TabList } from '@astryxdesign/core/TabList';
 import { Text } from '@astryxdesign/core/Text';
 import { TextInput } from '@astryxdesign/core/TextInput';
 import { VStack } from '@astryxdesign/core/VStack';
+import * as stylex from '@stylexjs/stylex';
 import { useMemo, useState } from 'react';
 
 import { currencyOptions } from '../config/currencies.js';
@@ -23,11 +24,15 @@ import { shipmentTypeOptions } from '../config/shipment-types.js';
 import { ShipmentCostLinesFields } from './shipment-cost-lines-fields.jsx';
 import { ShipmentVgmSection } from './shipment-vgm-section.jsx';
 
-// Fixed content height + its own scroll, same idiom as
-// `ContractFormDialog` — per user request (2026-09-05) that this form gets
-// tabs (it was one long scroll of Book info / Lot info / costs) instead of
-// growing the dialog without bound.
-const SHIPMENT_FIELDS_CONTENT_HEIGHT = 560;
+const styles = stylex.create({
+  container: {
+    height: '100%',
+  },
+  content: {
+    flex: '1',
+    minHeight: 0,
+  },
+});
 
 /**
  * One collapsible section of the form — same idiom as
@@ -104,19 +109,14 @@ export function ShipmentFields({
   );
 
   return (
-    <VStack gap={3} hAlign="stretch">
+    <VStack gap={3} hAlign="stretch" xstyle={styles.container}>
       <TabList value={activeTab} onChange={setActiveTab} hasDivider>
         <Tab value="info" label="Thông tin" />
         <Tab value="vgm" label="VGM" />
         <Tab value="costs" label="Chi phí Logistics" />
       </TabList>
 
-      <VStack
-        gap={3}
-        hAlign="stretch"
-        height={SHIPMENT_FIELDS_CONTENT_HEIGHT}
-        isScrollable
-      >
+      <VStack gap={3} hAlign="stretch" isScrollable xstyle={styles.content}>
         {activeTab === 'info' ? (
           <CollapsibleGroup type="multiple" defaultValue={['book', 'lot']}>
             <VStack gap={3} hAlign="stretch">

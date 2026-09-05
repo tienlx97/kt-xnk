@@ -5,6 +5,42 @@ Append-only session log. Newest entry FIRST.
 This file is the handoff between sessions/agents — write for a reader with zero conversation context.
 -->
 
+## 2026-09-05 — Trial fullscreen create/edit Shipment dialog
+
+**Context:** User liked the MISA-style pattern where large create/edit forms use
+the full viewport and asked to apply it to both "Thêm Shipment" and "Sửa
+Shipment" first for evaluation.
+
+**What changed:** `ShipmentFormDialog` is shared by create and edit from both
+the standalone Shipments page and the Contract Shipment tab, so it now passes
+Astryx's native `variant="fullscreen"` in one place. The form itself fills the
+dialog; `ShipmentFields` no longer assumes the old fixed 560px dialog body and
+instead gives its active tab the remaining height. The header and footer stay
+pinned while only the tab body scrolls, keeping Hủy/Thêm/Lưu reachable on short
+viewports.
+
+**Live verification:** On `/logistics/shipments`, opened the real create flow
+through the contract picker and the real edit flow for
+`26DN-SAMPLE01/LCL-01`. At 1272×573, both dialogs measured exactly
+1272×573 at `(0, 0)` with `data-variant="fullscreen"`; the tab body measured
+364px tall with 1150px of scrollable content, while the submit button remained
+visible at the bottom. At 390×844, the edit dialog measured exactly 390×844
+with no document-level horizontal overflow. Screenshots:
+`harness/runs/20260905-shipment-fullscreen/`.
+
+**Verification:** `./harness/verify.sh` passed every step (readiness, memory
+safety, theme build, lint, typecheck, dependency structure, harness/unit tests,
+production build, quality thresholds). Evidence:
+`harness/runs/20260905-115256-6350/`; `pnpm test`: 111/111 passed.
+
+**Discovered, not changed:** At mobile width, several existing two-column
+field rows remain dense and clip their own content even though the fullscreen
+shell itself does not overflow. Converting those rows to responsive Astryx
+`Grid` is a separate form-layout change, not part of this fullscreen trial.
+The dialog-scoped axe check also reports the existing Astryx-generated
+`aria-allowed-attr` issue on one field plus contrast checks needing manual
+review; the fullscreen change does not add ARIA markup.
+
 ## 2026-09-05 — Live-verified the in-progress Advanced Filter Builder (uncommitted)
 
 **Context:** User asked to "test tính năng advance search" against the working
