@@ -1,5 +1,27 @@
 # Progress Log
 
+## 2026-09-05 — Split operational UI responsibilities (task 3.1)
+
+Extracted Contract/Commission expanded details, Contract info/Commission tabs,
+Contract general fields, Shipment booking/lot fields, shared FormSection,
+table pagination, advanced-search dialog, and column transfer panel. Four list
+column/search/skeleton configurations now live in feature config. Public
+feature exports and API hooks are preserved; edit dialogs remain siblings of
+tables. Main sizes: contracts-list 1668→596, contract-form-dialog 590→137,
+shipment-fields 490→137, view-options 696→263 (formatting may adjust counts).
+
+Browser: opened seeded Contract info/Commission tabs and edit form; changed
+project name locally, switched accordion sections, confirmed unsaved value
+survived. Mobile geometry still passes for 12 controls and pinned submit.
+Removed/re-added/restored a table column. Opened Commission edit from Contract
+and mouse-selected a customer successfully (portal stacking preserved).
+No business record saved. Evidence: `harness/runs/20260905-ui-ux-review/`.
+
+Gate passed: `harness/runs/20260905-144317-7438/`.
+Discovered: view-options popover's existing 680px width clips controls at 390px;
+resolve in final audit task. During extraction, typecheck caught a duplicated
+JSDoc typedef; fixed and reran checks. Existing typecheck is the regression guard.
+
 ## 2026-09-05 — Responsive forms and list recovery (task 2.1)
 
 Added shared FormGrid, applied to paired Contract, Shipment/VGM, Customer,

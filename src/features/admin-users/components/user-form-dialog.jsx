@@ -1,9 +1,8 @@
 'use client';
-
 import { Banner } from '@astryxdesign/core/Banner';
 import { Button } from '@astryxdesign/core/Button';
 import { Card } from '@astryxdesign/core/Card';
-import { Collapsible, CollapsibleGroup } from '@astryxdesign/core/Collapsible';
+import { CollapsibleGroup } from '@astryxdesign/core/Collapsible';
 import { Dialog, DialogHeader } from '@astryxdesign/core/Dialog';
 import { HStack } from '@astryxdesign/core/HStack';
 import { Layout, LayoutContent, LayoutFooter } from '@astryxdesign/core/Layout';
@@ -11,6 +10,8 @@ import { Skeleton } from '@astryxdesign/core/Skeleton';
 import { Text } from '@astryxdesign/core/Text';
 import { VStack } from '@astryxdesign/core/VStack';
 import * as stylex from '@stylexjs/stylex';
+
+import { FormSection } from '@/shared/components/form-section.jsx';
 
 import { useCreateUserFormV2 } from '../hooks/use-create-user-form-v2.js';
 import { useEditUserFormV2 } from '../hooks/use-edit-user-form-v2.js';
@@ -27,25 +28,6 @@ const styles = stylex.create({
     height: '100%',
   },
 });
-
-/**
- * One collapsed section of the dialog. Each is its own Card, which is the
- * Astryx idiom for accordion layouts (`astryx component Collapsible`) — the
- * card gives the section its boundary, so the group doesn't also draw
- * dividers.
- * @param {{ value: string, title: string, children: import('react').ReactNode }} props
- */
-function FormSection({ value, title, children }) {
-  return (
-    <Card>
-      <Collapsible value={value} trigger={title}>
-        <VStack gap={3} hAlign="stretch" paddingBlock={3}>
-          {children}
-        </VStack>
-      </Collapsible>
-    </Card>
-  );
-}
 
 /**
  * The v2 create/edit dialog. Replaces v1's tab strip with a stack of cards:

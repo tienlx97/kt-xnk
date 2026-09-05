@@ -1,5 +1,4 @@
 'use client';
-
 import { Button } from '@astryxdesign/core/Button';
 import { Divider } from '@astryxdesign/core/Divider';
 import { HStack } from '@astryxdesign/core/HStack';
@@ -22,6 +21,14 @@ import {
   UnderlinedMetadataListItem as MetadataListItem,
 } from '@/shared/components/expandable-row-styles.jsx';
 
+import {
+  COLUMN_OPTIONS,
+  DEFAULT_PAGE_SIZE,
+  FILTER_FIELD_DEFS,
+  PAGE_SIZE_OPTIONS,
+  SEARCH_FIELD_DEFS,
+  skeletonRows,
+} from '../config/customers-table.js';
 import { useSearchCustomersQuery } from '../hooks/use-customers-query.js';
 import { CustomerFormDialog } from './customer-form-dialog.jsx';
 
@@ -29,43 +36,6 @@ import { CustomerFormDialog } from './customer-form-dialog.jsx';
 function orDash(value) {
   return value == null || value === '' ? '—' : value;
 }
-
-/** @satisfies {ReadonlyArray<import('@astryxdesign/core/PowerSearch').FieldDefinition>} */
-const SEARCH_FIELD_DEFS = [
-  { key: 'companyName', type: 'string', label: 'Tên công ty' },
-  { key: 'representativeName', type: 'string', label: 'Người đại diện' },
-  { key: 'representativeTitle', type: 'string', label: 'Chức vụ' },
-  { key: 'address', type: 'string', label: 'Địa chỉ' },
-];
-
-const COLUMN_OPTIONS = [
-  { key: 'companyName', label: 'Tên công ty', isAlwaysVisible: true },
-  { key: 'representativeName', label: 'Người đại diện' },
-  { key: 'representativeTitle', label: 'Chức vụ' },
-  { key: 'address', label: 'Địa chỉ' },
-  { key: 'extraFields', label: 'Trường tùy ý' },
-];
-
-/** @satisfies {ReadonlyArray<import('@/shared/components/advanced-filter-builder.jsx').AdvancedFilterFieldDef>} */
-const FILTER_FIELD_DEFS = [
-  { key: 'companyName', label: 'Tên công ty', type: 'string' },
-  { key: 'representativeName', label: 'Người đại diện', type: 'string' },
-  { key: 'representativeTitle', label: 'Chức vụ', type: 'string' },
-  { key: 'address', label: 'Địa chỉ', type: 'string' },
-];
-
-const SKELETON_ROW_COUNT = 6;
-const DEFAULT_PAGE_SIZE = 25;
-const PAGE_SIZE_OPTIONS = ['10', '25', '50', '100'];
-
-const skeletonRows = Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => ({
-  id: `skeleton-${index}`,
-  companyName: '',
-  representativeName: '',
-  representativeTitle: '',
-  address: '',
-  extraFields: [],
-}));
 
 const styles = stylex.create({
   companyNameHeading: {
@@ -180,7 +150,10 @@ export function CustomersList() {
   const listResult = customersQuery.data;
   const customers = listResult?.success ? listResult.customers : [];
   const totalCustomers = listResult?.success ? listResult.totalCount : 0;
-  const totalPages = Math.max(1, listResult?.success ? listResult.totalPages : 1);
+  const totalPages = Math.max(
+    1,
+    listResult?.success ? listResult.totalPages : 1,
+  );
 
   const searchableCustomers = customers.map((customer) => ({
     ...customer,

@@ -1,13 +1,10 @@
 'use client';
-
 import { Banner } from '@astryxdesign/core/Banner';
 import { Button } from '@astryxdesign/core/Button';
-import { Dialog, DialogHeader } from '@astryxdesign/core/Dialog';
 import { HStack } from '@astryxdesign/core/HStack';
 import { Icon } from '@astryxdesign/core/Icon';
 import { IconButton } from '@astryxdesign/core/IconButton';
 import { InputGroup } from '@astryxdesign/core/InputGroup';
-import { Layout, LayoutContent, LayoutFooter } from '@astryxdesign/core/Layout';
 import { usePowerSearchConfig } from '@astryxdesign/core/PowerSearch';
 import { Selector } from '@astryxdesign/core/Selector';
 import { Skeleton } from '@astryxdesign/core/Skeleton';
@@ -23,20 +20,20 @@ import {
 } from '@astryxdesign/core/Table';
 import { Text } from '@astryxdesign/core/Text';
 import { TextInput } from '@astryxdesign/core/TextInput';
-import { colorVars, spacingVars } from '@astryxdesign/core/theme/tokens.stylex';
+import { colorVars } from '@astryxdesign/core/theme/tokens.stylex';
 import { Toolbar } from '@astryxdesign/core/Toolbar';
 import { VStack } from '@astryxdesign/core/VStack';
 import * as stylex from '@stylexjs/stylex';
 import { useMemo, useState } from 'react';
 
-import { AdvancedFilterBuilder } from '@/shared/components/advanced-filter-builder.jsx';
-import { CommonDialog } from '@/shared/components/common-dialog.jsx';
 import { IconRefresh } from '@/shared/components/icon/icon-refresh.jsx';
 import {
   stickyColumnKeys,
   TableViewOptionsPopover,
 } from '@/shared/components/table-view-options-popover.jsx';
-import { tablePagination } from '@/shared/config/table-pagination.js';
+
+import { AdvanceTablePagination } from './advance-table-pagination.jsx';
+import { AdvanceTableSearchDialog } from './advance-table-search-dialog.jsx';
 
 /**
  * @typedef {Object} AdvanceTableQuickFilter
@@ -55,8 +52,6 @@ import { tablePagination } from '@/shared/config/table-pagination.js';
  * @property {'string' | 'enum'} [type]
  * @property {ReadonlyArray<{ value: string, label?: string }>} [options] Required when type is 'enum'.
  */
-
-const DEFAULT_PAGE_SIZE_OPTIONS = ['10', '25', '50', '100'];
 
 // A pinned cell paints an opaque background of its own; without this it
 // defaults to the card surface token, which mismatches the page's own
@@ -103,10 +98,6 @@ const styles = stylex.create({
   },
   searchInput: {
     flexGrow: 1,
-  },
-  advancedSearchPanel: {
-    paddingBlock: spacingVars['--spacing-3'],
-    paddingInline: spacingVars['--spacing-3'],
   },
 });
 
@@ -460,13 +451,6 @@ export function AdvanceTable({
     renderCell: () => <Skeleton height={16} width="70%" index={columnIndex} />,
   }));
 
-  const pageSizeOptions =
-    pagination?.pageSizeOptions ?? DEFAULT_PAGE_SIZE_OPTIONS;
-  const { currentPage, totalPages, rangeStart, rangeEnd } = tablePagination(
-    pagination,
-    filteredData.length,
-  );
-
   return (
     <VStack gap={0} hAlign="stretch" style={stickyBackgroundStyle}>
       <Toolbar
@@ -511,126 +495,20 @@ export function AdvanceTable({
                   />
                 ) : null}
               </InputGroup>
-              {isServerFilterMode ? (
-                <CommonDialog
-                  isOpen={isAdvancedSearchOpen}
-                  onOpenChange={handleAdvancedSearchOpenChange}
-                  purpose="form"
-                  width={800}
-                >
-                  <Layout
-                    header={
-                      <DialogHeader
-                        title="Bộ lọc nâng cao"
-                        onOpenChange={handleAdvancedSearchOpenChange}
-                      />
-                    }
-                    content={
-                      <LayoutContent>
-                        <VStack
-                          gap={3}
-                          hAlign="stretch"
-                          xstyle={styles.advancedSearchPanel}
-                        >
-                          <AdvancedFilterBuilder
-                            fields={filterFieldDefs ?? []}
-                            conditions={advancedFilterDraft}
-                            onChange={setAdvancedFilterDraft}
-                          />
-                        </VStack>
-                      </LayoutContent>
-                    }
-                    footer={
-                      <LayoutFooter>
-                        <HStack hAlign="between">
-                          <Button
-                            label="Bỏ lọc"
-                            variant="secondary"
-                            onClick={handleAdvancedFilterClear}
-                          />
-                          <Button
-                            label="Lọc"
-                            variant="primary"
-                            onClick={handleAdvancedFilterSubmit}
-                          />
-                        </HStack>
-                      </LayoutFooter>
-                    }
-                  />
-                </CommonDialog>
-              ) : advancedSearchFieldsResolved.length > 0 ? (
-                <Dialog
-                  isOpen={isAdvancedSearchOpen}
-                  onOpenChange={handleAdvancedSearchOpenChange}
-                  purpose="form"
-                  width={400}
-                >
-                  <Layout
-                    header={
-                      <DialogHeader
-                        title="Tìm kiếm nâng cao"
-                        onOpenChange={handleAdvancedSearchOpenChange}
-                      />
-                    }
-                    content={
-                      <LayoutContent>
-                        <VStack
-                          gap={3}
-                          hAlign="stretch"
-                          xstyle={styles.advancedSearchPanel}
-                        >
-                          {advancedSearchFieldsResolved.map((field) =>
-                            field.type === 'enum' ? (
-                              <Selector
-                                key={field.field}
-                                label={field.label}
-                                isLabelHidden
-                                placeholder={field.placeholder ?? field.label}
-                                hasClear
-                                options={[...(field.options ?? [])]}
-                                value={advancedSearchDraft[field.field] ?? null}
-                                onChange={(next) =>
-                                  setAdvancedSearchDraft((current) => ({
-                                    ...current,
-                                    [field.field]: next ?? '',
-                                  }))
-                                }
-                              />
-                            ) : (
-                              <TextInput
-                                key={field.field}
-                                label={field.label}
-                                isLabelHidden
-                                placeholder={field.placeholder ?? field.label}
-                                hasClear
-                                value={advancedSearchDraft[field.field] ?? ''}
-                                onChange={(next) =>
-                                  setAdvancedSearchDraft((current) => ({
-                                    ...current,
-                                    [field.field]: next,
-                                  }))
-                                }
-                                onEnter={handleAdvancedSearchSubmit}
-                              />
-                            ),
-                          )}
-                        </VStack>
-                      </LayoutContent>
-                    }
-                    footer={
-                      <LayoutFooter>
-                        <HStack hAlign="end">
-                          <Button
-                            label="Tìm kiếm"
-                            variant="primary"
-                            onClick={handleAdvancedSearchSubmit}
-                          />
-                        </HStack>
-                      </LayoutFooter>
-                    }
-                  />
-                </Dialog>
-              ) : null}
+              <AdvanceTableSearchDialog
+                isServerFilterMode={isServerFilterMode}
+                isAdvancedSearchOpen={isAdvancedSearchOpen}
+                handleAdvancedSearchOpenChange={handleAdvancedSearchOpenChange}
+                filterFieldDefs={filterFieldDefs}
+                advancedFilterDraft={advancedFilterDraft}
+                setAdvancedFilterDraft={setAdvancedFilterDraft}
+                handleAdvancedFilterClear={handleAdvancedFilterClear}
+                handleAdvancedFilterSubmit={handleAdvancedFilterSubmit}
+                advancedSearchFieldsResolved={advancedSearchFieldsResolved}
+                advancedSearchDraft={advancedSearchDraft}
+                setAdvancedSearchDraft={setAdvancedSearchDraft}
+                handleAdvancedSearchSubmit={handleAdvancedSearchSubmit}
+              />
             </StackItem>
             <HStack gap={2} vAlign="center" xstyle={styles.toolbarEnd}>
               <TableViewOptionsPopover
@@ -751,76 +629,11 @@ export function AdvanceTable({
         }}
       />
 
-      <HStack hAlign="between" vAlign="center" wrap="wrap" gap={3}>
-        <Text type="supporting" color="secondary">
-          Tổng số: {pagination ? pagination.totalCount : filteredData.length}
-        </Text>
-        {pagination ? (
-          <HStack gap={4} vAlign="center" wrap="wrap">
-            <HStack gap={2} vAlign="center">
-              <Text type="supporting" color="secondary">
-                Số dòng/trang
-              </Text>
-              <Selector
-                label="Số dòng/trang"
-                isLabelHidden
-                size="sm"
-                variant="ghost"
-                options={pageSizeOptions}
-                value={String(pagination.pageSize)}
-                onChange={(value) => {
-                  pagination.onPageSizeChange(Number(value));
-                  pagination.onPageIndexChange(1);
-                }}
-                width={80}
-              />
-            </HStack>
-            <Text type="supporting" color="secondary">
-              {rangeStart}-{rangeEnd}
-            </Text>
-            <HStack gap={0} vAlign="center">
-              <IconButton
-                label="Trang đầu"
-                icon={<Icon icon="chevronsLeft" size="sm" />}
-                variant="ghost"
-                size="sm"
-                isDisabled={currentPage === 1}
-                onClick={() => pagination.onPageIndexChange(1)}
-              />
-              <IconButton
-                label="Trang trước"
-                icon={<Icon icon="chevronLeft" size="sm" />}
-                variant="ghost"
-                size="sm"
-                isDisabled={currentPage === 1}
-                onClick={() =>
-                  pagination.onPageIndexChange(Math.max(1, currentPage - 1))
-                }
-              />
-              <IconButton
-                label="Trang sau"
-                icon={<Icon icon="chevronRight" size="sm" />}
-                variant="ghost"
-                size="sm"
-                isDisabled={currentPage >= totalPages || isLoading}
-                onClick={() =>
-                  pagination.onPageIndexChange(
-                    Math.min(totalPages, currentPage + 1),
-                  )
-                }
-              />
-              <IconButton
-                label="Trang cuối"
-                icon={<Icon icon="chevronsRight" size="sm" />}
-                variant="ghost"
-                size="sm"
-                isDisabled={currentPage >= totalPages || isLoading}
-                onClick={() => pagination.onPageIndexChange(totalPages)}
-              />
-            </HStack>
-          </HStack>
-        ) : null}
-      </HStack>
+      <AdvanceTablePagination
+        pagination={pagination}
+        visibleCount={filteredData.length}
+        isLoading={isLoading}
+      />
     </VStack>
   );
 }

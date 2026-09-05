@@ -1,39 +1,23 @@
 'use client';
-
 import { Banner } from '@astryxdesign/core/Banner';
 import { Button } from '@astryxdesign/core/Button';
-import { Card } from '@astryxdesign/core/Card';
-import { Collapsible, CollapsibleGroup } from '@astryxdesign/core/Collapsible';
+import { CollapsibleGroup } from '@astryxdesign/core/Collapsible';
 import { DialogHeader } from '@astryxdesign/core/Dialog';
 import { HStack } from '@astryxdesign/core/HStack';
 import { Layout, LayoutContent, LayoutFooter } from '@astryxdesign/core/Layout';
 import { VStack } from '@astryxdesign/core/VStack';
 
 import { CommonDialog } from '@/shared/components/common-dialog.jsx';
+import { FormSection } from '@/shared/components/form-section.jsx';
 
 import { useShipmentVgmForm } from '../hooks/use-shipment-vgm-form.js';
-import { ShipmentVgmAdditionalFields, ShipmentVgmFields } from './shipment-vgm-fields.jsx';
+import {
+  ShipmentVgmAdditionalFields,
+  ShipmentVgmFields,
+} from './shipment-vgm-fields.jsx';
 
 export const SHIPMENT_VGM_FORM_DIALOG_WIDTH = 760;
 const SHIPMENT_VGM_FORM_DIALOG_CONTENT_HEIGHT = 480;
-
-/**
- * One collapsed section of the dialog, same idiom as `ContractFormDialog`/
- * `UserFormDialog` — a `Card` per section is the Astryx accordion idiom
- * (`astryx component Collapsible`).
- * @param {{ value: string, title: string, children: import('react').ReactNode }} props
- */
-function FormSection({ value, title, children }) {
-  return (
-    <Card>
-      <Collapsible value={value} trigger={title}>
-        <VStack gap={3} hAlign="stretch" paddingBlock={3}>
-          {children}
-        </VStack>
-      </Collapsible>
-    </Card>
-  );
-}
 
 /**
  * Create/edit dialog for one `Shipment`'s VGM records — opened from
@@ -103,10 +87,17 @@ export function ShipmentVgmFormDialog({
                 isScrollable
               >
                 {form.submitError ? (
-                  <Banner status="error" title={form.submitError} container="card" />
+                  <Banner
+                    status="error"
+                    title={form.submitError}
+                    container="card"
+                  />
                 ) : null}
 
-                <CollapsibleGroup type="multiple" defaultValue={['main', 'additional']}>
+                <CollapsibleGroup
+                  type="multiple"
+                  defaultValue={['main', 'additional']}
+                >
                   <VStack gap={3} hAlign="stretch">
                     <FormSection value="main" title="Thông tin container">
                       <ShipmentVgmFields

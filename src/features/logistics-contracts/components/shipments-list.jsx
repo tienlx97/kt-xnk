@@ -1,5 +1,15 @@
 'use client';
-
+/**
+ * A `Shipment` plus fields resolved client-side for display — same reason
+ * as `CommissionListRow` in `commissions-list.jsx`: the
+ * system-wide `GET /api/v1/shipments` response doesn't carry the parent
+ * contract's number/project or the forwarder's name.
+ * @typedef {import('../types/index.js').Shipment & {
+ *   contractNumber: string,
+ *   projectName: string,
+ *   supplierName: string,
+ * }} ShipmentListRow
+ */
 import { Button } from '@astryxdesign/core/Button';
 import { DialogHeader } from '@astryxdesign/core/Dialog';
 import { HStack } from '@astryxdesign/core/HStack';
@@ -25,10 +35,16 @@ import { createRowExpansionInteractionPlugin } from '@/shared/components/expanda
 
 import { formatMoney } from '../config/currencies.js';
 import { labelForShipmentQuantityUnit } from '../config/shipment-quantity-units.js';
+import { labelForShipmentType } from '../config/shipment-types.js';
 import {
-  labelForShipmentType,
-  shipmentTypeOptions,
-} from '../config/shipment-types.js';
+  COLUMN_OPTIONS,
+  DEFAULT_COLUMN_KEYS,
+  DEFAULT_PAGE_SIZE,
+  FILTER_FIELD_DEFS,
+  PAGE_SIZE_OPTIONS,
+  SEARCH_FIELD_DEFS,
+  skeletonRows,
+} from '../config/shipments-table.js';
 import { useContractsQuery } from '../hooks/use-contracts-query.js';
 import { useCustomersQuery } from '../hooks/use-customers-query.js';
 import { useShipmentCostCategoriesQuery } from '../hooks/use-shipment-cost-categories-query.js';
@@ -41,105 +57,6 @@ import { ShipmentVgmFormDialog } from './shipment-vgm-form-dialog.jsx';
 function orDash(value) {
   return value == null || value === '' ? '—' : value;
 }
-
-/** @satisfies {ReadonlyArray<import('@astryxdesign/core/PowerSearch').FieldDefinition>} */
-const SEARCH_FIELD_DEFS = [
-  { key: 'shipmentCode', type: 'string', label: 'Mã' },
-  { key: 'name', type: 'string', label: 'Tên lô hàng' },
-  { key: 'contractNumber', type: 'string', label: 'Số hợp đồng' },
-  { key: 'projectName', type: 'string', label: 'Dự án' },
-  { key: 'bookingNumber', type: 'string', label: 'Booking' },
-];
-
-const COLUMN_OPTIONS = [
-  { key: 'shipmentCode', label: 'Mã', isAlwaysVisible: true },
-  { key: 'contractNumber', label: 'Số hợp đồng' },
-  { key: 'projectName', label: 'Dự án' },
-  { key: 'name', label: 'Tên lô hàng' },
-  { key: 'type', label: 'Loại hình' },
-  { key: 'quantity', label: 'Số lượng' },
-  { key: 'bookingNumber', label: 'Booking' },
-  { key: 'supplier', label: 'Forwarder' },
-  { key: 'invoiceValue', label: 'Giá trị invoice' },
-];
-// Narrow default, same "start narrow, opt in via Tuỳ chọn hiển thị"
-// convention as `contracts-list.jsx`'s `DEFAULT_COLUMN_KEYS`.
-const DEFAULT_COLUMN_KEYS = [
-  'shipmentCode',
-  'contractNumber',
-  'name',
-  'type',
-  'invoiceValue',
-];
-
-// `shipmentCode` (computed from the parent contract's number + shipment
-// number) has no backend search field — excluded here, still searchable
-// via the quick-search box above (`SEARCH_FIELD_DEFS`, client-side over
-// the loaded page).
-/** @satisfies {ReadonlyArray<import('@/shared/components/advanced-filter-builder.jsx').AdvancedFilterFieldDef>} */
-const FILTER_FIELD_DEFS = [
-  { key: 'contractNumber', label: 'Số hợp đồng', type: 'string' },
-  { key: 'projectName', label: 'Dự án', type: 'string' },
-  { key: 'name', label: 'Tên lô hàng', type: 'string' },
-  { key: 'type', label: 'Loại hình', type: 'enum', options: shipmentTypeOptions },
-  { key: 'bookingNumber', label: 'Booking', type: 'string' },
-  { key: 'supplierName', label: 'Forwarder', type: 'string' },
-  { key: 'invoiceValue', label: 'Giá trị invoice', type: 'number' },
-  { key: 'etd', label: 'ETD', type: 'date' },
-  { key: 'eta', label: 'ETA', type: 'date' },
-];
-
-const SKELETON_ROW_COUNT = 6;
-const DEFAULT_PAGE_SIZE = 25;
-const PAGE_SIZE_OPTIONS = ['10', '25', '50', '100'];
-
-/**
- * A `Shipment` plus fields resolved client-side for display — same reason
- * as `CommissionListRow` in `commissions-list.jsx`: the
- * system-wide `GET /api/v1/shipments` response doesn't carry the parent
- * contract's number/project or the forwarder's name.
- * @typedef {import('../types/index.js').Shipment & {
- *   contractNumber: string,
- *   projectName: string,
- *   supplierName: string,
- * }} ShipmentListRow
- */
-
-/** @type {ShipmentListRow[]} */
-const skeletonRows = Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => ({
-  id: `skeleton-${index}`,
-  contractId: '',
-  shipmentNumber: 0,
-  shipmentCode: '',
-  supplierCustomerId: '',
-  bookingNumber: '',
-  billOfLadingNumber: null,
-  shippingLine: null,
-  vesselName: null,
-  etd: null,
-  eta: null,
-  placeOfLoading: null,
-  placeOfDischarge: null,
-  type: 'LCL',
-  name: '',
-  paymentCondition: 'TT',
-  invoiceValue: 0,
-  invoiceCurrency: '',
-  declarationValue: 0,
-  declarationCurrency: '',
-  declarationExchangeRate: 0,
-  quantityAmount: 0,
-  quantityUnit: 'Kien',
-  declarationWeightKg: 0,
-  coNumber: null,
-  coDeclarationDate: null,
-  coIssuedDate: null,
-  costs: [],
-  costTotalsByCategory: [],
-  contractNumber: '',
-  projectName: '',
-  supplierName: '',
-}));
 
 export function ShipmentsList() {
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
