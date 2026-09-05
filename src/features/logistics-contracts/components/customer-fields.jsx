@@ -2,13 +2,14 @@
 
 import { Button } from '@astryxdesign/core/Button';
 import { useCollapsible } from '@astryxdesign/core/Collapsible';
-import { HStack } from '@astryxdesign/core/HStack';
 import { Icon } from '@astryxdesign/core/Icon';
 import { StackItem } from '@astryxdesign/core/Stack';
 import { TextInput } from '@astryxdesign/core/TextInput';
 import { VStack } from '@astryxdesign/core/VStack';
 import * as stylex from '@stylexjs/stylex';
 import { useId } from 'react';
+
+import { FormGrid } from '@/shared/components/form-grid.jsx';
 
 import { ExtraFieldsEditor } from './extra-fields-editor.jsx';
 
@@ -52,7 +53,7 @@ export function CustomerFields({
 
   const detailFields = (
     <VStack gap={3} hAlign="stretch" id={isCollapsible ? detailsId : undefined}>
-      <HStack gap={3}>
+      <FormGrid>
         <StackItem size="fill">
           <TextInput
             label="Người đại diện"
@@ -67,7 +68,7 @@ export function CustomerFields({
             onChange={(value) => setField('representativeTitle', value)}
           />
         </StackItem>
-      </HStack>
+      </FormGrid>
 
       <TextInput
         label="Địa chỉ"

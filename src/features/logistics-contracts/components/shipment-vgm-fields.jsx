@@ -11,6 +11,8 @@ import { TextInput } from '@astryxdesign/core/TextInput';
 import { TimeInput } from '@astryxdesign/core/TimeInput';
 import { VStack } from '@astryxdesign/core/VStack';
 
+import { FormGrid } from '@/shared/components/form-grid.jsx';
+
 import { shipmentContainerTypeOptions } from '../config/shipment-container-types.js';
 
 /**
@@ -65,7 +67,7 @@ export function ShipmentVgmFields({ values, setField, fieldStatuses, customers }
         width="100%"
       />
 
-      <HStack gap={3}>
+      <FormGrid>
         <StackItem size="fill">
           <TextInput
             label="Tên cont"
@@ -86,9 +88,9 @@ export function ShipmentVgmFields({ values, setField, fieldStatuses, customers }
             statusVariant="tooltip"
           />
         </StackItem>
-      </HStack>
+      </FormGrid>
 
-      <HStack gap={3}>
+      <FormGrid>
         <StackItem size="fill">
           <Selector
             label="Loại cont"
@@ -121,9 +123,9 @@ export function ShipmentVgmFields({ values, setField, fieldStatuses, customers }
             statusVariant="tooltip"
           />
         </StackItem>
-      </HStack>
+      </FormGrid>
 
-      <HStack gap={3}>
+      <FormGrid>
         <StackItem size="fill">
           <NumberInput
             label="Tare"
@@ -150,9 +152,9 @@ export function ShipmentVgmFields({ values, setField, fieldStatuses, customers }
             statusVariant="tooltip"
           />
         </StackItem>
-      </HStack>
+      </FormGrid>
 
-      <HStack gap={3}>
+      <FormGrid>
         <StackItem size="fill">
           <NumberInput
             label="Net weight"
@@ -179,7 +181,7 @@ export function ShipmentVgmFields({ values, setField, fieldStatuses, customers }
             statusVariant="tooltip"
           />
         </StackItem>
-      </HStack>
+      </FormGrid>
 
       <HStack gap={5}>
         <HStack gap={1} vAlign="center">

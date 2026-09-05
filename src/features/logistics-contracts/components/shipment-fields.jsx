@@ -14,6 +14,8 @@ import { VStack } from '@astryxdesign/core/VStack';
 import * as stylex from '@stylexjs/stylex';
 import { useMemo, useState } from 'react';
 
+import { FormGrid } from '@/shared/components/form-grid.jsx';
+
 import { currencyOptions } from '../config/currencies.js';
 import { paymentTypeOptions } from '../config/payment-schedule-types.js';
 import {
@@ -141,7 +143,7 @@ export function ShipmentFields({
                   width="100%"
                 />
 
-                <HStack gap={3}>
+                <FormGrid>
                   <StackItem size="fill">
                     <TextInput
                       label="Số booking"
@@ -164,9 +166,9 @@ export function ShipmentFields({
                       statusVariant="tooltip"
                     />
                   </StackItem>
-                </HStack>
+                </FormGrid>
 
-                <HStack gap={3}>
+                <FormGrid>
                   <StackItem size="fill">
                     <TextInput
                       label="Line tàu"
@@ -189,9 +191,9 @@ export function ShipmentFields({
                       statusVariant="tooltip"
                     />
                   </StackItem>
-                </HStack>
+                </FormGrid>
 
-                <HStack gap={3}>
+                <FormGrid>
                   <StackItem size="fill">
                     <DateInput
                       label="ETD"
@@ -222,9 +224,9 @@ export function ShipmentFields({
                       statusVariant="tooltip"
                     />
                   </StackItem>
-                </HStack>
+                </FormGrid>
 
-                <HStack gap={3}>
+                <FormGrid>
                   <StackItem size="fill">
                     <TextInput
                       label="Cảng/nơi xếp hàng"
@@ -245,7 +247,7 @@ export function ShipmentFields({
                       statusVariant="tooltip"
                     />
                   </StackItem>
-                </HStack>
+                </FormGrid>
 
                 <Text weight="semibold">C/O (Certificate of Origin)</Text>
 
@@ -259,7 +261,7 @@ export function ShipmentFields({
                   statusVariant="tooltip"
                 />
 
-                <HStack gap={3}>
+                <FormGrid>
                   <StackItem size="fill">
                     <DateInput
                       label="Ngày khai C/O"
@@ -294,11 +296,11 @@ export function ShipmentFields({
                       statusVariant="tooltip"
                     />
                   </StackItem>
-                </HStack>
+                </FormGrid>
               </FormSection>
 
               <FormSection value="lot" title="Thông tin lô hàng">
-                <HStack gap={3}>
+                <FormGrid>
                   <StackItem size="fill">
                     <TextInput
                       label="Tên lô hàng"
@@ -331,7 +333,7 @@ export function ShipmentFields({
                       statusVariant="tooltip"
                     />
                   </StackItem>
-                </HStack>
+                </FormGrid>
 
                 <Selector
                   label="Điều kiện thanh toán"

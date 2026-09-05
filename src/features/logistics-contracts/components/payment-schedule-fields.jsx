@@ -1,11 +1,12 @@
 'use client';
 
 import { DateInput } from '@astryxdesign/core/DateInput';
-import { HStack } from '@astryxdesign/core/HStack';
 import { NumberInput } from '@astryxdesign/core/NumberInput';
 import { Selector } from '@astryxdesign/core/Selector';
 import { TextArea } from '@astryxdesign/core/TextArea';
 import { VStack } from '@astryxdesign/core/VStack';
+
+import { FormGrid } from '@/shared/components/form-grid.jsx';
 
 import { paymentTypeOptions } from '../config/payment-schedule-types.js';
 
@@ -23,7 +24,7 @@ import { paymentTypeOptions } from '../config/payment-schedule-types.js';
 export function PaymentScheduleFields({ values, setField, fieldStatuses }) {
   return (
     <VStack gap={4} hAlign="stretch">
-      <HStack gap={3}>
+      <FormGrid>
         <DateInput
           label="Ngày thanh toán"
           value={
@@ -44,7 +45,7 @@ export function PaymentScheduleFields({ values, setField, fieldStatuses }) {
           status={fieldStatuses.amount}
           statusVariant="tooltip"
         />
-      </HStack>
+      </FormGrid>
 
       <Selector
         label="Loại thanh toán"

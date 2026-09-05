@@ -1,9 +1,10 @@
 'use client';
 
-import { HStack } from '@astryxdesign/core/HStack';
 import { StackItem } from '@astryxdesign/core/Stack';
 import { TextInput } from '@astryxdesign/core/TextInput';
 import { VStack } from '@astryxdesign/core/VStack';
+
+import { FormGrid } from '@/shared/components/form-grid.jsx';
 
 import { ExtraFieldsEditor } from './extra-fields-editor.jsx';
 
@@ -30,7 +31,7 @@ export function BankFields({ values, setField, fieldStatuses, extraFieldRows }) 
         statusVariant="tooltip"
       />
 
-      <HStack gap={3}>
+      <FormGrid>
         <StackItem size="fill">
           <TextInput
             label="Beneficiary"
@@ -45,9 +46,9 @@ export function BankFields({ values, setField, fieldStatuses, extraFieldRows }) 
             onChange={(value) => setField('bankAccountNumber', value)}
           />
         </StackItem>
-      </HStack>
+      </FormGrid>
 
-      <HStack gap={3}>
+      <FormGrid>
         <StackItem size="fill">
           <TextInput
             label="Chi nhánh"
@@ -62,7 +63,7 @@ export function BankFields({ values, setField, fieldStatuses, extraFieldRows }) 
             onChange={(value) => setField('bankAddress', value)}
           />
         </StackItem>
-      </HStack>
+      </FormGrid>
 
       <TextInput
         label="Swift Code"

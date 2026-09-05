@@ -22,6 +22,7 @@ import * as stylex from '@stylexjs/stylex';
 import { useState } from 'react';
 
 import { CommonDialog } from '@/shared/components/common-dialog.jsx';
+import { FormGrid } from '@/shared/components/form-grid.jsx';
 import { IconPlus } from '@/shared/components/icon/icon-plus.jsx';
 
 import { currencyOptions, formatMoney } from '../config/currencies.js';
@@ -160,7 +161,7 @@ export function ContractFormDialog({
                 <CollapsibleGroup type="single" defaultValue="general">
                   <VStack gap={3} hAlign="stretch">
                     <FormSection value="general" title="Thông tin chung">
-                      <HStack gap={3}>
+                      <FormGrid>
                         <StackItem size="fill" xstyle={styles.equalFill}>
                           <TextInput
                             label="Số hợp đồng"
@@ -184,9 +185,9 @@ export function ContractFormDialog({
                             statusVariant="tooltip"
                           />
                         </StackItem>
-                      </HStack>
+                      </FormGrid>
 
-                      <HStack gap={3}>
+                      <FormGrid>
                         <StackItem size="fill" xstyle={styles.equalFill}>
                           <DateInput
                             label="Ngày tạo hợp đồng"
@@ -221,9 +222,9 @@ export function ContractFormDialog({
                             statusVariant="tooltip"
                           />
                         </StackItem>
-                      </HStack>
+                      </FormGrid>
 
-                      <HStack gap={3}>
+                      <FormGrid>
                         <StackItem size="fill" xstyle={styles.equalFill}>
                           <TextInput
                             label="Hạng mục"
@@ -265,9 +266,9 @@ export function ContractFormDialog({
                             />
                           </HStack>
                         </StackItem>
-                      </HStack>
+                      </FormGrid>
 
-                      <HStack gap={3}>
+                      <FormGrid>
                         <StackItem size="fill" xstyle={styles.equalFill}>
                           <Selector
                             label="Incoterm"
@@ -295,7 +296,7 @@ export function ContractFormDialog({
                             statusVariant="tooltip"
                           />
                         </StackItem>
-                      </HStack>
+                      </FormGrid>
 
                       <HStack>
                         <StackItem size="fill">

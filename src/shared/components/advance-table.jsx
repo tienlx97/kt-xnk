@@ -36,6 +36,7 @@ import {
   stickyColumnKeys,
   TableViewOptionsPopover,
 } from '@/shared/components/table-view-options-popover.jsx';
+import { tablePagination } from '@/shared/config/table-pagination.js';
 
 /**
  * @typedef {Object} AdvanceTableQuickFilter
@@ -85,6 +86,9 @@ const styles = stylex.create({
   // when the search bar next to it grows to fill the row.
   toolbarEnd: {
     flexShrink: 0,
+  },
+  searchSlot: {
+    minWidth: 'min(100%, 16rem)',
   },
   filterRow: {
     rowGap: 6,
@@ -380,8 +384,23 @@ export function AdvanceTable({
   // Per-column header filters (popover icon in the header), layered on top
   // of the search bar and quick-filter chips above — all three write into
   // the same PowerSearch filter engine, so applyFilters ANDs them together.
-  const { filters: headerFilters, onFilterChange: setHeaderFilter } =
-    useTableFilterState();
+  const {
+    filters: headerFilters,
+    onFilterChange: setHeaderFilter,
+    clearAll: clearHeaderFilters,
+  } = useTableFilterState();
+
+  const activeFilterCount =
+    searchFilters.length +
+    Object.keys(headerFilters).length +
+    (advancedFilterConditions?.length ?? 0);
+  function clearAllFilters() {
+    setSearchFilters([]);
+    clearHeaderFilters();
+    setAdvancedFilterDraft([]);
+    onAdvancedFilterChange?.([]);
+    resetPageIndex();
+  }
   const filterPlugin =
     /** @type {import('@astryxdesign/core/Table').TablePlugin<T>} */ (
       useTableFiltering({
@@ -443,15 +462,10 @@ export function AdvanceTable({
 
   const pageSizeOptions =
     pagination?.pageSizeOptions ?? DEFAULT_PAGE_SIZE_OPTIONS;
-  const currentPage = pagination
-    ? Math.min(pagination.pageIndex, Math.max(1, pagination.totalPages))
-    : 1;
-  const pageStart = pagination ? (currentPage - 1) * pagination.pageSize : 0;
-  const rangeStart =
-    pagination == null || pagination.totalCount === 0 ? 0 : pageStart + 1;
-  const rangeEnd = pagination
-    ? Math.min(pageStart + filteredData.length, pagination.totalCount)
-    : filteredData.length;
+  const { currentPage, totalPages, rangeStart, rangeEnd } = tablePagination(
+    pagination,
+    filteredData.length,
+  );
 
   return (
     <VStack gap={0} hAlign="stretch" style={stickyBackgroundStyle}>
@@ -469,7 +483,7 @@ export function AdvanceTable({
             wrap="wrap"
             xstyle={styles.toolbarPrimary}
           >
-            <StackItem size="fill">
+            <StackItem size="fill" xstyle={styles.searchSlot}>
               <InputGroup
                 label={searchPlaceholder}
                 isLabelHidden
@@ -690,7 +704,39 @@ export function AdvanceTable({
         </HStack>
       ) : null}
 
+      {activeFilterCount > 0 ? (
+        <HStack gap={2} wrap="wrap" vAlign="center">
+          <Text type="supporting" color="secondary">
+            Đang áp dụng {activeFilterCount} điều kiện lọc
+          </Text>
+          <Button
+            label="Xóa tất cả bộ lọc"
+            variant="ghost"
+            size="sm"
+            onClick={clearAllFilters}
+          />
+        </HStack>
+      ) : null}
+
       <Table
+        emptyState={
+          isLoading ? (
+            false
+          ) : (
+            <VStack gap={2} hAlign="center" paddingBlock={6}>
+              <Text weight="semibold">
+                {activeFilterCount > 0
+                  ? 'Không tìm thấy kết quả phù hợp'
+                  : 'Chưa có dữ liệu'}
+              </Text>
+              <Text type="supporting" color="secondary">
+                {activeFilterCount > 0
+                  ? 'Thử từ khóa khác hoặc xóa bộ lọc để xem lại danh sách.'
+                  : 'Dữ liệu sẽ xuất hiện tại đây sau khi được thêm.'}
+              </Text>
+            </VStack>
+          )
+        }
         data={isLoading ? (skeletonRows ?? []) : filteredData}
         columns={isLoading ? skeletonColumns : tableColumns}
         idKey={idKey}
@@ -756,10 +802,10 @@ export function AdvanceTable({
                 icon={<Icon icon="chevronRight" size="sm" />}
                 variant="ghost"
                 size="sm"
-                isDisabled={currentPage === pagination.totalPages}
+                isDisabled={currentPage >= totalPages || isLoading}
                 onClick={() =>
                   pagination.onPageIndexChange(
-                    Math.min(pagination.totalPages, currentPage + 1),
+                    Math.min(totalPages, currentPage + 1),
                   )
                 }
               />
@@ -768,10 +814,8 @@ export function AdvanceTable({
                 icon={<Icon icon="chevronsRight" size="sm" />}
                 variant="ghost"
                 size="sm"
-                isDisabled={currentPage === pagination.totalPages}
-                onClick={() =>
-                  pagination.onPageIndexChange(pagination.totalPages)
-                }
+                isDisabled={currentPage >= totalPages || isLoading}
+                onClick={() => pagination.onPageIndexChange(totalPages)}
               />
             </HStack>
           </HStack>

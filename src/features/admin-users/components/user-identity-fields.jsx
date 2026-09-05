@@ -9,6 +9,7 @@ import { Text } from '@astryxdesign/core/Text';
 import { TextInput } from '@astryxdesign/core/TextInput';
 import { VStack } from '@astryxdesign/core/VStack';
 
+import { FormGrid } from '@/shared/components/form-grid.jsx';
 import { IconShuffle } from '@/shared/components/icon/icon-shuffle.jsx';
 
 import { generateRandomPassword } from '../config/generate-password.js';
@@ -42,7 +43,7 @@ export function UserIdentityFields({
   const fullName = `${values.lastName} ${values.firstName}`.trim();
 
   return (
-    <HStack gap={5} vAlign="start">
+    <FormGrid>
       <StackItem>
         <VStack gap={2} hAlign="center" width={200}>
           <Avatar
@@ -58,7 +59,7 @@ export function UserIdentityFields({
 
       <StackItem size="fill">
         <VStack gap={3} hAlign="stretch">
-          <HStack gap={3}>
+          <FormGrid>
             <StackItem size="fill">
               <TextInput
                 label="Họ"
@@ -79,7 +80,7 @@ export function UserIdentityFields({
                 statusVariant="tooltip"
               />
             </StackItem>
-          </HStack>
+          </FormGrid>
 
           <TextInput
             label="Số điện thoại"
@@ -121,6 +122,6 @@ export function UserIdentityFields({
           )}
         </VStack>
       </StackItem>
-    </HStack>
+    </FormGrid>
   );
 }

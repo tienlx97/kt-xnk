@@ -2,13 +2,14 @@
 
 import { DateInput } from '@astryxdesign/core/DateInput';
 import { Divider } from '@astryxdesign/core/Divider';
-import { HStack } from '@astryxdesign/core/HStack';
 import { NumberInput } from '@astryxdesign/core/NumberInput';
 import { RadioList, RadioListItem } from '@astryxdesign/core/RadioList';
 import { StackItem } from '@astryxdesign/core/Stack';
 import { Text } from '@astryxdesign/core/Text';
 import { TextInput } from '@astryxdesign/core/TextInput';
 import { VStack } from '@astryxdesign/core/VStack';
+
+import { FormGrid } from '@/shared/components/form-grid.jsx';
 
 import { UserAddressFields } from './user-address-fields.jsx';
 
@@ -49,7 +50,7 @@ export function UserEmployeeFields({
 }) {
   return (
     <VStack gap={3} hAlign="stretch">
-      <HStack gap={3}>
+      <FormGrid>
         <StackItem size="fill">
           <NumberInput
             label="Năm sinh"
@@ -78,7 +79,7 @@ export function UserEmployeeFields({
             ) : null}
           </RadioList>
         </StackItem>
-      </HStack>
+      </FormGrid>
 
       {/* CCCD is correctable — the login identifier is EmployeeCode, shown
           read-only below when editing an existing account. */}
@@ -101,7 +102,7 @@ export function UserEmployeeFields({
         </VStack>
       ) : null}
 
-      <HStack gap={3}>
+      <FormGrid>
         <StackItem size="fill">
           <DateInput
             label="Ngày cấp CCCD"
@@ -127,7 +128,7 @@ export function UserEmployeeFields({
             statusVariant="tooltip"
           />
         </StackItem>
-      </HStack>
+      </FormGrid>
 
       <TextInput
         label="Số hộ chiếu"

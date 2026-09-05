@@ -33,7 +33,7 @@ export function ContentSection() {
     <>
       <ShowcaseSection title="Divider / Breadcrumbs / Icon">
         <VStack gap={5}>
-          <VStack gap={3} style={{ width: 400 }}>
+          <VStack gap={3} width="100%" maxWidth={400}>
             <Divider variant="subtle" />
             <Divider variant="strong" />
             <Divider label="hoặc" />

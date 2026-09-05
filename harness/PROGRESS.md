@@ -1,5 +1,25 @@
 # Progress Log
 
+## 2026-09-05 — Responsive forms and list recovery (task 2.1)
+
+Added shared FormGrid, applied to paired Contract, Shipment/VGM, Customer,
+Bank, Payment Schedule and User fields. User avatar/identity now reflow too.
+Login and Design system divider samples constrain their fixed desktop width.
+Advanced filter controls use responsive Grid and visible labels. AdvanceTable
+shows active filter count, clears all three filter sources, and provides one
+Vietnamese empty state through Table's native emptyState prop. Pagination now
+clamps zero/stale pages and shows 0–0 for a locally filtered empty page.
+
+Browser geometry at 390×844: Contract 12, Shipment 21, User 4 controls checked,
+no overlap/clipping, submit footer visible. Screenshots and filter date-layout
+evidence: `harness/runs/20260905-ui-ux-review/`. Search-to-empty and reset were
+exercised without saving forms. Added reusable `harness/checks/form-geometry.js`
+browser probe and three pagination edge-case tests. Caught duplicate library
+empty state during review and replaced it with the native custom-empty prop;
+future wrapper changes should inspect built-in empty behavior before adding it.
+
+Full gate passed: `harness/runs/20260905-143108-7335/`.
+
 ## 2026-09-05 — UI/UX review baseline (task 1.1)
 
 Created `openspec/changes/ui-ux-maintainability/` for the user-requested

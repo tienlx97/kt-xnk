@@ -30,8 +30,8 @@ export function LoginForm() {
   } = useLoginForm();
 
   return (
-    <Center axis="both" paddingBlock={10}>
-      <VStack gap={4} hAlign="stretch" width={400}>
+    <Center axis="both" paddingBlock={10} paddingInline={4}>
+      <VStack gap={4} hAlign="stretch" width="100%" maxWidth={400}>
         <Card padding={8}>
           <form onSubmit={handleSubmit}>
             <VStack gap={4} hAlign="stretch">

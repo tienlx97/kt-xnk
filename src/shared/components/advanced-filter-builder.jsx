@@ -1,15 +1,13 @@
 'use client';
 
 import { DateInput } from '@astryxdesign/core/DateInput';
-import { HStack } from '@astryxdesign/core/HStack';
+import { Grid } from '@astryxdesign/core/Grid';
 import { Icon } from '@astryxdesign/core/Icon';
 import { IconButton } from '@astryxdesign/core/IconButton';
 import { NumberInput } from '@astryxdesign/core/NumberInput';
 import { Selector } from '@astryxdesign/core/Selector';
-import { StackItem } from '@astryxdesign/core/Stack';
 import { TextInput } from '@astryxdesign/core/TextInput';
 import { VStack } from '@astryxdesign/core/VStack';
-import * as stylex from '@stylexjs/stylex';
 import { Trash2 } from 'lucide-react';
 
 /** @typedef {'string' | 'enum' | 'number' | 'date'} AdvancedFilterFieldType */
@@ -71,26 +69,7 @@ const OPERATORS_BY_TYPE = {
 
 const VALUELESS_OPERATORS = new Set(['IsEmpty', 'IsNotEmpty']);
 
-// Fixed column widths so every row lines up: the field and value columns are
-// wider than the operator column, which stays a constant width regardless of
-// how long the selected operator's label is (e.g. "Lớn hơn hoặc bằng").
-const FIELD_COLUMN_WIDTH = 220;
-const OPERATOR_COLUMN_WIDTH = 140;
-const VALUE_COLUMN_WIDTH = 220;
-
-// Reserves the connector Selector's width on the first condition row (which
-// has no connector — there's nothing to combine it with) so every row's
-// field/operator/value columns line up regardless of index.
-const styles = stylex.create({
-  connectorSpacer: {
-    flexShrink: 0,
-    width: 100,
-  },
-  valueSpacer: {
-    flexShrink: 0,
-    width: VALUE_COLUMN_WIDTH,
-  },
-});
+const CONDITION_COLUMNS = { minWidth: 200, max: 4 };
 
 /** @param {AdvancedFilterFieldType} type */
 function defaultOperatorFor(type) {
@@ -165,28 +144,26 @@ export function AdvancedFilterBuilder({ fields, conditions, onChange }) {
         const showsValue = !VALUELESS_OPERATORS.has(condition.operator);
 
         return (
-          <HStack key={condition.id} gap={2} vAlign="end" wrap="wrap">
+          <VStack key={condition.id} gap={2} hAlign="stretch">
             {index > 0 ? (
               <Selector
                 label="Kết hợp với điều kiện trước"
-                isLabelHidden
                 size="sm"
                 width={100}
                 options={CONNECTOR_OPTIONS}
                 value={condition.connector}
                 onChange={(next) =>
-                  updateCondition(condition.id, { connector: /** @type {'And' | 'Or'} */ (next ?? 'And') })
+                  updateCondition(condition.id, {
+                    connector: /** @type {'And' | 'Or'} */ (next ?? 'And'),
+                  })
                 }
               />
-            ) : (
-              <StackItem xstyle={styles.connectorSpacer} />
-            )}
-            <HStack gap={2} vAlign="end" wrap="wrap">
+            ) : null}
+            <Grid columns={CONDITION_COLUMNS} gap={2} align="end">
               <Selector
                 label="Trường lọc"
-                isLabelHidden
                 size="sm"
-                width={FIELD_COLUMN_WIDTH}
+                width="100%"
                 options={[
                   { value: field.key, label: field.label },
                   ...availableFieldOptions,
@@ -209,25 +186,29 @@ export function AdvancedFilterBuilder({ fields, conditions, onChange }) {
                   <DateInput
                     label="Từ ngày"
                     size="sm"
-                    width={FIELD_COLUMN_WIDTH}
+                    width="100%"
                     value={
                       /** @type {import('@astryxdesign/core/Calendar').ISODateString | undefined} */ (
                         condition.value || undefined
                       )
                     }
-                    onChange={(next) => updateCondition(condition.id, { value: next ?? '' })}
+                    onChange={(next) =>
+                      updateCondition(condition.id, { value: next ?? '' })
+                    }
                     format="system_date"
                   />
                   <DateInput
                     label="Đến ngày"
                     size="sm"
-                    width={VALUE_COLUMN_WIDTH}
+                    width="100%"
                     value={
                       /** @type {import('@astryxdesign/core/Calendar').ISODateString | undefined} */ (
                         condition.valueTo || undefined
                       )
                     }
-                    onChange={(next) => updateCondition(condition.id, { valueTo: next ?? '' })}
+                    onChange={(next) =>
+                      updateCondition(condition.id, { valueTo: next ?? '' })
+                    }
                     format="system_date"
                   />
                 </>
@@ -235,51 +216,57 @@ export function AdvancedFilterBuilder({ fields, conditions, onChange }) {
                 <>
                   <Selector
                     label="Điều kiện"
-                    isLabelHidden
                     size="sm"
-                    width={OPERATOR_COLUMN_WIDTH}
+                    width="100%"
                     options={OPERATORS_BY_TYPE[field.type]}
                     value={condition.operator}
                     onChange={(next) =>
-                      updateCondition(condition.id, { operator: next ?? OPERATORS_BY_TYPE[field.type][0].value })
+                      updateCondition(condition.id, {
+                        operator:
+                          next ?? OPERATORS_BY_TYPE[field.type][0].value,
+                      })
                     }
                   />
                   {showsValue && field.type === 'enum' ? (
                     <Selector
                       label="Giá trị"
-                      isLabelHidden
                       size="sm"
-                      width={VALUE_COLUMN_WIDTH}
+                      width="100%"
                       hasClear
                       options={[...(field.options ?? [])]}
                       value={condition.value || null}
-                      onChange={(next) => updateCondition(condition.id, { value: next ?? '' })}
+                      onChange={(next) =>
+                        updateCondition(condition.id, { value: next ?? '' })
+                      }
                     />
                   ) : null}
                   {showsValue && field.type === 'number' ? (
                     <NumberInput
                       label="Giá trị"
-                      isLabelHidden
                       size="sm"
-                      width={VALUE_COLUMN_WIDTH}
-                      value={condition.value === '' ? null : Number(condition.value)}
+                      width="100%"
+                      value={
+                        condition.value === '' ? null : Number(condition.value)
+                      }
                       onChange={(next) =>
-                        updateCondition(condition.id, { value: next == null ? '' : String(next) })
+                        updateCondition(condition.id, {
+                          value: next == null ? '' : String(next),
+                        })
                       }
                     />
                   ) : null}
                   {showsValue && field.type === 'string' ? (
                     <TextInput
                       label="Giá trị"
-                      isLabelHidden
                       size="sm"
-                      width={VALUE_COLUMN_WIDTH}
+                      width="100%"
                       hasClear
                       value={condition.value}
-                      onChange={(next) => updateCondition(condition.id, { value: next })}
+                      onChange={(next) =>
+                        updateCondition(condition.id, { value: next })
+                      }
                     />
                   ) : null}
-                  {!showsValue ? <StackItem xstyle={styles.valueSpacer} /> : null}
                 </>
               )}
               <IconButton
@@ -290,8 +277,8 @@ export function AdvancedFilterBuilder({ fields, conditions, onChange }) {
                 size="sm"
                 onClick={() => removeCondition(condition.id)}
               />
-            </HStack>
-          </HStack>
+            </Grid>
+          </VStack>
         );
       })}
 
