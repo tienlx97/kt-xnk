@@ -21,6 +21,47 @@ export async function listCustomers() {
 }
 
 /**
+ * Same directory as `listCustomers`, but paginated and narrowed by
+ * `conditions` (the advanced-search condition builder) — the backend
+ * endpoint behind this one (`POST /api/v1/customers/search`, BE-kt-xnk)
+ * is the only Customer endpoint with pagination; `listCustomers`/`GET
+ * /api/v1/customers` stays unpaged for its existing callers (name-lookup
+ * maps in other lists).
+ * @param {{ page?: number, pageSize?: number, conditions?: import('@/shared/components/advanced-filter-builder.jsx').AdvancedFilterCondition[] }} [options]
+ * @returns {Promise<{ success: true, customers: import('../types/index.js').Customer[], page: number, pageSize: number, totalCount: number, totalPages: number } | { success: false, message: string }>}
+ */
+export async function searchCustomers({ page = 1, pageSize = 25, conditions = [] } = {}) {
+  const result = await apiRequest('/api/v1/customers/search', {
+    method: 'POST',
+    errorMessage: GENERIC_LIST_ERROR,
+    body: {
+      Page: page,
+      PageSize: pageSize,
+      Conditions: conditions.map((condition) => ({
+        Field: condition.field,
+        Operator: condition.operator,
+        Value: condition.value || null,
+        ValueTo: condition.valueTo || null,
+        Connector: condition.connector,
+      })),
+    },
+  });
+
+  if (!result.success) {
+    return { success: false, message: result.message };
+  }
+
+  return {
+    success: true,
+    customers: result.data?.items ?? [],
+    page: result.data?.page ?? page,
+    pageSize: result.data?.pageSize ?? pageSize,
+    totalCount: result.data?.totalCount ?? 0,
+    totalPages: result.data?.totalPages ?? 0,
+  };
+}
+
+/**
  * Requires `logistics:contracts:manage`.
  * @param {import('../types/index.js').CustomerFormValues} values
  * @param {import('../types/index.js').ExtraFieldRow[]} [extraFieldRows]

@@ -30,6 +30,47 @@ export async function listContracts({ page = 1, pageSize = 25 } = {}) {
 }
 
 /**
+ * Same as `listContracts`, additionally narrowed by `conditions` (the
+ * advanced-search condition builder, `AdvanceTable`'s "Bộ lọc nâng cao"
+ * panel). An empty `conditions` array behaves identically to
+ * `listContracts` — filtering happens server-side (`POST
+ * /api/v1/contracts/search`, BE-kt-xnk) so results are correct across every
+ * page, not just the one currently loaded.
+ * @param {{ page?: number, pageSize?: number, conditions?: import('@/shared/components/advanced-filter-builder.jsx').AdvancedFilterCondition[] }} [options]
+ * @returns {Promise<{ success: true, contracts: import('../types/index.js').Contract[], page: number, pageSize: number, totalCount: number, totalPages: number } | { success: false, message: string }>}
+ */
+export async function searchContracts({ page = 1, pageSize = 25, conditions = [] } = {}) {
+  const result = await apiRequest('/api/v1/contracts/search', {
+    method: 'POST',
+    errorMessage: GENERIC_LIST_ERROR,
+    body: {
+      Page: page,
+      PageSize: pageSize,
+      Conditions: conditions.map((condition) => ({
+        Field: condition.field,
+        Operator: condition.operator,
+        Value: condition.value || null,
+        ValueTo: condition.valueTo || null,
+        Connector: condition.connector,
+      })),
+    },
+  });
+
+  if (!result.success) {
+    return { success: false, message: result.message };
+  }
+
+  return {
+    success: true,
+    contracts: result.data?.items ?? [],
+    page: result.data?.page ?? page,
+    pageSize: result.data?.pageSize ?? pageSize,
+    totalCount: result.data?.totalCount ?? 0,
+    totalPages: result.data?.totalPages ?? 0,
+  };
+}
+
+/**
  * Real-time duplicate check for the "Số hợp đồng" field — backs the Contract
  * form's live validation, separate from the `409 Conflict` the backend still
  * returns on submit (this is a UX aid, not the source of truth).

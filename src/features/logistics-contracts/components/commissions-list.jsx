@@ -85,6 +85,20 @@ const DEFAULT_COLUMN_KEYS = [
   'signedDate',
 ];
 
+// `code` (computed from Year+Number) has no backend search field —
+// excluded here, still searchable via the quick-search box above
+// (`SEARCH_FIELD_DEFS`, client-side over the loaded page).
+/** @satisfies {ReadonlyArray<import('@/shared/components/advanced-filter-builder.jsx').AdvancedFilterFieldDef>} */
+const FILTER_FIELD_DEFS = [
+  { key: 'contractNumber', label: 'Số hợp đồng', type: 'string' },
+  { key: 'projectName', label: 'Dự án', type: 'string' },
+  { key: 'partyCustomerName', label: 'Bên nhận hoa hồng', type: 'string' },
+  { key: 'value', label: 'Giá trị', type: 'number' },
+  { key: 'signedDate', label: 'Ngày ký', type: 'date' },
+  { key: 'sellerSigned', label: 'Bên bán đã ký', type: 'enum', options: [{ value: 'true', label: 'Đã ký' }, { value: 'false', label: 'Chưa ký' }] },
+  { key: 'partySigned', label: 'Bên nhận hoa hồng đã ký', type: 'enum', options: [{ value: 'true', label: 'Đã ký' }, { value: 'false', label: 'Chưa ký' }] },
+];
+
 const SKELETON_ROW_COUNT = 6;
 const DEFAULT_PAGE_SIZE = 25;
 const PAGE_SIZE_OPTIONS = ['10', '25', '50', '100'];
@@ -331,6 +345,9 @@ function CommissionExpandedDetails({
 export function CommissionsList() {
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [pageIndex, setPageIndex] = useState(1);
+  const [filterConditions, setFilterConditions] = useState(
+    /** @type {import('@/shared/components/advanced-filter-builder.jsx').AdvancedFilterCondition[]} */ ([]),
+  );
   const [expandedCommissionId, setExpandedCommissionId] = useState(
     /** @type {string | null} */ (null),
   );
@@ -356,6 +373,7 @@ export function CommissionsList() {
   const commissionsQuery = useCommissionsQuery({
     page: pageIndex,
     pageSize,
+    conditions: filterConditions,
   });
   const listResult = commissionsQuery.data;
   const commissions = listResult?.success ? listResult.commissions : [];
@@ -560,6 +578,9 @@ export function CommissionsList() {
         entityLabel="Commission"
         contentSearchFieldKey="code"
         searchPlaceholder="Tìm mã, số hợp đồng..."
+        filterFieldDefs={FILTER_FIELD_DEFS}
+        advancedFilterConditions={filterConditions}
+        onAdvancedFilterChange={setFilterConditions}
         columnOptions={COLUMN_OPTIONS}
         initialColumnKeys={DEFAULT_COLUMN_KEYS}
         defaultColumnKeys={DEFAULT_COLUMN_KEYS}

@@ -2,14 +2,18 @@
 
 import { useQuery } from '@tanstack/react-query';
 
-import { listCommissions } from '../api/commissions.js';
+import { searchCommissions } from '../api/commissions.js';
 
 const QUERY_KEY = ['logistics-contracts', 'commissions-list'];
 
-/** @param {{ page: number, pageSize: number }} params */
-export function useCommissionsQuery({ page, pageSize }) {
+/**
+ * `conditions` defaults to `[]`, which the backend treats identically to
+ * the unfiltered list — existing unfiltered callers keep working unchanged.
+ * @param {{ page: number, pageSize: number, conditions?: import('@/shared/components/advanced-filter-builder.jsx').AdvancedFilterCondition[] }} params
+ */
+export function useCommissionsQuery({ page, pageSize, conditions = [] }) {
   return useQuery({
-    queryKey: [...QUERY_KEY, page, pageSize],
-    queryFn: () => listCommissions({ page, pageSize }),
+    queryKey: [...QUERY_KEY, page, pageSize, conditions],
+    queryFn: () => searchCommissions({ page, pageSize, conditions }),
   });
 }

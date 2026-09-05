@@ -2,19 +2,20 @@
 
 import { useQuery } from '@tanstack/react-query';
 
-import { listAllShipments } from '../api/shipments.js';
+import { searchAllShipments } from '../api/shipments.js';
 
 const QUERY_KEY = ['logistics-contracts', 'shipments-list'];
 
 /**
  * System-wide, paginated Shipment list — separate from `useShipmentsQuery`
  * (`use-shipments-query.js`), which is per-contract and already owns that
- * name.
- * @param {{ page: number, pageSize: number }} params
+ * name. `conditions` defaults to `[]`, which the backend treats identically
+ * to the unfiltered list.
+ * @param {{ page: number, pageSize: number, conditions?: import('@/shared/components/advanced-filter-builder.jsx').AdvancedFilterCondition[] }} params
  */
-export function useShipmentsListQuery({ page, pageSize }) {
+export function useShipmentsListQuery({ page, pageSize, conditions = [] }) {
   return useQuery({
-    queryKey: [...QUERY_KEY, page, pageSize],
-    queryFn: () => listAllShipments({ page, pageSize }),
+    queryKey: [...QUERY_KEY, page, pageSize, conditions],
+    queryFn: () => searchAllShipments({ page, pageSize, conditions }),
   });
 }

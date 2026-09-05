@@ -2,15 +2,21 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { createContract, listContracts, updateContract } from '../api/contracts.js';
+import { createContract, searchContracts, updateContract } from '../api/contracts.js';
 
 const QUERY_KEY = ['logistics-contracts', 'contracts'];
 
-/** @param {{ page: number, pageSize: number }} params */
-export function useContractsQuery({ page, pageSize }) {
+/**
+ * `conditions` defaults to `[]`, which the backend treats identically to
+ * the unfiltered list (`searchContracts`'s own doc comment) — so every
+ * existing caller (e.g. `shipments-list.jsx`'s cross-reference fetch) keeps
+ * working unchanged.
+ * @param {{ page: number, pageSize: number, conditions?: import('@/shared/components/advanced-filter-builder.jsx').AdvancedFilterCondition[] }} params
+ */
+export function useContractsQuery({ page, pageSize, conditions = [] }) {
   return useQuery({
-    queryKey: [...QUERY_KEY, page, pageSize],
-    queryFn: () => listContracts({ page, pageSize }),
+    queryKey: [...QUERY_KEY, page, pageSize, conditions],
+    queryFn: () => searchContracts({ page, pageSize, conditions }),
   });
 }
 

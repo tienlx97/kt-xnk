@@ -89,46 +89,31 @@ const SEARCH_FIELD_DEFS = [
   },
 ];
 
-/** @satisfies {ReadonlyArray<import('@/shared/components/advance-table.jsx').AdvanceTableAdvancedSearchField>} */
-const ADVANCED_SEARCH_FIELDS = [
-  {
-    field: 'contractNumber',
-    label: 'Số hợp đồng',
-    placeholder: 'Theo số hợp đồng',
-  },
-  { field: 'projectName', label: 'Dự án', placeholder: 'Theo tên dự án' },
-  {
-    field: 'buyerCompanyName',
-    label: 'Khách hàng',
-    placeholder: 'Theo tên khách hàng',
-  },
-  {
-    field: 'countryName',
-    label: 'Nước xuất khẩu',
-    placeholder: 'Theo nước xuất khẩu',
-  },
-  {
-    field: 'incoterm',
-    label: 'Incoterm',
-    placeholder: 'Theo incoterm',
-    type: 'enum',
-    options: incotermOptions,
-  },
-  {
-    field: 'createdDate',
-    label: 'Ngày tạo hợp đồng',
-    placeholder: 'Theo ngày tạo (vd 2026, 2026-01, 2026-01-15)',
-  },
-  {
-    field: 'placeOfDischarge',
-    label: 'Cảng/nơi đến',
-    placeholder: 'Theo cảng/nơi đến',
-  },
-  {
-    field: 'bankNames',
-    label: 'Ngân hàng thụ hưởng',
-    placeholder: 'Theo ngân hàng thụ hưởng',
-  },
+// The static, single-value-per-field advanced search this list used to have
+// (one text input per field, ANDed together) is replaced by the
+// `AdvancedFilterBuilder` condition builder below (`FILTER_FIELD_DEFS`) —
+// same funnel-icon entry point in `AdvanceTable`'s toolbar, now server-side
+// and per-field-typed (operators, Và/Hoặc chaining) instead of a fixed form.
+// `countryName`/`bankNames` (client-joined display fields with no matching
+// backend filter field yet) aren't carried over — see
+// `openspec/changes/add-advanced-filtering/proposal.md`'s "Out of scope".
+
+/** @satisfies {ReadonlyArray<import('@/shared/components/advanced-filter-builder.jsx').AdvancedFilterFieldDef>} */
+const FILTER_FIELD_DEFS = [
+  { key: 'contractNumber', label: 'Số hợp đồng', type: 'string' },
+  { key: 'projectName', label: 'Dự án', type: 'string' },
+  { key: 'buyerCompanyName', label: 'Khách hàng', type: 'string' },
+  { key: 'sellerCompanyName', label: 'Người bán', type: 'string' },
+  { key: 'contractValue', label: 'Giá trị', type: 'number' },
+  { key: 'currency', label: 'Đơn vị tiền tệ', type: 'enum', options: currencyOptions },
+  { key: 'incoterm', label: 'Incoterm', type: 'enum', options: incotermOptions },
+  { key: 'incotermYear', label: 'Năm Incoterm', type: 'number' },
+  { key: 'createdDate', label: 'Ngày tạo', type: 'date' },
+  { key: 'quotationDate', label: 'Ngày báo giá', type: 'date' },
+  { key: 'category', label: 'Hạng mục', type: 'string' },
+  { key: 'placeOfLoading', label: 'Nơi xếp hàng', type: 'string' },
+  { key: 'placeOfDischarge', label: 'Nơi dỡ hàng', type: 'string' },
+  { key: 'note', label: 'Ghi chú', type: 'string' },
 ];
 
 const COLUMN_OPTIONS = [
@@ -676,7 +661,7 @@ function ContractExpandedDetails({
         <Tab value="info" label="Thông tin" />
         <Tab value="paymentSchedule" label="Lịch sử thanh toán" />
         <Tab value="shipment" label="Shipment" />
-        {hasCommission ? <Tab value="commission" label="Commission" /> : null}
+        <Tab value="commission" label="Commission" />
       </TabList>
 
       <VStack
@@ -948,6 +933,25 @@ function ContractExpandedDetails({
           </VStack>
         )}
 
+        {activeTab === 'commission' && !commission && (
+          <VStack gap={4} hAlign="stretch" vAlign="center">
+            <Text color="secondary">Hợp đồng chưa có Commission</Text>
+            <Button
+              label="Tạo Commission"
+              variant="secondary"
+              size="sm"
+              icon={<Icon icon={Plus} />}
+              onClick={() =>
+                onOpenCommission({
+                  contractId: contract.id,
+                  currency: contract.currency,
+                  commission: null,
+                })
+              }
+            />
+          </VStack>
+        )}
+
         {activeTab === 'commission' && commission && (
           <VStack gap={4} hAlign="stretch">
             {/* Same field set/layout as `commissions-list.jsx`'s
@@ -1155,6 +1159,9 @@ export function ContractsList() {
   );
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [pageIndex, setPageIndex] = useState(1);
+  const [filterConditions, setFilterConditions] = useState(
+    /** @type {import('@/shared/components/advanced-filter-builder.jsx').AdvancedFilterCondition[]} */ ([]),
+  );
   const [expandedContractId, setExpandedContractId] = useState(
     /** @type {string | null} */ (null),
   );
@@ -1206,7 +1213,11 @@ export function ContractsList() {
     });
   }
 
-  const contractsQuery = useContractsQuery({ page: pageIndex, pageSize });
+  const contractsQuery = useContractsQuery({
+    page: pageIndex,
+    pageSize,
+    conditions: filterConditions,
+  });
   const listResult = contractsQuery.data;
   const contracts = listResult?.success ? listResult.contracts : [];
 
@@ -1484,7 +1495,9 @@ export function ContractsList() {
         entityLabel="Hợp đồng"
         contentSearchFieldKey="contractNumber"
         searchPlaceholder="Tìm số HĐ, dự án..."
-        advancedSearchFields={ADVANCED_SEARCH_FIELDS}
+        filterFieldDefs={FILTER_FIELD_DEFS}
+        advancedFilterConditions={filterConditions}
+        onAdvancedFilterChange={setFilterConditions}
         columnOptions={COLUMN_OPTIONS}
         initialColumnKeys={DEFAULT_COLUMN_KEYS}
         defaultColumnKeys={DEFAULT_COLUMN_KEYS}

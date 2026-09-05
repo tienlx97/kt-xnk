@@ -35,6 +35,45 @@ export async function listCommissions({ page = 1, pageSize = 25 } = {}) {
 }
 
 /**
+ * Same as `listCommissions`, additionally narrowed by `conditions` (the
+ * advanced-search condition builder). An empty `conditions` array behaves
+ * identically to `listCommissions` — filtering happens server-side (`POST
+ * /api/v1/commissions/search`, BE-kt-xnk).
+ * @param {{ page?: number, pageSize?: number, conditions?: import('@/shared/components/advanced-filter-builder.jsx').AdvancedFilterCondition[] }} [options]
+ * @returns {Promise<{ success: true, commissions: import('../types/index.js').Commission[], page: number, pageSize: number, totalCount: number, totalPages: number } | { success: false, message: string }>}
+ */
+export async function searchCommissions({ page = 1, pageSize = 25, conditions = [] } = {}) {
+  const result = await apiRequest('/api/v1/commissions/search', {
+    method: 'POST',
+    errorMessage: GENERIC_LIST_ERROR,
+    body: {
+      Page: page,
+      PageSize: pageSize,
+      Conditions: conditions.map((condition) => ({
+        Field: condition.field,
+        Operator: condition.operator,
+        Value: condition.value || null,
+        ValueTo: condition.valueTo || null,
+        Connector: condition.connector,
+      })),
+    },
+  });
+
+  if (!result.success) {
+    return { success: false, message: result.message };
+  }
+
+  return {
+    success: true,
+    commissions: result.data?.items ?? [],
+    page: result.data?.page ?? page,
+    pageSize: result.data?.pageSize ?? pageSize,
+    totalCount: result.data?.totalCount ?? 0,
+    totalPages: result.data?.totalPages ?? 0,
+  };
+}
+
+/**
  * At most one per contract. A `404` means the contract has none yet —
  * not an error the UI should show, so it is folded into `exists: false`
  * rather than `success: false`.

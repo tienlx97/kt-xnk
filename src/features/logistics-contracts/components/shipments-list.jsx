@@ -25,7 +25,10 @@ import { createRowExpansionInteractionPlugin } from '@/shared/components/expanda
 
 import { formatMoney } from '../config/currencies.js';
 import { labelForShipmentQuantityUnit } from '../config/shipment-quantity-units.js';
-import { labelForShipmentType } from '../config/shipment-types.js';
+import {
+  labelForShipmentType,
+  shipmentTypeOptions,
+} from '../config/shipment-types.js';
 import { useContractsQuery } from '../hooks/use-contracts-query.js';
 import { useCustomersQuery } from '../hooks/use-customers-query.js';
 import { useShipmentsListQuery } from '../hooks/use-shipments-list-query.js';
@@ -66,6 +69,23 @@ const DEFAULT_COLUMN_KEYS = [
   'name',
   'type',
   'invoiceValue',
+];
+
+// `shipmentCode` (computed from the parent contract's number + shipment
+// number) has no backend search field — excluded here, still searchable
+// via the quick-search box above (`SEARCH_FIELD_DEFS`, client-side over
+// the loaded page).
+/** @satisfies {ReadonlyArray<import('@/shared/components/advanced-filter-builder.jsx').AdvancedFilterFieldDef>} */
+const FILTER_FIELD_DEFS = [
+  { key: 'contractNumber', label: 'Số hợp đồng', type: 'string' },
+  { key: 'projectName', label: 'Dự án', type: 'string' },
+  { key: 'name', label: 'Tên lô hàng', type: 'string' },
+  { key: 'type', label: 'Loại hình', type: 'enum', options: shipmentTypeOptions },
+  { key: 'bookingNumber', label: 'Booking', type: 'string' },
+  { key: 'supplierName', label: 'Forwarder', type: 'string' },
+  { key: 'invoiceValue', label: 'Giá trị invoice', type: 'number' },
+  { key: 'etd', label: 'ETD', type: 'date' },
+  { key: 'eta', label: 'ETA', type: 'date' },
 ];
 
 const SKELETON_ROW_COUNT = 6;
@@ -121,6 +141,9 @@ const skeletonRows = Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => ({
 export function ShipmentsList() {
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [pageIndex, setPageIndex] = useState(1);
+  const [filterConditions, setFilterConditions] = useState(
+    /** @type {import('@/shared/components/advanced-filter-builder.jsx').AdvancedFilterCondition[]} */ ([]),
+  );
   const [expandedShipmentId, setExpandedShipmentId] = useState(
     /** @type {string | null} */ (null),
   );
@@ -145,7 +168,11 @@ export function ShipmentsList() {
     ),
   );
 
-  const shipmentsQuery = useShipmentsListQuery({ page: pageIndex, pageSize });
+  const shipmentsQuery = useShipmentsListQuery({
+    page: pageIndex,
+    pageSize,
+    conditions: filterConditions,
+  });
   const listResult = shipmentsQuery.data;
   const shipments = listResult?.success ? listResult.shipments : [];
 
@@ -341,6 +368,9 @@ export function ShipmentsList() {
         entityLabel="Shipment"
         contentSearchFieldKey="shipmentCode"
         searchPlaceholder="Tìm mã, tên lô hàng, số hợp đồng..."
+        filterFieldDefs={FILTER_FIELD_DEFS}
+        advancedFilterConditions={filterConditions}
+        onAdvancedFilterChange={setFilterConditions}
         columnOptions={COLUMN_OPTIONS}
         initialColumnKeys={DEFAULT_COLUMN_KEYS}
         defaultColumnKeys={DEFAULT_COLUMN_KEYS}

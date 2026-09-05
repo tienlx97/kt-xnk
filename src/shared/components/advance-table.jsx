@@ -32,6 +32,7 @@ import { VStack } from '@astryxdesign/core/VStack';
 import * as stylex from '@stylexjs/stylex';
 import { useMemo, useState } from 'react';
 
+import { AdvancedFilterBuilder } from '@/shared/components/advanced-filter-builder.jsx';
 import { IconRefresh } from '@/shared/components/icon/icon-refresh.jsx';
 import {
   stickyColumnKeys,
@@ -129,6 +130,9 @@ const styles = stylex.create({
  *   contentSearchFieldKey: string,
  *   searchPlaceholder: string,
  *   advancedSearchFields?: ReadonlyArray<AdvanceTableAdvancedSearchField>,
+ *   filterFieldDefs?: ReadonlyArray<import('@/shared/components/advanced-filter-builder.jsx').AdvancedFilterFieldDef>,
+ *   advancedFilterConditions?: ReadonlyArray<import('@/shared/components/advanced-filter-builder.jsx').AdvancedFilterCondition>,
+ *   onAdvancedFilterChange?: (conditions: import('@/shared/components/advanced-filter-builder.jsx').AdvancedFilterCondition[]) => void,
  *   quickFilters?: ReadonlyArray<AdvanceTableQuickFilter>,
  *   columnOptions: ReadonlyArray<{ key: string, label: string, isAlwaysVisible?: boolean }>,
  *   initialColumnKeys?: string[],
@@ -162,6 +166,9 @@ export function AdvanceTable({
   contentSearchFieldKey,
   searchPlaceholder,
   advancedSearchFields,
+  filterFieldDefs,
+  advancedFilterConditions,
+  onAdvancedFilterChange,
   quickFilters,
   columnOptions,
   initialColumnKeys,
@@ -286,9 +293,20 @@ export function AdvanceTable({
     resetPageIndex();
   }
 
+  // When `filterFieldDefs` is given, the funnel button/dialog run the
+  // server-driven condition builder (`AdvancedFilterBuilder`) instead of the
+  // static one-input-per-field form below — the caller owns the applied
+  // conditions (`advancedFilterConditions`) and sends them to its own
+  // server-side search API via `onAdvancedFilterChange`; this component only
+  // holds the in-dialog draft.
+  const isServerFilterMode = Boolean(filterFieldDefs && filterFieldDefs.length > 0);
+
   const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
   const [advancedSearchDraft, setAdvancedSearchDraft] = useState(
     /** @type {Record<string, string>} */ ({}),
+  );
+  const [advancedFilterDraft, setAdvancedFilterDraft] = useState(
+    /** @type {import('@/shared/components/advanced-filter-builder.jsx').AdvancedFilterCondition[]} */ ([]),
   );
 
   // The funnel button opens a `Dialog`. Unlike the popover this replaced,
@@ -297,18 +315,37 @@ export function AdvanceTable({
   /** @param {boolean} isOpen */
   function handleAdvancedSearchOpenChange(isOpen) {
     if (isOpen) {
-      const draft = /** @type {Record<string, string>} */ ({});
-      for (const field of advancedSearchFieldsResolved) {
-        const active = searchFilters.find(
-          (filter) => filter.field === field.field,
-        );
-        draft[field.field] = active
-          ? String(/** @type {any} */ (active.value).value)
-          : '';
+      if (isServerFilterMode) {
+        setAdvancedFilterDraft([...(advancedFilterConditions ?? [])]);
+      } else {
+        const draft = /** @type {Record<string, string>} */ ({});
+        for (const field of advancedSearchFieldsResolved) {
+          const active = searchFilters.find(
+            (filter) => filter.field === field.field,
+          );
+          draft[field.field] = active
+            ? String(/** @type {any} */ (active.value).value)
+            : '';
+        }
+        setAdvancedSearchDraft(draft);
       }
-      setAdvancedSearchDraft(draft);
     }
     setIsAdvancedSearchOpen(isOpen);
+  }
+
+  function handleAdvancedFilterSubmit() {
+    onAdvancedFilterChange?.(advancedFilterDraft);
+    resetPageIndex();
+    setIsAdvancedSearchOpen(false);
+  }
+
+  // Clears immediately (applies the empty filter) rather than only resetting
+  // the draft — matches the reference UI, where "Bỏ lọc" is a standalone
+  // clear action, not a second step before "Lọc".
+  function handleAdvancedFilterClear() {
+    setAdvancedFilterDraft([]);
+    onAdvancedFilterChange?.([]);
+    resetPageIndex();
   }
 
   function handleAdvancedSearchSubmit() {
@@ -448,7 +485,7 @@ export function AdvanceTable({
                   onChange={handleQuickSearchChange}
                   xstyle={styles.searchInput}
                 />
-                {advancedSearchFieldsResolved.length > 0 ? (
+                {isServerFilterMode || advancedSearchFieldsResolved.length > 0 ? (
                   <IconButton
                     label="Bộ lọc nâng cao"
                     tooltip="Bộ lọc nâng cao"
@@ -458,7 +495,54 @@ export function AdvanceTable({
                   />
                 ) : null}
               </InputGroup>
-              {advancedSearchFieldsResolved.length > 0 ? (
+              {isServerFilterMode ? (
+                <Dialog
+                  isOpen={isAdvancedSearchOpen}
+                  onOpenChange={handleAdvancedSearchOpenChange}
+                  purpose="form"
+                  width={560}
+                >
+                  <Layout
+                    header={
+                      <DialogHeader
+                        title="Bộ lọc nâng cao"
+                        onOpenChange={handleAdvancedSearchOpenChange}
+                      />
+                    }
+                    content={
+                      <LayoutContent>
+                        <VStack
+                          gap={3}
+                          hAlign="stretch"
+                          xstyle={styles.advancedSearchPanel}
+                        >
+                          <AdvancedFilterBuilder
+                            fields={filterFieldDefs ?? []}
+                            conditions={advancedFilterDraft}
+                            onChange={setAdvancedFilterDraft}
+                          />
+                        </VStack>
+                      </LayoutContent>
+                    }
+                    footer={
+                      <LayoutFooter>
+                        <HStack hAlign="between">
+                          <Button
+                            label="Bỏ lọc"
+                            variant="secondary"
+                            onClick={handleAdvancedFilterClear}
+                          />
+                          <Button
+                            label="Lọc"
+                            variant="primary"
+                            onClick={handleAdvancedFilterSubmit}
+                          />
+                        </HStack>
+                      </LayoutFooter>
+                    }
+                  />
+                </Dialog>
+              ) : advancedSearchFieldsResolved.length > 0 ? (
                 <Dialog
                   isOpen={isAdvancedSearchOpen}
                   onOpenChange={handleAdvancedSearchOpenChange}

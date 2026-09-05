@@ -22,7 +22,7 @@ import {
   UnderlinedMetadataListItem as MetadataListItem,
 } from '@/shared/components/expandable-row-styles.jsx';
 
-import { useCustomersQuery } from '../hooks/use-customers-query.js';
+import { useSearchCustomersQuery } from '../hooks/use-customers-query.js';
 import { CustomerFormDialog } from './customer-form-dialog.jsx';
 
 /** @param {string | null | undefined} value */
@@ -46,7 +46,17 @@ const COLUMN_OPTIONS = [
   { key: 'extraFields', label: 'Trường tùy ý' },
 ];
 
+/** @satisfies {ReadonlyArray<import('@/shared/components/advanced-filter-builder.jsx').AdvancedFilterFieldDef>} */
+const FILTER_FIELD_DEFS = [
+  { key: 'companyName', label: 'Tên công ty', type: 'string' },
+  { key: 'representativeName', label: 'Người đại diện', type: 'string' },
+  { key: 'representativeTitle', label: 'Chức vụ', type: 'string' },
+  { key: 'address', label: 'Địa chỉ', type: 'string' },
+];
+
 const SKELETON_ROW_COUNT = 6;
+const DEFAULT_PAGE_SIZE = 25;
+const PAGE_SIZE_OPTIONS = ['10', '25', '50', '100'];
 
 const skeletonRows = Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => ({
   id: `skeleton-${index}`,
@@ -156,10 +166,21 @@ export function CustomersList() {
   const [expandedCustomerId, setExpandedCustomerId] = useState(
     /** @type {string | null} */ (null),
   );
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [pageIndex, setPageIndex] = useState(1);
+  const [filterConditions, setFilterConditions] = useState(
+    /** @type {import('@/shared/components/advanced-filter-builder.jsx').AdvancedFilterCondition[]} */ ([]),
+  );
 
-  const customersQuery = useCustomersQuery();
+  const customersQuery = useSearchCustomersQuery({
+    page: pageIndex,
+    pageSize,
+    conditions: filterConditions,
+  });
   const listResult = customersQuery.data;
   const customers = listResult?.success ? listResult.customers : [];
+  const totalCustomers = listResult?.success ? listResult.totalCount : 0;
+  const totalPages = Math.max(1, listResult?.success ? listResult.totalPages : 1);
 
   const searchableCustomers = customers.map((customer) => ({
     ...customer,
@@ -271,6 +292,9 @@ export function CustomersList() {
         entityLabel="Khách hàng"
         contentSearchFieldKey="companyName"
         searchPlaceholder="Tìm công ty, địa chỉ..."
+        filterFieldDefs={FILTER_FIELD_DEFS}
+        advancedFilterConditions={filterConditions}
+        onAdvancedFilterChange={setFilterConditions}
         columnOptions={COLUMN_OPTIONS}
         tableColumns={columns}
         data={searchableCustomers}
@@ -284,6 +308,15 @@ export function CustomersList() {
         onRefresh={() => customersQuery.refetch()}
         isRefreshing={customersQuery.isFetching}
         defaultStickyEnd="none"
+        pagination={{
+          pageIndex,
+          pageSize,
+          totalCount: totalCustomers,
+          totalPages,
+          onPageIndexChange: setPageIndex,
+          onPageSizeChange: setPageSize,
+          pageSizeOptions: PAGE_SIZE_OPTIONS,
+        }}
       />
 
       {hasOpenedCreate ? (

@@ -5,6 +5,42 @@ Append-only session log. Newest entry FIRST.
 This file is the handoff between sessions/agents — write for a reader with zero conversation context.
 -->
 
+## 2026-09-05 — Live-verified the in-progress Advanced Filter Builder (uncommitted)
+
+**Context:** User asked to "test tính năng advance search" against the working
+tree's uncommitted changes (`advanced-filter-builder.jsx` + the `AdvanceTable`/
+`*-list.jsx`/API/hook wiring across Contracts, Commissions, Customers,
+Shipments — see `git status`). No test file exists for this yet; this was a
+manual browser pass, not an automated one.
+
+**Live-verified in a browser** (`pnpm dev` already running on `:3000` +
+BE-kt-xnk Docker; logged in as the documented dev Admin
+`DNG26F4A9C2`/`Admin@123456`):
+- `/logistics/contracts`: funnel icon opens "Bộ lọc nâng cao"; field picker
+  lists all 14 `FILTER_FIELD_DEFS` fields and excludes fields already used in
+  another condition.
+- Number field (Giá trị): all 6 operators render (Bằng/Khác/Nhỏ hơn/≤ /Lớn
+  hơn/≥); set "≥ 100000".
+- Adding a 2nd condition switches on the "Và/Hoặc" connector selector; picking
+  a date field (Ngày tạo) correctly hides the operator dropdown and shows the
+  Từ ngày/Đến ngày pair instead (matches the `date` type's `Between`-only
+  design in `advanced-filter-builder.jsx`).
+- Applying `Giá trị ≥ 100000 AND Ngày tạo between 2026-01-01..2026-09-05` hit
+  `POST /api/backend/api/v1/contracts/search` → 200 and correctly narrowed 7
+  seeded rows to the 5 matching ones.
+- Reopening the dialog preserves the applied conditions (`filterConditions`
+  state round-trips correctly); "Bỏ lọc" clears them and restores the full
+  list.
+- Spot-checked `/logistics/commissions`: same "Bộ lọc nâng cao" dialog opens
+  correctly there too.
+- No console errors observed during any of the above.
+
+**Not done:** Did not test Customers/Shipments lists, did not test
+string-field operators (Contains/StartsWith/.../IsEmpty/IsNotEmpty) or the
+enum-field Selector, did not add an automated test for this feature — changes
+are still uncommitted working-tree edits, not yet reviewed/tested by their
+author.
+
 ## 2026-09-04 — Rename frontend Service Agreement to Commission
 
 **Context:** The BE-kt-xnk resource was renamed end-to-end from

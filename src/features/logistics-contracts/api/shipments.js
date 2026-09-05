@@ -116,6 +116,45 @@ export async function listAllShipments({ page = 1, pageSize = 25 } = {}) {
 }
 
 /**
+ * Same as `listAllShipments`, additionally narrowed by `conditions` (the
+ * advanced-search condition builder). An empty `conditions` array behaves
+ * identically to `listAllShipments` — filtering happens server-side (`POST
+ * /api/v1/shipments/search`, BE-kt-xnk).
+ * @param {{ page?: number, pageSize?: number, conditions?: import('@/shared/components/advanced-filter-builder.jsx').AdvancedFilterCondition[] }} [options]
+ * @returns {Promise<{ success: true, shipments: import('../types/index.js').Shipment[], page: number, pageSize: number, totalCount: number, totalPages: number } | { success: false, message: string }>}
+ */
+export async function searchAllShipments({ page = 1, pageSize = 25, conditions = [] } = {}) {
+  const result = await apiRequest('/api/v1/shipments/search', {
+    method: 'POST',
+    errorMessage: GENERIC_LIST_ALL_ERROR,
+    body: {
+      Page: page,
+      PageSize: pageSize,
+      Conditions: conditions.map((condition) => ({
+        Field: condition.field,
+        Operator: condition.operator,
+        Value: condition.value || null,
+        ValueTo: condition.valueTo || null,
+        Connector: condition.connector,
+      })),
+    },
+  });
+
+  if (!result.success) {
+    return { success: false, message: result.message };
+  }
+
+  return {
+    success: true,
+    shipments: result.data?.items ?? [],
+    page: result.data?.page ?? page,
+    pageSize: result.data?.pageSize ?? pageSize,
+    totalCount: result.data?.totalCount ?? 0,
+    totalPages: result.data?.totalPages ?? 0,
+  };
+}
+
+/**
  * Requires `logistics:contracts:manage`, scoped to the contract's company.
  * `shipmentNumber`/`shipmentCode` are assigned by the backend, never sent
  * here.
