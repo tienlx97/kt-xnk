@@ -58,6 +58,7 @@ import { useContractsQuery } from '../hooks/use-contracts-query.js';
 import { useCountriesQuery } from '../hooks/use-countries-query.js';
 import { useCustomersQuery } from '../hooks/use-customers-query.js';
 import { usePaymentSchedulesQuery } from '../hooks/use-payment-schedules-query.js';
+import { useShipmentCostCategoriesQuery } from '../hooks/use-shipment-cost-categories-query.js';
 import { useShipmentsQuery } from '../hooks/use-shipments-query.js';
 import { CommissionAnnexFormDialog } from './commission-annex-form-dialog.jsx';
 import { CommissionFormDialog } from './commission-form-dialog.jsx';
@@ -287,6 +288,7 @@ const skeletonRows = Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => ({
  * @param {Map<string, import('../types/index.js').ContractBank>} props.banksById
  * @param {Map<string, import('../types/index.js').Country>} props.countriesById
  * @param {Map<string, import('../types/index.js').Customer>} props.customersById
+ * @param {Map<string, import('../types/index.js').ShipmentCostCategory>} props.costCategoriesById
  * @param {ExpandedTab} props.activeTab
  * @param {(tab: ExpandedTab) => void} props.onActiveTabChange
  * @param {() => void} props.onAddAnnex
@@ -308,6 +310,7 @@ function ContractExpandedDetails({
   banksById,
   countriesById,
   customersById,
+  costCategoriesById,
   activeTab,
   onActiveTabChange,
   onAddAnnex,
@@ -564,6 +567,7 @@ function ContractExpandedDetails({
               customersById.get(shipment.supplierCustomerId)?.companyName ?? ''
             }
             customersById={customersById}
+            costCategoriesById={costCategoriesById}
             onAddVgm={() =>
               onAddVgm({ contractId: contract.id, shipmentId: shipment.id })
             }
@@ -1262,6 +1266,22 @@ export function ContractsList() {
     [customersQuery.data],
   );
 
+  // `Shipment.costs[].costCategoryId` is a live FK into the
+  // `ShipmentCostCategory` catalog — resolved client-side for
+  // `ShipmentExpandedDetails`'s cost-lines table, same pattern as
+  // `customersById` above.
+  const costCategoriesQuery = useShipmentCostCategoriesQuery();
+  const costCategoriesById = useMemo(
+    () =>
+      new Map(
+        (costCategoriesQuery.data?.success
+          ? costCategoriesQuery.data.costCategories
+          : []
+        ).map((costCategory) => [costCategory.id, costCategory]),
+      ),
+    [costCategoriesQuery.data],
+  );
+
   /** @type {import('@astryxdesign/core/Table').TableColumn<import('../types/index.js').Contract & Record<string, unknown>>[]} */
   const columns = [
     {
@@ -1397,6 +1417,7 @@ export function ContractsList() {
             banksById={banksById}
             countriesById={countriesById}
             customersById={customersById}
+            costCategoriesById={costCategoriesById}
             activeTab={expandedTab}
             onActiveTabChange={setExpandedTab}
             onAddAnnex={() => setAnnexDialog({ contractId: contract.id })}

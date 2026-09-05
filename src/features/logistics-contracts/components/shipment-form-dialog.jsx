@@ -51,7 +51,7 @@ export function ShipmentFormDialog({
   }
 
   return (
-    <CommonDialog isOpen={isOpen} onOpenChange={handleOpenChange} width={760}>
+    <CommonDialog isOpen={isOpen} onOpenChange={handleOpenChange} width={1200}>
       <form onSubmit={form.handleSubmit}>
         <Layout
           header={
@@ -79,6 +79,7 @@ export function ShipmentFormDialog({
                 fieldStatuses={form.fieldStatuses}
                 customers={form.customers}
                 isEditing={shipment != null}
+                costLineRows={form.costLineRows}
               />
             </LayoutContent>
           }

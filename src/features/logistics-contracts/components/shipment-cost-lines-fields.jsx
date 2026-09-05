@@ -1,0 +1,219 @@
+'use client';
+
+import { Banner } from '@astryxdesign/core/Banner';
+import { Button } from '@astryxdesign/core/Button';
+import { HStack } from '@astryxdesign/core/HStack';
+import { Icon } from '@astryxdesign/core/Icon';
+import { IconButton } from '@astryxdesign/core/IconButton';
+import { NumberInput } from '@astryxdesign/core/NumberInput';
+import { Selector } from '@astryxdesign/core/Selector';
+import { pixel, proportional, Table } from '@astryxdesign/core/Table';
+import { Text } from '@astryxdesign/core/Text';
+import { TextInput } from '@astryxdesign/core/TextInput';
+import { VStack } from '@astryxdesign/core/VStack';
+import { useState } from 'react';
+
+import { IconPlus } from '@/shared/components/icon/icon-plus.jsx';
+import { IconTrash } from '@/shared/components/icon/icon-trash.jsx';
+
+import { formatMoney } from '../config/currencies.js';
+import { useShipmentCostCategoriesQuery } from '../hooks/use-shipment-cost-categories-query.js';
+import { QuickCreateShipmentCostCategoryDialog } from './quick-create-shipment-cost-category-dialog.jsx';
+
+/**
+ * "Thông tin chi phí logistics" grid for a Shipment — mirrors
+ * `PaymentHistoryFields` (purely a controlled view over
+ * `useShipmentCostLineRows`'s state). `Amount` is always VNĐ, no currency
+ * selector (unlike other money fields on this form) — see
+ * `docs/api/Shipments.md`, BE-kt-xnk. `Name` is free text — Astryx has no
+ * autocomplete/combobox component that accepts free text plus suggestions,
+ * so a plain `TextInput` is used instead of building a custom one (per
+ * spec's documented fallback); `ShipmentCostItemTemplate` suggestions are
+ * therefore not surfaced in this UI yet.
+ * @param {{
+ *   rows: import('../types/index.js').ShipmentCostLineRow[],
+ *   customers: import('../types/index.js').Customer[],
+ *   status?: { type: 'error' | 'success', message: string },
+ *   onAddRow: () => void,
+ *   onRemoveRow: (rowKey: string) => void,
+ *   onUpdateRowField: (rowKey: string, field: 'costCategoryId' | 'name' | 'amount' | 'note' | 'providerCustomerId', value: number | string) => void,
+ * }} props
+ */
+export function ShipmentCostLinesFields({
+  rows,
+  customers,
+  status,
+  onAddRow,
+  onRemoveRow,
+  onUpdateRowField,
+}) {
+  const [quickCreateForRowKey, setQuickCreateForRowKey] = useState(
+    /** @type {string | null} */ (null),
+  );
+
+  const costCategoriesQuery = useShipmentCostCategoriesQuery();
+  const costCategories = costCategoriesQuery.data?.success
+    ? costCategoriesQuery.data.costCategories
+    : [];
+
+  const total = rows.reduce((sum, row) => sum + (row.amount ?? 0), 0);
+
+  /** @type {import('@astryxdesign/core/Table').TableColumn<import('../types/index.js').ShipmentCostLineRow & Record<string, unknown>>[]} */
+  const columns = [
+    {
+      key: 'costCategoryId',
+      header: 'Nhóm chi phí',
+      width: pixel(220),
+      renderCell: (row) => (
+        <HStack gap={2} vAlign="center">
+          <Selector
+            label="Nhóm chi phí"
+            isLabelHidden
+            hasSearch
+            placeholder="Chọn nhóm chi phí"
+            value={row.costCategoryId}
+            onChange={(value) =>
+              onUpdateRowField(row.rowKey, 'costCategoryId', value ?? '')
+            }
+            options={costCategories.map((costCategory) => ({
+              value: costCategory.id,
+              label: costCategory.name,
+            }))}
+            width="100%"
+          />
+          <IconButton
+            label="Thêm nhóm chi phí"
+            tooltip="Thêm nhóm chi phí"
+            icon={<Icon icon={IconPlus} size="sm" />}
+            type="button"
+            variant="ghost"
+            onClick={() => setQuickCreateForRowKey(row.rowKey)}
+          />
+        </HStack>
+      ),
+    },
+    {
+      key: 'name',
+      header: 'Tên khoản chi phí',
+      width: proportional(1, { minWidth: 180 }),
+      renderCell: (row) => (
+        <TextInput
+          label="Tên khoản chi phí"
+          isLabelHidden
+          value={row.name}
+          onChange={(value) => onUpdateRowField(row.rowKey, 'name', value)}
+          placeholder="Ví dụ: Phí THC, Phí D/O"
+        />
+      ),
+    },
+    {
+      key: 'amount',
+      header: 'Số tiền',
+      width: pixel(180),
+      renderCell: (row) => (
+        <NumberInput
+          label="Số tiền"
+          isLabelHidden
+          value={row.amount}
+          onChange={(value) => onUpdateRowField(row.rowKey, 'amount', value)}
+          min={0}
+          step={0.01}
+          units="đ"
+        />
+      ),
+    },
+    {
+      key: 'note',
+      header: 'Ghi chú',
+      width: proportional(1),
+      renderCell: (row) => (
+        <TextInput
+          label="Ghi chú"
+          isLabelHidden
+          value={row.note}
+          onChange={(value) => onUpdateRowField(row.rowKey, 'note', value)}
+          placeholder="Ghi chú (không bắt buộc)"
+        />
+      ),
+    },
+    {
+      key: 'providerCustomerId',
+      header: 'Nhà cung cấp',
+      width: pixel(200),
+      renderCell: (row) => (
+        <Selector
+          label="Nhà cung cấp"
+          isLabelHidden
+          hasSearch
+          hasClear
+          placeholder="Chưa xác định"
+          value={row.providerCustomerId || null}
+          onChange={(value) =>
+            onUpdateRowField(row.rowKey, 'providerCustomerId', value ?? '')
+          }
+          options={customers.map((customer) => ({
+            value: customer.id,
+            label: customer.companyName,
+          }))}
+          width="100%"
+        />
+      ),
+    },
+    {
+      key: 'actions',
+      header: '',
+      width: pixel(48),
+      align: 'end',
+      renderCell: (row) => (
+        <IconButton
+          label="Xoá dòng này"
+          tooltip="Xoá"
+          icon={<Icon icon={IconTrash} size="sm" />}
+          type="button"
+          variant="ghost"
+          onClick={() => onRemoveRow(row.rowKey)}
+        />
+      ),
+    },
+  ];
+
+  return (
+    <VStack gap={2} hAlign="stretch">
+      {rows.length === 0 ? (
+        <Text color="secondary">Chưa có khoản chi phí nào</Text>
+      ) : (
+        <Table data={rows} columns={columns} idKey="rowKey" dividers="grid" />
+      )}
+
+      <HStack hAlign="between" vAlign="center">
+        <Button
+          label="Thêm chi phí"
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={onAddRow}
+        />
+        {rows.length > 0 ? (
+          <Text weight="semibold">Tổng chi phí: {formatMoney(total)} đ</Text>
+        ) : null}
+      </HStack>
+
+      {status ? (
+        <Banner status="error" title={status.message} container="card" />
+      ) : null}
+
+      <QuickCreateShipmentCostCategoryDialog
+        isOpen={quickCreateForRowKey !== null}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) setQuickCreateForRowKey(null);
+        }}
+        onCreated={(costCategory) => {
+          if (quickCreateForRowKey) {
+            onUpdateRowField(quickCreateForRowKey, 'costCategoryId', costCategory.id);
+          }
+          setQuickCreateForRowKey(null);
+        }}
+      />
+    </VStack>
+  );
+}

@@ -18,6 +18,7 @@ import {
   quantityUnitForShipmentType,
 } from '../config/shipment-quantity-units.js';
 import { shipmentTypeOptions } from '../config/shipment-types.js';
+import { ShipmentCostLinesFields } from './shipment-cost-lines-fields.jsx';
 
 /**
  * One collapsible section of the form — same idiom as
@@ -37,14 +38,15 @@ function FormSection({ value, title, children }) {
 }
 
 /**
- * `Shipment` field-set, grouped into two collapsible cards — Book info and
- * Shipment (lot) info; cost info is a deliberately deferred future
- * addition, so there is no section for it yet. Both start expanded
- * (`defaultValue`) since every field in each is either required or
- * commonly filled in, unlike `ContractFormDialog`'s sections (only
- * "Thông tin chung" defaults open there). `shipmentNumber`/`shipmentCode`
- * are backend-assigned and never editable — shown read-only in the dialog
- * header when editing (see `ShipmentFormDialog`).
+ * `Shipment` field-set, grouped into three collapsible cards — Book info,
+ * Shipment (lot) info, and logistics cost info (`costs`). The first two
+ * start expanded (`defaultValue`) since every field in each is either
+ * required or commonly filled in, unlike `ContractFormDialog`'s sections
+ * (only "Thông tin chung" defaults open there); "costs" starts collapsed
+ * since a shipment commonly starts with no cost lines yet.
+ * `shipmentNumber`/`shipmentCode` are backend-assigned and never editable
+ * — shown read-only in the dialog header when editing (see
+ * `ShipmentFormDialog`).
  *
  * `type` ("Loại hình") is locked once editing an existing shipment (2026-
  * 09-03 business rule, BE-kt-xnk: `Type` is immutable after creation,
@@ -60,6 +62,7 @@ function FormSection({ value, title, children }) {
  *   fieldStatuses: Record<string, { type: 'error', message: string } | undefined>,
  *   customers: import('../types/index.js').Customer[],
  *   isEditing: boolean,
+ *   costLineRows: ReturnType<typeof import('../hooks/use-shipment-cost-line-rows.js').useShipmentCostLineRows>,
  * }} props
  */
 export function ShipmentFields({
@@ -68,6 +71,7 @@ export function ShipmentFields({
   fieldStatuses,
   customers,
   isEditing,
+  costLineRows,
 }) {
   const derivedQuantityUnit = quantityUnitForShipmentType(values.type);
   return (
@@ -396,6 +400,16 @@ export function ShipmentFields({
             isRequired
             status={fieldStatuses.declarationWeightKg}
             statusVariant="tooltip"
+          />
+        </FormSection>
+
+        <FormSection value="costs" title="Thông tin chi phí logistics">
+          <ShipmentCostLinesFields
+            rows={costLineRows.rows}
+            customers={customers}
+            onAddRow={costLineRows.addRow}
+            onRemoveRow={costLineRows.removeRow}
+            onUpdateRowField={costLineRows.updateRowField}
           />
         </FormSection>
       </VStack>

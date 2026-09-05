@@ -384,9 +384,84 @@ export {};
  */
 
 /**
+ * Logistics cost-group catalog entry ("nhóm chi phí", e.g. Trucking, O/F,
+ * Customs) — a dynamic, user-managed list (unlike {@link Place}, which is
+ * create/list only). `ShipmentCostLine.costCategoryId` is a live,
+ * FK-enforced reference into this catalog.
+ * @typedef {Object} ShipmentCostCategory
+ * @property {string} id
+ * @property {string} name
+ */
+
+/**
+ * @typedef {Object} ShipmentCostCategoryFormValues
+ * @property {string} name
+ */
+
+/**
+ * Autocomplete-suggestion catalog for `ShipmentCostLine.name` — lookup only,
+ * does NOT constrain the free-text `name` on an actual cost line.
+ * `costCategoryId` is the suggested default group for the suggestion.
+ * @typedef {Object} ShipmentCostItemTemplate
+ * @property {string} id
+ * @property {string} name
+ * @property {string} costCategoryId
+ */
+
+/**
+ * @typedef {Object} ShipmentCostItemTemplateFormValues
+ * @property {string} name
+ * @property {string} costCategoryId
+ */
+
+/**
+ * One logistics cost line ("khoản chi phí") on a `Shipment.costs` — the
+ * whole list is replaced on every PUT (same contract as
+ * `Commission.paymentHistory`/`paymentTerms`). `amount` is always VNĐ, no
+ * currency field. `costCategoryId` is a live, FK-enforced reference into
+ * {@link ShipmentCostCategory}; `providerCustomerId` is a live, optional
+ * reference into the {@link Customer} catalog.
+ * @typedef {Object} ShipmentCostLine
+ * @property {string} id
+ * @property {string} costCategoryId
+ * @property {string} name
+ * @property {number} amount
+ * @property {string | null} note
+ * @property {string | null} providerCustomerId
+ */
+
+/**
+ * @typedef {Object} ShipmentCostLineFormValues
+ * @property {string} costCategoryId
+ * @property {string} name
+ * @property {number} amount
+ * @property {string} note
+ * @property {string} providerCustomerId
+ */
+
+/**
+ * @typedef {Object} ShipmentCostLineRow
+ * @property {string} rowKey
+ * @property {string} costCategoryId
+ * @property {string} name
+ * @property {number | undefined} amount
+ * @property {string} note
+ * @property {string} providerCustomerId
+ */
+
+/**
+ * Server-computed (GET only, never sent on create/update) total `amount`
+ * grouped by `costCategoryId` across a Shipment's `costs`.
+ * @typedef {Object} ShipmentCostTotal
+ * @property {string} costCategoryId
+ * @property {string} costCategoryName
+ * @property {number} totalAmount
+ */
+
+/**
  * One shipment ("lần xuất hàng") against a `Contract` — a contract has one
- * or more. Groups Book info (booking/B-L/vessel) and Shipment/lot info;
- * cost info is a deliberately deferred future addition (BE-kt-xnk).
+ * or more. Groups Book info (booking/B-L/vessel), Shipment/lot info, and
+ * logistics cost info (`costs`/`costTotalsByCategory`).
  * `shipmentNumber`/`shipmentCode` are system-assigned (BE-kt-xnk):
  * `shipmentCode` is `{contractNumber}/LCL-{shipmentNumber:D2}` for LCL
  * shipments or `{contractNumber}/LOT-{shipmentNumber:D2}` for FCL (2026-
@@ -430,6 +505,8 @@ export {};
  * @property {string | null} coNumber - customs-issued, manually entered
  * @property {string | null} coDeclarationDate - ISO date, "ngày khai C/O"
  * @property {string | null} coIssuedDate - ISO date, "ngày có C/O"
+ * @property {ShipmentCostLine[]} costs
+ * @property {ShipmentCostTotal[]} costTotalsByCategory - computed at read time, never stored
  */
 
 /**

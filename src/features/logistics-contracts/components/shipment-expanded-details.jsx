@@ -63,11 +63,15 @@ function orDash(value) {
  * persistent per-row action column isn't an option there, and this footer
  * button is the edit entry point instead, same spot `ContractExpandedDetails`
  * puts "Sửa hợp đồng".
+ * `costCategoriesById` resolves `ShipmentCostLine.costCategoryId` → name for
+ * the "Thông tin chi phí logistics" section below; `ProviderCustomerId`
+ * reuses the already-threaded `customersById` instead of a new prop.
  * @param {{
  *   contractId: string,
  *   shipment: import('../types/index.js').Shipment,
  *   supplierName: string,
  *   customersById: Map<string, import('../types/index.js').Customer>,
+ *   costCategoriesById: Map<string, import('../types/index.js').ShipmentCostCategory>,
  *   onAddVgm: () => void,
  *   onEditVgm: (vgm: import('../types/index.js').ShipmentVgm) => void,
  *   onEdit?: () => void,
@@ -78,6 +82,7 @@ export function ShipmentExpandedDetails({
   shipment,
   supplierName,
   customersById,
+  costCategoriesById,
   onAddVgm,
   onEditVgm,
   onEdit,
@@ -199,6 +204,46 @@ export function ShipmentExpandedDetails({
     },
   ];
 
+  /** @type {import('@astryxdesign/core/Table').TableColumn<import('../types/index.js').ShipmentCostLine & Record<string, unknown>>[]} */
+  const costColumns = [
+    {
+      key: 'costCategoryId',
+      header: 'Nhóm chi phí',
+      width: pixel(160),
+      renderCell: (cost) =>
+        orDash(costCategoriesById.get(cost.costCategoryId)?.name),
+    },
+    {
+      key: 'name',
+      header: 'Tên khoản chi phí',
+      width: proportional(1, { minWidth: 160 }),
+      renderCell: (cost) => cost.name,
+    },
+    {
+      key: 'amount',
+      header: 'Số tiền',
+      width: pixel(160),
+      renderCell: (cost) => `${formatMoney(cost.amount)} đ`,
+    },
+    {
+      key: 'note',
+      header: 'Ghi chú',
+      width: proportional(1),
+      renderCell: (cost) => orDash(cost.note),
+    },
+    {
+      key: 'providerCustomerId',
+      header: 'Nhà cung cấp',
+      width: proportional(1, { minWidth: 160 }),
+      renderCell: (cost) =>
+        orDash(
+          cost.providerCustomerId
+            ? customersById.get(cost.providerCustomerId)?.companyName
+            : null,
+        ),
+    },
+  ];
+
   // Pinned to the end edge so "Sửa"/"Xoá" stay reachable while scrolling
   // horizontally — per user request (2026-09-03 follow-up to the header-
   // truncation fix, which is what made this table scroll horizontally at
@@ -302,6 +347,40 @@ export function ShipmentExpandedDetails({
           plugins={{ stickyColumns: vgmStickyColumns }}
         />
       )}
+
+      <VStack gap={2} hAlign="stretch">
+        <Text weight="semibold">Thông tin chi phí logistics</Text>
+
+        {shipment.costs.length === 0 ? (
+          <Text color="secondary">Chưa có khoản chi phí nào</Text>
+        ) : (
+          <>
+            <Table
+              columns={costColumns}
+              data={shipment.costs}
+              idKey="id"
+              dividers="rows"
+              density="compact"
+            />
+            {shipment.costTotalsByCategory.length > 0 ? (
+              <MetadataList
+                title={<Text weight="semibold">Tổng theo nhóm chi phí</Text>}
+                columns={4}
+                label={{ position: 'top' }}
+              >
+                {shipment.costTotalsByCategory.map((total) => (
+                  <MetadataListItem
+                    key={total.costCategoryId}
+                    label={total.costCategoryName}
+                  >
+                    {formatMoney(total.totalAmount)} đ
+                  </MetadataListItem>
+                ))}
+              </MetadataList>
+            ) : null}
+          </>
+        )}
+      </VStack>
 
       {onEdit ? (
         <>

@@ -31,6 +31,7 @@ import {
 } from '../config/shipment-types.js';
 import { useContractsQuery } from '../hooks/use-contracts-query.js';
 import { useCustomersQuery } from '../hooks/use-customers-query.js';
+import { useShipmentCostCategoriesQuery } from '../hooks/use-shipment-cost-categories-query.js';
 import { useShipmentsListQuery } from '../hooks/use-shipments-list-query.js';
 import { ShipmentExpandedDetails } from './shipment-expanded-details.jsx';
 import { ShipmentFormDialog } from './shipment-form-dialog.jsx';
@@ -133,6 +134,8 @@ const skeletonRows = Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => ({
   coNumber: null,
   coDeclarationDate: null,
   coIssuedDate: null,
+  costs: [],
+  costTotalsByCategory: [],
   contractNumber: '',
   projectName: '',
   supplierName: '',
@@ -202,6 +205,18 @@ export function ShipmentsList() {
         ),
       ),
     [customersQuery.data],
+  );
+
+  const costCategoriesQuery = useShipmentCostCategoriesQuery();
+  const costCategoriesById = useMemo(
+    () =>
+      new Map(
+        (costCategoriesQuery.data?.success
+          ? costCategoriesQuery.data.costCategories
+          : []
+        ).map((costCategory) => [costCategory.id, costCategory]),
+      ),
+    [costCategoriesQuery.data],
   );
 
   const searchableShipments = shipments.map((shipment) => {
@@ -297,6 +312,7 @@ export function ShipmentsList() {
             shipment={row}
             supplierName={row.supplierName}
             customersById={customersById}
+            costCategoriesById={costCategoriesById}
             onAddVgm={() =>
               setVgmDialog({ contractId: row.contractId, shipmentId: row.id })
             }

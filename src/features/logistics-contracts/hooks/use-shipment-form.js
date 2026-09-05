@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import { shipmentSchema } from '../config/shipment-schema.js';
 import { useCustomersQuery } from './use-customers-query.js';
+import { useShipmentCostLineRows } from './use-shipment-cost-line-rows.js';
 import {
   useCreateShipmentMutation,
   useUpdateShipmentMutation,
@@ -108,6 +109,19 @@ export function useShipmentForm({
   const createMutation = useCreateShipmentMutation(contractId);
   const updateMutation = useUpdateShipmentMutation(contractId);
 
+  const costLineRows = useShipmentCostLineRows(
+    shipment
+      ? shipment.costs.map((cost) => ({
+          rowKey: cost.id,
+          costCategoryId: cost.costCategoryId,
+          name: cost.name,
+          amount: cost.amount,
+          note: cost.note ?? '',
+          providerCustomerId: cost.providerCustomerId ?? '',
+        }))
+      : undefined,
+  );
+
   /**
    * @template {keyof import('../types/index.js').ShipmentFormValues} K
    * @param {K} field
@@ -121,6 +135,18 @@ export function useShipmentForm({
     setValues(shipment ? valuesFromShipment(shipment) : emptyValues(contract));
     setFieldErrors({});
     setSubmitError('');
+    costLineRows.setRows(
+      shipment
+        ? shipment.costs.map((cost) => ({
+            rowKey: cost.id,
+            costCategoryId: cost.costCategoryId,
+            name: cost.name,
+            amount: cost.amount,
+            note: cost.note ?? '',
+            providerCustomerId: cost.providerCustomerId ?? '',
+          }))
+        : [],
+    );
   }
 
   /** @param {import('react').FormEvent<HTMLFormElement>} [event] */
@@ -128,12 +154,26 @@ export function useShipmentForm({
     event?.preventDefault();
     setSubmitError('');
 
-    const result = shipmentSchema.safeParse(values);
+    const candidate = {
+      ...values,
+      costLines: costLineRows.rows.map((row) => ({
+        costCategoryId: row.costCategoryId,
+        name: row.name,
+        amount: row.amount,
+        note: row.note,
+        providerCustomerId: row.providerCustomerId,
+      })),
+    };
+
+    const result = shipmentSchema.safeParse(candidate);
     if (!result.success) {
       /** @type {Record<string, string>} */
       const nextFieldErrors = {};
       for (const issue of result.error.issues) {
-        nextFieldErrors[String(issue.path[0])] = issue.message;
+        const key = issue.path.join('.');
+        if (!nextFieldErrors[key]) {
+          nextFieldErrors[key] = issue.message;
+        }
       }
       setFieldErrors(nextFieldErrors);
       return;
@@ -141,12 +181,14 @@ export function useShipmentForm({
 
     setFieldErrors({});
 
+    const { costLines, ...submittedValues } = result.data;
     const mutationResult = shipment
       ? await updateMutation.mutateAsync({
           shipmentId: shipment.id,
-          values: result.data,
+          values: submittedValues,
+          costLines,
         })
-      : await createMutation.mutateAsync(result.data);
+      : await createMutation.mutateAsync({ values: submittedValues, costLines });
 
     if (!mutationResult.success) {
       setSubmitError(mutationResult.message);
@@ -169,6 +211,7 @@ export function useShipmentForm({
     customers: customersQuery.data?.success
       ? customersQuery.data.customers
       : [],
+    costLineRows,
     submitError,
     isSubmitting: createMutation.isPending || updateMutation.isPending,
     handleSubmit,

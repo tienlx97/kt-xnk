@@ -27,8 +27,11 @@ export function useCreateShipmentMutation(contractId) {
 
   return useMutation({
     mutationFn: (
-      /** @type {import('../types/index.js').ShipmentFormValues} */ values,
-    ) => createShipment(contractId, values),
+      /** @type {{ values: import('../types/index.js').ShipmentFormValues, costLines?: Parameters<typeof createShipment>[2] }} */ {
+        values,
+        costLines,
+      },
+    ) => createShipment(contractId, values, costLines),
     onSuccess: (result) => {
       if (result.success) {
         queryClient.invalidateQueries({ queryKey: queryKey(contractId) });
@@ -43,11 +46,12 @@ export function useUpdateShipmentMutation(contractId) {
 
   return useMutation({
     mutationFn: (
-      /** @type {{ shipmentId: string, values: import('../types/index.js').ShipmentFormValues }} */ {
+      /** @type {{ shipmentId: string, values: import('../types/index.js').ShipmentFormValues, costLines?: Parameters<typeof updateShipment>[3] }} */ {
         shipmentId,
         values,
+        costLines,
       },
-    ) => updateShipment(contractId, shipmentId, values),
+    ) => updateShipment(contractId, shipmentId, values, costLines),
     onSuccess: (result) => {
       if (result.success) {
         queryClient.invalidateQueries({ queryKey: queryKey(contractId) });

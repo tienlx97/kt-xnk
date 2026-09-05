@@ -6,11 +6,28 @@ const GENERIC_CREATE_ERROR = 'Không thể thêm lần xuất hàng';
 const GENERIC_UPDATE_ERROR = 'Không thể cập nhật lần xuất hàng';
 
 /**
+ * `Costs` is sent as the full list on both create and update (whole-list
+ * replace, same contract as `Commission.PaymentHistory`/`PaymentTerms` —
+ * see `docs/api/Shipments.md`, BE-kt-xnk).
+ * @param {import('../types/index.js').ShipmentCostLine[] | import('../types/index.js').ShipmentCostLineFormValues[]} costLines
+ */
+function toCostsRequestBody(costLines) {
+  return costLines.map((cost) => ({
+    CostCategoryId: cost.costCategoryId,
+    Name: cost.name,
+    Amount: cost.amount,
+    Note: cost.note || null,
+    ProviderCustomerId: cost.providerCustomerId || null,
+  }));
+}
+
+/**
  * `QuantityUnit` is derived from `Type` on the backend now (LCL is always
  * Kiện, FCL always Cont) — never sent, on create or update.
  * @param {import('../types/index.js').ShipmentFormValues} values
+ * @param {import('../types/index.js').ShipmentCostLineFormValues[]} costLines
  */
-function toCreateRequestBody(values) {
+function toCreateRequestBody(values, costLines) {
   return {
     SupplierCustomerId: values.supplierCustomerId,
     BookingNumber: values.bookingNumber,
@@ -34,6 +51,7 @@ function toCreateRequestBody(values) {
     CoNumber: values.coNumber || null,
     CoDeclarationDate: values.coDeclarationDate || null,
     CoIssuedDate: values.coIssuedDate || null,
+    Costs: toCostsRequestBody(costLines),
   };
 }
 
@@ -41,8 +59,9 @@ function toCreateRequestBody(values) {
  * `Type` is immutable after creation (see `Shipment`'s class doc comment,
  * BE-kt-xnk) — not part of the update body either.
  * @param {import('../types/index.js').ShipmentFormValues} values
+ * @param {import('../types/index.js').ShipmentCostLineFormValues[]} costLines
  */
-function toUpdateRequestBody(values) {
+function toUpdateRequestBody(values, costLines) {
   return {
     SupplierCustomerId: values.supplierCustomerId,
     BookingNumber: values.bookingNumber,
@@ -65,6 +84,7 @@ function toUpdateRequestBody(values) {
     CoNumber: values.coNumber || null,
     CoDeclarationDate: values.coDeclarationDate || null,
     CoIssuedDate: values.coIssuedDate || null,
+    Costs: toCostsRequestBody(costLines),
   };
 }
 
@@ -157,16 +177,18 @@ export async function searchAllShipments({ page = 1, pageSize = 25, conditions =
 /**
  * Requires `logistics:contracts:manage`, scoped to the contract's company.
  * `shipmentNumber`/`shipmentCode` are assigned by the backend, never sent
- * here.
+ * here. `costLines` defaults to empty — a shipment may be created with no
+ * logistics costs recorded yet.
  * @param {string} contractId
  * @param {import('../types/index.js').ShipmentFormValues} values
+ * @param {import('../types/index.js').ShipmentCostLineFormValues[]} [costLines]
  * @returns {Promise<{ success: true, shipment: import('../types/index.js').Shipment } | { success: false, message: string }>}
  */
-export async function createShipment(contractId, values) {
+export async function createShipment(contractId, values, costLines = []) {
   const result = await apiRequest(`/api/v1/contracts/${contractId}/shipments`, {
     method: 'POST',
     errorMessage: GENERIC_CREATE_ERROR,
-    body: toCreateRequestBody(values),
+    body: toCreateRequestBody(values, costLines),
   });
 
   if (!result.success) {
@@ -178,19 +200,23 @@ export async function createShipment(contractId, values) {
 
 /**
  * Requires `logistics:contracts:manage`, scoped to the contract's company.
- * `shipmentNumber` is immutable — not part of the request body.
+ * `shipmentNumber` is immutable — not part of the request body. `costLines`
+ * is the *entire* list — sending fewer rows than currently exist deletes
+ * the rest (same "whole-list replace" contract as
+ * `Commission.PaymentHistory`/`PaymentTerms`).
  * @param {string} contractId
  * @param {string} shipmentId
  * @param {import('../types/index.js').ShipmentFormValues} values
+ * @param {import('../types/index.js').ShipmentCostLineFormValues[]} [costLines]
  * @returns {Promise<{ success: true, shipment: import('../types/index.js').Shipment } | { success: false, message: string }>}
  */
-export async function updateShipment(contractId, shipmentId, values) {
+export async function updateShipment(contractId, shipmentId, values, costLines = []) {
   const result = await apiRequest(
     `/api/v1/contracts/${contractId}/shipments/${shipmentId}`,
     {
       method: 'PUT',
       errorMessage: GENERIC_UPDATE_ERROR,
-      body: toUpdateRequestBody(values),
+      body: toUpdateRequestBody(values, costLines),
     },
   );
 

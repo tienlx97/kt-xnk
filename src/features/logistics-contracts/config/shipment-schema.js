@@ -5,6 +5,26 @@ import { PAYMENT_TYPES } from './payment-schedule-types.js';
 import { SHIPMENT_TYPES } from './shipment-types.js';
 
 /**
+ * Mirrors the backend's `ShipmentCost` validation (BE-kt-xnk):
+ * `costCategoryId`/`name` required, `amount` must be > 0. `note` is
+ * optional, max 500 chars. `providerCustomerId` is optional — not every
+ * cost line has a known provider yet.
+ */
+const shipmentCostLineSchema = z.object({
+  costCategoryId: z.string().trim().min(1, 'Vui lòng chọn nhóm chi phí'),
+  name: z
+    .string()
+    .trim()
+    .min(1, 'Vui lòng nhập tên khoản chi phí')
+    .max(200, 'Tối đa 200 ký tự'),
+  amount: z
+    .number({ error: 'Vui lòng nhập số tiền' })
+    .positive('Số tiền phải lớn hơn 0'),
+  note: z.string().trim().max(500, 'Tối đa 500 ký tự'),
+  providerCustomerId: z.string().trim(),
+});
+
+/**
  * Mirrors the backend's `CreateShipmentCommandValidator`/
  * `UpdateShipmentCommandValidator` (BE-kt-xnk). `shipmentNumber`/
  * `shipmentCode` are system-assigned and never part of this form; neither
@@ -14,7 +34,8 @@ import { SHIPMENT_TYPES } from './shipment-types.js';
  * `PaymentSchedule`. `invoiceCurrency`/`declarationCurrency` are
  * constrained to the curated `CURRENCY_CODES` shortlist here (same choice
  * as `contract-schema.js`'s `currency`), narrower than the backend's free
- * 3-letter-code regex.
+ * 3-letter-code regex. `costLines` may be empty — a shipment can have no
+ * logistics costs recorded yet.
  */
 export const shipmentSchema = z.object({
   supplierCustomerId: z.string().trim().min(1, 'Vui lòng chọn forwarder'),
@@ -63,4 +84,5 @@ export const shipmentSchema = z.object({
   coNumber: z.string().trim().max(50, 'Tối đa 50 ký tự'),
   coDeclarationDate: z.string(),
   coIssuedDate: z.string(),
+  costLines: z.array(shipmentCostLineSchema),
 });
