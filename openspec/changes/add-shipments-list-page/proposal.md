@@ -73,3 +73,4 @@ pure FE addition with no backend dependency.
 |---|---|---|
 | 2026-09-04 | Standalone page gets a contract-picker create flow (unlike Commission, which has none) | User explicitly asked for it despite no code precedent |
 | 2026-09-05 | Trial the shared create/edit Shipment form as a fullscreen dialog | The form has three substantial work areas; the user wants to evaluate the MISA-style full-viewport editing pattern before applying it elsewhere |
+| 2026-09-05 | Treat Logistics Costs as a compact editable grid with one vertical-scroll owner | Prevents the table's full-bleed horizontal behavior from creating a redundant scrollbar in the surrounding tab and keeps high-frequency cost entry scannable |

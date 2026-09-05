@@ -5,6 +5,36 @@ Append-only session log. Newest entry FIRST.
 This file is the handoff between sessions/agents — write for a reader with zero conversation context.
 -->
 
+## 2026-09-05 — Polish Shipment Logistics Costs table
+
+**Context:** After the Shipment create/edit form moved fullscreen, the user
+reported that the Logistics Costs tab still felt visually unpolished and
+showed an unnecessary vertical scrollbar. They then asked for Note to become a
+small textarea and for Cost Category/Provider to receive more width.
+
+**What changed:** The tab's scroll container now owns only vertical overflow
+(`overflow-x: hidden; overflow-y: auto`), while Astryx Table remains the sole
+owner of horizontal overflow. `ShipmentCostLinesFields` resets inherited
+container-padding compensation at its own table boundary so the Table no
+longer expands 24px beyond the tab and clips the delete action. Removed the
+duplicated Logistics Costs heading that overlapped the first column header;
+moved "Thêm chi phí" and the running total into a compact toolbar above the
+grid; and switched the Table to `density="compact"`. Note now uses a one-row,
+small `TextArea`; Cost Category grew from 220→280px, Provider 200→260px,
+while Note shrank to 160px and Amount to 160px.
+
+**Live verification:** On `/logistics/shipments`, checked the fullscreen create
+dialog with no rows and after adding a row, plus the edit dialog with the
+seeded cost row. At 1272×573 the tab content measured 1224×364 with equal
+client/scroll height (no vertical overflow), the Table measured exactly its
+1224px content boundary with equal client/scroll dimensions, Note rendered as
+`textarea rows="1"`, and the delete control was fully visible and hit-testable.
+Screenshots: `harness/runs/20260905-shipment-cost-table/`.
+
+**Verification:** `./harness/verify.sh` passed every step; evidence:
+`harness/runs/20260905-120835-6570/`. Lint and typecheck passed independently
+before the full gate.
+
 ## 2026-09-05 — Trial fullscreen create/edit Shipment dialog
 
 **Context:** User liked the MISA-style pattern where large create/edit forms use

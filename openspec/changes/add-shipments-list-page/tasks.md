@@ -15,3 +15,7 @@
 ## 3. Fullscreen create/edit experiment
 
 - [x] 3.1 Render the shared `ShipmentFormDialog` as Astryx's fullscreen variant for both create and edit, make the form fill the viewport, and keep its tab body independently scrollable beneath a pinned header/footer — verify: `./harness/verify.sh` full pass and browser checks at 1272×573 and 390×844; evidence `harness/runs/20260905-shipment-fullscreen/` and `harness/runs/20260905-115256-6350/`.
+
+## 4. Logistics costs table polish
+
+- [x] 4.1 Separate vertical tab scrolling from the table's horizontal overflow, remove the clipped duplicate heading, move add/total into a compact toolbar, use compact table density, change Note to a one-row `TextArea`, and rebalance width toward Cost Category and Provider — verify: create-empty, create-with-row, and edit-with-row browser checks at 1272×573 plus `./harness/verify.sh`; evidence `harness/runs/20260905-shipment-cost-table/` and `harness/runs/20260905-120835-6570/`.

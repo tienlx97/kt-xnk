@@ -31,6 +31,8 @@ const styles = stylex.create({
   content: {
     flex: '1',
     minHeight: 0,
+    overflowX: 'hidden',
+    overflowY: 'auto',
   },
 });
 
@@ -116,7 +118,7 @@ export function ShipmentFields({
         <Tab value="costs" label="Chi phí Logistics" />
       </TabList>
 
-      <VStack gap={3} hAlign="stretch" isScrollable xstyle={styles.content}>
+      <VStack gap={3} hAlign="stretch" xstyle={styles.content}>
         {activeTab === 'info' ? (
           <CollapsibleGroup type="multiple" defaultValue={['book', 'lot']}>
             <VStack gap={3} hAlign="stretch">
@@ -474,25 +476,13 @@ export function ShipmentFields({
         ) : null}
 
         {activeTab === 'costs' ? (
-          // `Text` heading first, same as `ShipmentVgmSection`'s own "VGM"
-          // heading above its table: `Table` ships a baked-in -24px
-          // margin-top on its scroll wrapper (meant to pull the header row
-          // up flush against whatever sits right above it), and with
-          // nothing above to absorb that here, the tab's scrollable
-          // container clipped almost the entire header row off — a bug
-          // report (2026-09-05) that looked like a width problem but
-          // wasn't. Any element ≥24px tall directly above the table fixes
-          // it; a heading also matches every other tab's pattern.
-          <VStack gap={2} hAlign="stretch">
-            <Text weight="semibold">Chi phí Logistics</Text>
-            <ShipmentCostLinesFields
-              rows={costLineRows.rows}
-              customers={customers}
-              onAddRow={costLineRows.addRow}
-              onRemoveRow={costLineRows.removeRow}
-              onUpdateRowField={costLineRows.updateRowField}
-            />
-          </VStack>
+          <ShipmentCostLinesFields
+            rows={costLineRows.rows}
+            customers={customers}
+            onAddRow={costLineRows.addRow}
+            onRemoveRow={costLineRows.removeRow}
+            onUpdateRowField={costLineRows.updateRowField}
+          />
         ) : null}
       </VStack>
     </VStack>

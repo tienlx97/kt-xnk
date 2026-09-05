@@ -5,12 +5,15 @@ import { Button } from '@astryxdesign/core/Button';
 import { HStack } from '@astryxdesign/core/HStack';
 import { Icon } from '@astryxdesign/core/Icon';
 import { IconButton } from '@astryxdesign/core/IconButton';
+import { overlayPaddingReset } from '@astryxdesign/core/Layout';
 import { NumberInput } from '@astryxdesign/core/NumberInput';
 import { Selector } from '@astryxdesign/core/Selector';
 import { pixel, proportional, Table } from '@astryxdesign/core/Table';
 import { Text } from '@astryxdesign/core/Text';
+import { TextArea } from '@astryxdesign/core/TextArea';
 import { TextInput } from '@astryxdesign/core/TextInput';
 import { VStack } from '@astryxdesign/core/VStack';
+import * as stylex from '@stylexjs/stylex';
 import { useState } from 'react';
 
 import { IconPlus } from '@/shared/components/icon/icon-plus.jsx';
@@ -70,7 +73,7 @@ export function ShipmentCostLinesFields({
     {
       key: 'costCategoryId',
       header: 'Nhóm chi phí',
-      width: pixel(220),
+      width: pixel(280),
       renderCell: (row) => (
         <Selector
           label="Nhóm chi phí"
@@ -118,7 +121,7 @@ export function ShipmentCostLinesFields({
     {
       key: 'amount',
       header: 'Số tiền',
-      width: pixel(180),
+      width: pixel(160),
       renderCell: (row) => (
         <NumberInput
           label="Số tiền"
@@ -134,21 +137,24 @@ export function ShipmentCostLinesFields({
     {
       key: 'note',
       header: 'Ghi chú',
-      width: proportional(1),
+      width: pixel(160),
       renderCell: (row) => (
-        <TextInput
+        <TextArea
           label="Ghi chú"
           isLabelHidden
           value={row.note}
           onChange={(value) => onUpdateRowField(row.rowKey, 'note', value)}
           placeholder="Ghi chú (không bắt buộc)"
+          rows={1}
+          size="sm"
+          width="100%"
         />
       ),
     },
     {
       key: 'providerCustomerId',
       header: 'Nhà cung cấp',
-      width: pixel(200),
+      width: pixel(260),
       renderCell: (row) => (
         <Selector
           label="Nhà cung cấp"
@@ -187,13 +193,11 @@ export function ShipmentCostLinesFields({
   ];
 
   return (
-    <VStack gap={2} hAlign="stretch">
-      {rows.length === 0 ? (
-        <Text color="secondary">Chưa có khoản chi phí nào</Text>
-      ) : (
-        <Table data={rows} columns={columns} idKey="rowKey" dividers="grid" />
-      )}
-
+    <VStack
+      gap={2}
+      hAlign="stretch"
+      {...stylex.props(overlayPaddingReset.reset)}
+    >
       <HStack hAlign="between" vAlign="center">
         <Button
           label="Thêm chi phí"
@@ -206,6 +210,18 @@ export function ShipmentCostLinesFields({
           <Text weight="semibold">Tổng chi phí: {formatMoney(total)} đ</Text>
         ) : null}
       </HStack>
+
+      {rows.length === 0 ? (
+        <Text color="secondary">Chưa có khoản chi phí nào</Text>
+      ) : (
+        <Table
+          data={rows}
+          columns={columns}
+          idKey="rowKey"
+          density="compact"
+          dividers="grid"
+        />
+      )}
 
       {status ? (
         <Banner status="error" title={status.message} container="card" />
