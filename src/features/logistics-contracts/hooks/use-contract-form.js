@@ -3,6 +3,7 @@
 import { useState } from 'react';
 
 import { contractSchema } from '../config/contract-schema.js';
+import { CONTRACT_TYPES } from '../config/contract-types.js';
 import { DEFAULT_CURRENCY } from '../config/currencies.js';
 import { requiresPlaceOfDischarge } from '../config/incoterms.js';
 import { findVietnamCountry } from '../config/vietnam-country.js';
@@ -50,6 +51,9 @@ function dedupePlacesByName(places) {
 function emptyValues() {
   return {
     contractNumber: '',
+    // New contracts default to Draft — the user promotes to Official once
+    // it's finalized (edit form still lets it be changed either way).
+    contractType: CONTRACT_TYPES[0],
     createdDate: TODAY_ISO,
     quotationDate: TODAY_ISO,
     projectName: '',
@@ -90,6 +94,7 @@ function emptyValues() {
 function valuesFromContract(contract) {
   return {
     contractNumber: contract.contractNumber,
+    contractType: contract.contractType,
     createdDate: contract.createdDate,
     quotationDate: contract.quotationDate,
     projectName: contract.projectName,
@@ -268,7 +273,8 @@ export function useContractForm({ contract = null, onSuccess } = {}) {
    */
   function selectExistingSeller(sellerId, knownSeller) {
     const sellers = sellersQuery.data?.success ? sellersQuery.data.sellers : [];
-    const seller = knownSeller ?? sellers.find((candidate) => candidate.id === sellerId);
+    const seller =
+      knownSeller ?? sellers.find((candidate) => candidate.id === sellerId);
 
     setValues((current) => ({
       ...current,

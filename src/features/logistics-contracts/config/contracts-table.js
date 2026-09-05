@@ -1,3 +1,4 @@
+import { contractTypeOptions } from './contract-types.js';
 import { currencyOptions } from './currencies.js';
 import { incotermOptions } from './incoterms.js';
 
@@ -6,6 +7,12 @@ import { incotermOptions } from './incoterms.js';
 /** @satisfies {ReadonlyArray<import('@astryxdesign/core/PowerSearch').FieldDefinition>} */
 export const SEARCH_FIELD_DEFS = [
   { key: 'contractNumber', type: 'string', label: 'Số hợp đồng' },
+  {
+    key: 'contractType',
+    type: 'enum',
+    label: 'Loại hợp đồng',
+    enumValues: contractTypeOptions,
+  },
   { key: 'projectName', type: 'string', label: 'Dự án' },
   { key: 'buyerCompanyName', type: 'string', label: 'Khách hàng' },
   { key: 'contractValue', type: 'number', label: 'Giá trị' },
@@ -35,6 +42,12 @@ export const SEARCH_FIELD_DEFS = [
 /** @satisfies {ReadonlyArray<import('@/shared/components/advanced-filter-builder.jsx').AdvancedFilterFieldDef>} */
 export const FILTER_FIELD_DEFS = [
   { key: 'contractNumber', label: 'Số hợp đồng', type: 'string' },
+  {
+    key: 'contractType',
+    label: 'Loại hợp đồng',
+    type: 'enum',
+    options: contractTypeOptions,
+  },
   { key: 'projectName', label: 'Dự án', type: 'string' },
   { key: 'buyerCompanyName', label: 'Khách hàng', type: 'string' },
   { key: 'sellerCompanyName', label: 'Người bán', type: 'string' },
@@ -62,6 +75,7 @@ export const FILTER_FIELD_DEFS = [
 
 export const COLUMN_OPTIONS = [
   { key: 'contractNumber', label: 'Số hợp đồng', isAlwaysVisible: true },
+  { key: 'contractType', label: 'Loại hợp đồng' },
   { key: 'projectName', label: 'Dự án' },
   { key: 'buyer', label: 'Khách hàng' },
   { key: 'contractValue', label: 'Giá trị' },
@@ -83,6 +97,7 @@ export const COLUMN_OPTIONS = [
 // already has it open.
 export const DEFAULT_COLUMN_KEYS = [
   'contractNumber',
+  'contractType',
   'projectName',
   'buyer',
   'contractValue',
@@ -102,6 +117,7 @@ export const skeletonRows = Array.from(
   (_, index) => ({
     id: `skeleton-${index}`,
     contractNumber: '',
+    contractType: 'Draft',
     createdDate: '',
     quotationDate: '',
     projectName: '',

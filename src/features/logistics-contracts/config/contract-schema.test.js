@@ -7,6 +7,7 @@ import { contractSchema } from './contract-schema.js';
 function baseCandidate() {
   return {
     contractNumber: 'HD-001',
+    contractType: 'Draft',
     createdDate: '2026-01-10',
     quotationDate: '2026-01-05',
     projectName: 'Dự án A',
@@ -74,6 +75,20 @@ test('rejects a quotation date after the contract date', () => {
       issue?.message,
       'Ngày báo giá phải trước hoặc bằng ngày tạo hợp đồng',
     );
+  }
+});
+
+test('requires a valid contractType', () => {
+  const result = contractSchema.safeParse({
+    ...baseCandidate(),
+    contractType: 'NotAType',
+  });
+  assert.equal(result.success, false);
+  if (!result.success) {
+    const issue = result.error.issues.find(
+      (candidate) => candidate.path.join('.') === 'contractType',
+    );
+    assert.ok(issue, 'expected an issue on contractType');
   }
 });
 

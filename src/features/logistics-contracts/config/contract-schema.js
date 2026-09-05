@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { CONTRACT_TYPES } from './contract-types.js';
 import { CURRENCY_CODES } from './currencies.js';
 import { INCOTERM_CODES, requiresPlaceOfDischarge } from './incoterms.js';
 
@@ -32,6 +33,9 @@ const paymentTermSchema = z.object({
 export const contractSchema = z
   .object({
     contractNumber: z.string().trim().min(1, 'Vui lòng nhập số hợp đồng'),
+    contractType: z.enum(CONTRACT_TYPES, {
+      error: 'Vui lòng chọn loại hợp đồng',
+    }),
     createdDate: z.string().min(1, 'Vui lòng chọn ngày tạo hợp đồng'),
     quotationDate: z.string().min(1, 'Vui lòng chọn ngày báo giá'),
     projectName: z.string().trim().min(1, 'Vui lòng nhập tên dự án'),

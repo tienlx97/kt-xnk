@@ -5,6 +5,10 @@ export {};
  */
 
 /**
+ * @typedef {'Draft' | 'Official'} ContractType
+ */
+
+/**
  * @typedef {Object} ExtraField
  * @property {string} key
  * @property {string} value
@@ -116,6 +120,7 @@ export {};
  * @typedef {Object} Contract
  * @property {string} id
  * @property {string} contractNumber
+ * @property {ContractType} contractType
  * @property {string} createdDate - ISO date (YYYY-MM-DD)
  * @property {string} quotationDate - ISO date (YYYY-MM-DD)
  * @property {string} projectName
@@ -320,6 +325,7 @@ export {};
 /**
  * @typedef {Object} ContractFormValues
  * @property {string} contractNumber
+ * @property {ContractType | ''} contractType
  * @property {string} createdDate - ISO date (YYYY-MM-DD)
  * @property {string} quotationDate - ISO date (YYYY-MM-DD)
  * @property {string} projectName

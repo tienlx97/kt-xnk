@@ -22,6 +22,7 @@ import {
 import { createRowExpansionInteractionPlugin } from '@/shared/components/expandable-row-styles.jsx';
 import { useFullscreenToggle } from '@/shared/components/fullscreen-panel.jsx';
 
+import { labelForContractType } from '../config/contract-types.js';
 import {
   COLUMN_OPTIONS,
   DEFAULT_COLUMN_KEYS,
@@ -218,6 +219,13 @@ export function ContractsList() {
       width: pixel(180),
       filter: 'contractNumber',
       renderCell: (contract) => contract.contractNumber,
+    },
+    {
+      key: 'contractType',
+      header: 'Loại hợp đồng',
+      width: pixel(130),
+      filter: 'contractType',
+      renderCell: (contract) => labelForContractType(contract.contractType),
     },
     {
       key: 'projectName',

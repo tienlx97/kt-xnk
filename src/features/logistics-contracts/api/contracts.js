@@ -39,7 +39,11 @@ export async function listContracts({ page = 1, pageSize = 25 } = {}) {
  * @param {{ page?: number, pageSize?: number, conditions?: import('@/shared/components/advanced-filter-builder.jsx').AdvancedFilterCondition[] }} [options]
  * @returns {Promise<{ success: true, contracts: import('../types/index.js').Contract[], page: number, pageSize: number, totalCount: number, totalPages: number } | { success: false, message: string }>}
  */
-export async function searchContracts({ page = 1, pageSize = 25, conditions = [] } = {}) {
+export async function searchContracts({
+  page = 1,
+  pageSize = 25,
+  conditions = [],
+} = {}) {
   const result = await apiRequest('/api/v1/contracts/search', {
     method: 'POST',
     errorMessage: GENERIC_LIST_ERROR,
@@ -165,6 +169,7 @@ function buildContractBody(
 ) {
   return {
     ContractNumber: values.contractNumber,
+    ContractType: values.contractType,
     CreatedDate: values.createdDate,
     QuotationDate: values.quotationDate,
     ProjectName: values.projectName,

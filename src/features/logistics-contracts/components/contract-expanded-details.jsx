@@ -24,6 +24,7 @@ import {
 } from '@/shared/components/expandable-row-styles.jsx';
 
 import { labelForContractAnnexType } from '../config/contract-annex-types.js';
+import { labelForContractType } from '../config/contract-types.js';
 import { formatMoney } from '../config/currencies.js';
 import { labelForPaymentType } from '../config/payment-schedule-types.js';
 import { labelForShipmentQuantityUnit } from '../config/shipment-quantity-units.js';
@@ -442,6 +443,11 @@ export function ContractExpandedDetails({
           </VStack>
         </HStack>
         <HStack gap={2} vAlign="center" wrap="wrap">
+          <Token
+            label={labelForContractType(contract.contractType)}
+            color={contract.contractType === 'Official' ? 'green' : 'orange'}
+            size="sm"
+          />
           <Token
             label={`${contract.incoterm} ${contract.incotermYear}`}
             color="blue"

@@ -15,6 +15,7 @@ import { Plus } from 'lucide-react';
 
 import { UnderlinedMetadataListItem as MetadataListItem } from '@/shared/components/expandable-row-styles.jsx';
 
+import { labelForContractType } from '../config/contract-types.js';
 import { formatMoney } from '../config/currencies.js';
 
 /** @typedef {'info' | 'paymentSchedule' | 'shipment' | 'commission'} ExpandedTab */
@@ -90,8 +91,10 @@ export function ContractInfoTab({
         <MetadataListItem label="Ngày báo giá">
           {orDash(contract.quotationDate)}
         </MetadataListItem>
+        <MetadataListItem label="Loại hợp đồng">
+          {labelForContractType(contract.contractType)}
+        </MetadataListItem>
         {metadataSpacer('row2-pad-1')}
-        {metadataSpacer('row2-pad-2')}
         <MetadataListItem label="Incoterm">
           {contract.incoterm}
         </MetadataListItem>

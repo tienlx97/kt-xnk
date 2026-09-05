@@ -17,6 +17,7 @@ import { FormSection } from '@/shared/components/form-section.jsx';
 import { FormattedNumberTextInput } from '@/shared/components/formatted-number-text-input.jsx';
 import { IconPlus } from '@/shared/components/icon/icon-plus.jsx';
 
+import { contractTypeOptions } from '../config/contract-types.js';
 import { currencyOptions } from '../config/currencies.js';
 import { incotermOptions } from '../config/incoterms.js';
 import { BuyerFields } from './buyer-fields.jsx';
@@ -82,6 +83,21 @@ export function ContractGeneralFields({ form }) {
             onChange={(value) => setField('projectName', value)}
             isRequired
             status={fieldStatuses.projectName}
+            statusVariant="tooltip"
+          />
+        </StackItem>
+      </FormGrid>
+
+      <FormGrid>
+        <StackItem size="fill">
+          <Selector
+            label="Loại hợp đồng"
+            placeholder="Chọn loại hợp đồng"
+            value={values.contractType}
+            onChange={(value) => setField('contractType', value ?? '')}
+            options={contractTypeOptions}
+            isRequired
+            status={fieldStatuses.contractType}
             statusVariant="tooltip"
           />
         </StackItem>
