@@ -1,5 +1,20 @@
 # Progress Log
 
+## 2026-09-05 — UI/UX review baseline (task 1.1)
+
+Created `openspec/changes/ui-ux-maintainability/` for the user-requested
+system-wide UI review and component split. Audited 15 representative URLs at
+390×844 and captured Contract desktop/mobile baseline screenshots. Confirmed
+overlapping Contract date controls, fixed-width form rows, and Design system
+440px document width on a 390px viewport. Identified zero-page pagination edge
+case in shared table source. See change audit for scope and evidence limits.
+
+Verification passed: `harness/runs/20260905-142258-7129/`.
+Screenshots: `harness/runs/20260905-ui-ux-review/`.
+
+Harness gaps: document overflow checks miss controls overlapping inside a
+clipped dialog; add a reusable geometry regression check in this change.
+
 <!--
 Append-only session log. Newest entry FIRST.
 This file is the handoff between sessions/agents — write for a reader with zero conversation context.
