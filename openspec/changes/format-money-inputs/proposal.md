@@ -13,7 +13,7 @@ drafts.
 ## What changes
 
 - Introduce a shared Astryx `TextInput` adapter for non-negative numeric values.
-- Group integer digits from left to right and retain up to two decimal digits.
+- Group integer digits from left to right and retain up to eight decimal digits.
 - Keep form and API boundaries numeric; only the editing representation is text.
 - Apply the adapter to money, ratio, quantity, and weight fields while retaining
   `NumberInput` for year values.

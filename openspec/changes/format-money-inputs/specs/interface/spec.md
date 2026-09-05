@@ -17,7 +17,14 @@ state.
 
 - GIVEN a user has entered an integer amount
 - WHEN they enter a decimal point
-- THEN the decimal point remains visible so up to two decimal digits can follow
+- THEN the decimal point remains visible so up to eight decimal digits can
+  follow
+
+### Scenario: Extended decimal precision
+
+- GIVEN a user is editing a numeric business field
+- WHEN they enter between three and eight digits after the decimal point
+- THEN every entered decimal digit remains visible and is emitted to form state
 
 ### Scenario: Year inputs
 

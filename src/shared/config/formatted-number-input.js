@@ -1,4 +1,4 @@
-const MAX_DECIMAL_DIGITS = 2;
+const MAX_DECIMAL_DIGITS = 8;
 
 /**
  * Formats a non-negative numeric draft while it is being edited. Integer

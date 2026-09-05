@@ -1,5 +1,19 @@
 # Progress Log
 
+## 2026-09-05 — Extend formatted numeric precision (task 1.2)
+
+Raised the common `FormattedNumberTextInput` decimal precision from two to
+eight digits for every migrated money, ratio, quantity, and weight field. Added
+unit coverage for each supported length from three through eight and confirmed
+that a ninth digit is consistently truncated.
+
+Browser verification on the Contract value field produced `123,4.123`,
+`123,4.1234`, `123,4.12345`, `123,4.123456`, `123,4.1234567`, and
+`123,4.12345678` without saving a record. Screenshot:
+`harness/runs/20260905-decimal-precision/eight-decimals.png`. Gate passed:
+`harness/runs/20260905-155139-7971/`; 119 tests, build, dependency structure,
+and quality thresholds passed.
+
 ## 2026-09-05 — Common formatted numeric TextInput
 
 Completed `format-money-inputs`. Added shared `FormattedNumberTextInput` over
