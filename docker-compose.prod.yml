@@ -24,8 +24,12 @@ services:
     restart: unless-stopped
     networks:
       - internal
+    # Host port 80 is taken by IIS on this machine, so nginx's container
+    # port 80 is published on host port 8090 instead. The router's dst-nat
+    # maps external port 80 -> this host's 8090 (see docs/deployment.md
+    # section 3) so the outside world still just sees plain port 80.
     ports:
-      - "80:80"
+      - "8090:80"
       - "443:443"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro

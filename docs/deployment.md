@@ -75,11 +75,11 @@ ipconfig /all
 ```
 
 Trên MikroTik (Winbox → Terminal, hoặc SSH), giả sử dải LAN mặc định
-`192.168.88.0/24` và muốn gán `192.168.88.60` cho frontend:
+`192.168.100.0/24` và muốn gán `192.168.100.34` cho frontend:
 
 ```
 /ip dhcp-server lease
-add address=192.168.88.60 mac-address=AA:BB:CC:DD:EE:FF server=[find] comment="frontend-server"
+add address=192.168.100.34 mac-address=AA:BB:CC:DD:EE:FF server=[find] comment="frontend-server"
 ```
 
 (`server=[find]` lấy DHCP server đầu tiên đang cấu hình — nếu MikroTik có
@@ -91,7 +91,7 @@ Khởi động lại kết nối mạng trên máy chủ (hoặc `ipconfig /rene
 Xác nhận:
 
 ```
-/ip dhcp-server lease print where address=192.168.88.60
+/ip dhcp-server lease print where address=192.168.100.34
 ```
 
 ---
@@ -131,13 +131,20 @@ Tìm interface có địa chỉ IP public (không phải dải LAN `192.168.x.x`
 thường là `ether1` hoặc `pppoe-out1` nếu dùng PPPoE. Gọi tên đó là
 `<WAN>` trong các lệnh dưới.
 
-Forward port 80 và 443 từ WAN vào máy chủ frontend (`192.168.88.60` — IP đã
+Forward port 80 và 443 từ WAN vào máy chủ frontend (`192.168.100.34` — IP đã
 đặt ở mục 1):
+
+> Port 80 trên máy `192.168.100.34` đang bị IIS (Windows) chiếm sẵn, nên
+> nginx container publish ra host ở port **8090** thay vì 80 (xem
+> `docker-compose.prod.yml`). Vì vậy rule dst-nat cho HTTP phải trỏ
+> `to-ports=8090` — người dùng bên ngoài vẫn gõ port 80 bình thường, chỉ có
+> bước NAT dịch sang 8090 trước khi vào máy. Port 443 không xung đột nên giữ
+> nguyên `to-ports=443`.
 
 ```
 /ip firewall nat
-add chain=dstnat in-interface=<WAN> protocol=tcp dst-port=80 action=dst-nat to-addresses=192.168.88.60 to-ports=80 comment="Frontend HTTP (ACME + redirect)"
-add chain=dstnat in-interface=<WAN> protocol=tcp dst-port=443 action=dst-nat to-addresses=192.168.88.60 to-ports=443 comment="Frontend HTTPS"
+add chain=dstnat in-interface=<WAN> protocol=tcp dst-port=80 action=dst-nat to-addresses=192.168.100.34 to-ports=8090 comment="Frontend HTTP (ACME + redirect)"
+add chain=dstnat in-interface=<WAN> protocol=tcp dst-port=443 action=dst-nat to-addresses=192.168.100.34 to-ports=443 comment="Frontend HTTPS"
 ```
 
 **Không forward thêm port nào khác** — đặc biệt không forward port của
@@ -158,10 +165,14 @@ mọi rule `drop`/`reject` cuối chain `forward`:
 Thêm rule (điều chỉnh số thứ tự `place-before` theo rule `drop all` hiện có
 trong danh sách vừa in ra — luôn đặt accept phía TRÊN drop):
 
+> Lưu ý: NAT (dstnat) chạy ở giai đoạn prerouting, **trước** khi packet tới
+> chain `forward` — nên tại `forward`, `dst-port` đã là port **sau khi dịch**
+> (8090 cho HTTP), không phải port 80 gốc mà người ngoài gõ vào.
+
 ```
 /ip firewall filter
-add chain=forward protocol=tcp dst-port=80 dst-address=192.168.88.60 action=accept place-before=<số-thứ-tự-rule-drop> comment="Allow inbound HTTP to frontend"
-add chain=forward protocol=tcp dst-port=443 dst-address=192.168.88.60 action=accept place-before=<số-thứ-tự-rule-drop> comment="Allow inbound HTTPS to frontend"
+add chain=forward protocol=tcp dst-port=8090 dst-address=192.168.100.34 action=accept place-before=<số-thứ-tự-rule-drop> comment="Allow inbound HTTP to frontend"
+add chain=forward protocol=tcp dst-port=443 dst-address=192.168.100.34 action=accept place-before=<số-thứ-tự-rule-drop> comment="Allow inbound HTTPS to frontend"
 ```
 
 Nếu chain `forward` của bạn vốn không có rule drop nào (chính sách mặc định
@@ -191,14 +202,14 @@ cp .env.production.example .env
 
 | Biến | Giá trị |
 |---|---|
-| `API_BASE_URL` | Địa chỉ LAN của backend, vd `http://192.168.88.50:8080` (theo `BE-kt-xnk/docker-compose.lan.yml`) |
+| `API_BASE_URL` | Địa chỉ LAN của backend, vd `http://192.168.100.34:8080` (backend chạy chung máy với frontend, theo `BE-kt-xnk/docker-compose.lan.yml`) |
 
 ---
 
 ## 7. Sửa hostname trong cấu hình nginx và lấy chứng chỉ TLS
 
 ```bash
-sed -i 's/app.your-ddns-hostname.example/<hostname-tu-muc-2>/g' nginx/conf.d/app.conf
+sed -i 's/app.your-ddns-hostname.example/hd6089xzez8.sn.mynetname.net/g' nginx/conf.d/app.conf
 ```
 
 Lấy chứng chỉ Let's Encrypt lần đầu (chi tiết: `nginx/README.md`):
@@ -210,7 +221,7 @@ docker run --rm -p 80:80 \
   -v "$PWD/certbot/www:/var/www/certbot" \
   -v "$PWD/certbot/conf:/etc/letsencrypt" \
   certbot/certbot certonly --standalone \
-  -d <hostname-tu-muc-2> \
+  -d hd6089xzez8.sn.mynetname.net \
   --email you@example.com --agree-tos --no-eff-email
 ```
 
@@ -241,8 +252,8 @@ Từ **một mạng khác** (4G điện thoại, tắt Wi-Fi công ty) để ch�
 truy cập được từ Internet:
 
 ```bash
-curl -I http://<hostname-tu-muc-2>          # phải redirect sang https
-curl -I https://<hostname-tu-muc-2>          # phải trả về 200
+curl -I http://hd6089xzez8.sn.mynetname.net          # phải redirect sang https
+curl -I https://hd6089xzez8.sn.mynetname.net          # phải trả về 200
 ```
 
 Mở trình duyệt, đăng nhập thử bằng tài khoản Admin đã seed ở backend
