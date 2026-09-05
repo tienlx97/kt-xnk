@@ -24,7 +24,7 @@ import {
  * warning in the dev server log.
  * @param {import('next/server').NextRequest} request
  */
-export function middleware(request) {
+export function proxy(request) {
   const { pathname } = request.nextUrl;
   const matchedRule = routeAccessRules.find(
     (rule) =>
