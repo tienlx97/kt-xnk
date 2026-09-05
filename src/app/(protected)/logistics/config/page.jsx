@@ -29,7 +29,7 @@ const ITEMS = [
  */
 export default function LogisticsConfigPage() {
   return (
-    <PageContentShell>
+    <PageContentShell isFullWidth>
       <VStack gap={4} hAlign="stretch">
         <Breadcrumbs>
           <BreadcrumbItem href="/logistics">Logistics</BreadcrumbItem>

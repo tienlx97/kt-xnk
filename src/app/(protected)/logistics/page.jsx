@@ -14,7 +14,7 @@ export const metadata = {
  */
 export default function LogisticsPage() {
   return (
-    <PageContentShell>
+    <PageContentShell isFullWidth>
       <LogisticsOverview />
     </PageContentShell>
   );

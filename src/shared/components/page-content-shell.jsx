@@ -30,18 +30,32 @@ export const pageContentShellStyles = stylex.create({
     maxWidth: '110rem',
     width: '100%',
   },
+  // /logistics/*'s data tables (contracts, shipments, etc.) routinely need
+  // more columns' worth of room than even /admin's 110rem cap gives them —
+  // this drops the cap entirely instead of just raising it, since there's
+  // no natural next number that stays right as monitors get wider.
+  innerFullWidth: {
+    maxWidth: 'none',
+  },
 });
 
 /**
  * Convenience wrapper for non-MDX pages that want the same padding/width
  * contract as `/docs` (see `pageContentShellStyles` above) — `/admin/*`'s
  * standard page shell.
- * @param {{ children: import('react').ReactNode }} props
+ * @param {{ children: import('react').ReactNode, isFullWidth?: boolean }} props
  */
-export function PageContentShell({ children }) {
+export function PageContentShell({ children, isFullWidth = false }) {
   return (
     <div {...stylex.props(pageContentShellStyles.outer)}>
-      <div {...stylex.props(pageContentShellStyles.inner)}>{children}</div>
+      <div
+        {...stylex.props(
+          pageContentShellStyles.inner,
+          isFullWidth && pageContentShellStyles.innerFullWidth,
+        )}
+      >
+        {children}
+      </div>
     </div>
   );
 }

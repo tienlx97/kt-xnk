@@ -14,7 +14,7 @@ export const metadata = {
  */
 export default function LogisticsShipmentsPage() {
   return (
-    <PageContentShell>
+    <PageContentShell isFullWidth>
       <VStack gap={4} hAlign="stretch">
         <Breadcrumbs>
           <BreadcrumbItem href="/logistics">Logistics</BreadcrumbItem>
