@@ -7,6 +7,7 @@ import { RadioList, RadioListItem } from '@astryxdesign/core/RadioList';
 import { Section } from '@astryxdesign/core/Section';
 import { StackItem } from '@astryxdesign/core/Stack';
 import { Heading } from '@astryxdesign/core/Text';
+import { colorVars, spacingVars } from '@astryxdesign/core/theme/tokens.stylex';
 import { VStack } from '@astryxdesign/core/VStack';
 import * as stylex from '@stylexjs/stylex';
 import { AlignJustify, Pin } from 'lucide-react';
@@ -43,6 +44,8 @@ const styles = stylex.create({
   // then runs the full height of the body, and the rail/pane each restate
   // their own gutter instead of sharing the popover's.
   surface: {
+    backgroundColor: colorVars['--color-background-surface'],
+    maxWidth: `calc(100vw - ${spacingVars['--spacing-4']})`,
     paddingBlockEnd: 0,
     paddingBlockStart: 0,
     paddingInlineEnd: 0,
@@ -50,14 +53,36 @@ const styles = stylex.create({
   },
   body: {
     blockSize: 400,
+    flexDirection: {
+      default: 'column',
+      '@media (min-width: 640px)': 'row',
+    },
   },
   rail: {
     flexShrink: 0,
-    width: 176,
+    width: {
+      default: '100%',
+      '@media (min-width: 640px)': 176,
+    },
+  },
+  railItems: {
+    flexDirection: {
+      default: 'row',
+      '@media (min-width: 640px)': 'column',
+    },
+    flexWrap: 'wrap',
   },
   railItem: {
     justifyContent: 'flex-start',
-    width: '100%',
+    width: {
+      default: 'auto',
+      '@media (min-width: 640px)': '100%',
+    },
+  },
+  paneSlot: {
+    flexBasis: 0,
+    minHeight: 0,
+    minWidth: 0,
   },
   // `pane` sits in a `StackItem`, which is a block box, not a flex
   // container — `flexGrow` does nothing there, so without a definite
@@ -143,7 +168,7 @@ export function TableViewOptionsPopover({
     <Popover
       placement="below"
       alignment="end"
-      width={680}
+      width={`min(42.5rem, calc(100vw - ${spacingVars['--spacing-4']}))`}
       label="Tuỳ chọn hiển thị"
       isOpen={isOpen}
       onOpenChange={setIsOpen}
@@ -156,7 +181,7 @@ export function TableViewOptionsPopover({
             dividers={['end']}
             xstyle={styles.rail}
           >
-            <VStack gap={1}>
+            <VStack gap={1} xstyle={styles.railItems}>
               <Button
                 label="Cột hiển thị"
                 variant={section === 'columns' ? 'secondary' : 'ghost'}
@@ -181,7 +206,7 @@ export function TableViewOptionsPopover({
             </VStack>
           </Section>
 
-          <StackItem size="fill">
+          <StackItem size="fill" xstyle={styles.paneSlot}>
             <VStack gap={0} minHeight={0} xstyle={styles.pane}>
               {section !== 'columns' ? (
                 <VStack gap={0} padding={4} paddingBlockEnd={3}>

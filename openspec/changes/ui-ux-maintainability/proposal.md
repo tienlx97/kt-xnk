@@ -1,6 +1,6 @@
 # Proposal: UI/UX and component maintainability
 
-**Status:** in-progress
+**Status:** done
 **Created:** 2026-09-05
 
 ## Why

@@ -4,11 +4,12 @@
 
 ## Purpose
 
-KT-XNK website — a static/informational Next.js site. **Front-end only** —
-the backend (data access, business logic) lives in a separate project; this
-repo never talks to a database directly. Target users: visitors looking up
-company/product info. Success criteria: fast, light-themed, easy to extend
-with new pages via the feature-based `src/` structure.
+KT-XNK is the company's Next.js frontend for internal documentation, logistics
+operations, and user administration. **Front-end only** — backend data and
+business logic live in a separate project; this repo never talks to a database
+directly. Target users are company staff managing contracts, shipments,
+commissions, customers, users, and internal reference material. The interface
+uses a light theme and feature-based `src/` architecture.
 
 ## Tech stack
 
@@ -21,7 +22,7 @@ with new pages via the feature-based `src/` structure.
   components and the `xstyle` escape hatch on Astryx components — see
   `docs/stylex-installation.md` and `docs/stylex-authoring.md`
 - Theme: light only (no dark mode)
-- Database: none yet — static site
+- Database: none in this repository; authenticated API calls use the separate backend
 - Data fetching: `@tanstack/react-query` for any client-side fetching/caching
   against the separate backend project; provider goes in
   `src/shared/components` per the layer rules, hooks live in each feature's

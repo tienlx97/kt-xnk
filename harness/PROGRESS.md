@@ -1,5 +1,31 @@
 # Progress Log
 
+## 2026-09-05 — Final UI/UX regression and component map (task 4.1)
+
+Completed `ui-ux-maintainability`. Fixed the remaining 680px column-options
+overlay: constrained its actual Popover width, reflowed rail and transfer
+panels at 640px, and used an opaque theme surface. Measured 374px at viewport
+390px. Updated current architecture/project purpose and added
+`docs/ui-components.md` plus ADR-0005.
+
+Final mobile navigation sweep: 16 URLs, document width 390px throughout.
+Desktop: 11 representative pages, document width 1440px throughout. Login
+checked separately. Screenshots/interaction evidence:
+`harness/runs/20260905-ui-ux-review/`; complete results/limits:
+`openspec/changes/ui-ux-maintainability/audit.md`.
+
+Gate passed: `harness/runs/20260905-145851-7541/`; 114 tests, no dependency
+violations (515 modules), shared JS gzip 168.7kB against 250kB budget.
+No business form was saved. Axe returned zero evaluated passes: inconclusive,
+not evidence of accessibility compliance. Role matrix, production Web Vitals,
+changed-line coverage and full save round trips were not measured.
+
+Harness gaps: responsive overlay checks must measure the positioned outer
+popover, not just its inner surface. ADR-0005 was recorded after refactoring
+instead of before as ENTROPY prescribes; future large changes should include
+that decision document in the first planning task. The form geometry probe is
+reusable but not yet part of an automated browser gate.
+
 ## 2026-09-05 — Split operational UI responsibilities (task 3.1)
 
 Extracted Contract/Commission expanded details, Contract info/Commission tabs,

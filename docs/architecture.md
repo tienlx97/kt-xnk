@@ -82,6 +82,14 @@ Enforced by `harness/structure.rules.cjs` (dependency-cruiser), run via
 
 ## Current inventory
 
+- `src/features/auth/` — login, session handling, and access-aware UI.
+- `src/features/admin-users/` — users, organization/employee fields, permissions,
+  and session administration.
+- `src/features/logistics-contracts/` — contracts, shipments/VGM, commissions,
+  customers, countries, places, and related payment/catalog UI. List metadata
+  lives in `config/*-table.js`; components are grouped by responsibility.
+  See `docs/ui-components.md` and ADR-0005 for the current component map.
+
 - `src/features/home/` — `components/hero.jsx`, the homepage hero.
 - `src/features/design-system/` — `components/{showcase-section.jsx,sections/*.jsx}`,
   the internal component showcase at `/design-system`.
@@ -104,9 +112,10 @@ Enforced by `harness/structure.rules.cjs` (dependency-cruiser), run via
 ## Data flow
 
 `src/app/*` (Next.js routes) → feature/shared public index → each tree's
-own `components → hooks → api → config → types` chain. No backend calls
-yet — the site is fully static at this stage; `api/` layers will appear
-once a feature needs data from the separate backend project.
+own `components → hooks → api → config → types` chain. Operational features
+call the separate backend through the authenticated Next API proxy; React
+Query hooks own client fetching and invalidation. Documentation is compiled
+from trusted repository MDX. The frontend does not access a database directly.
 
 ## Documentation shell
 

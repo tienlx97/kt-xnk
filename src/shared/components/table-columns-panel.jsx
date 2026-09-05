@@ -24,6 +24,10 @@ const styles = stylex.create({
   // rows within whatever height the pane gives them — many columns lengthen
   // a list instead of growing the popover past the viewport.
   transferPanels: {
+    flexDirection: {
+      default: 'column',
+      '@media (min-width: 640px)': 'row',
+    },
     flexGrow: 1,
     minHeight: 0,
   },
