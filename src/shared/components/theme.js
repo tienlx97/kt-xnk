@@ -149,6 +149,22 @@ export const ktxnkTheme = defineTheme({
         color: 'var(--color-on-success)',
       },
     },
+    // `Table`'s own scroll wrapper is `overflow: auto` on *both* axes
+    // (needed for horizontal scroll on wide tables) — per the CSS overflow
+    // spec, a "visible" value on one axis forces itself to "auto" when the
+    // other axis isn't "visible", so there's no way to keep horizontal
+    // auto-scroll while leaving vertical overflow alone. That auto-overflow
+    // ancestor is exactly what `position: sticky` resolves against, so
+    // without a bounded height here the header's sticky `top: 0` was
+    // anchoring to an ever-growing, never-actually-scrolled box — it never
+    // visibly stuck to anything (caught live with 50 seeded rows,
+    // 2026-09-12). Giving the wrapper a real height turns it into the
+    // scrolling box sticky needs — the table now scrolls internally,
+    // independent of the page, with its own header staying pinned to the
+    // top of that scroll box.
+    'table-scroll-wrapper': {
+      base: { maxHeight: '65vh' },
+    },
     // Paint cells as well as the section so pinned headers stay opaque.
     // `position: sticky` goes on the header *cells* (`<th>`), not the
     // `<thead>` itself — sticky on a table-header-group isn't reliably
@@ -163,7 +179,14 @@ export const ktxnkTheme = defineTheme({
         color: '#18594e',
         position: 'sticky',
         top: '0',
-        zIndex: '1',
+        // Sticky-left/-right body cells (`useTableStickyColumns`) are
+        // ALSO `position: sticky` at `z-index: 1` — with equal z-index,
+        // DOM order wins ties, and `<tbody>` comes after `<thead>`, so a
+        // sticky body cell painted over the header's own label once both
+        // were stuck at the same screen position (caught live with 50
+        // seeded rows and a sticky-start column, 2026-09-12). `2` beats
+        // every sticky body cell regardless of which edge it's pinned to.
+        zIndex: '2',
       },
     },
     'table-body': {

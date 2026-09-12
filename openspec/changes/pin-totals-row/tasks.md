@@ -7,4 +7,5 @@
 
 ## 2. Full verification
 
-- [x] 2.1 `./harness/verify.sh` green (lint, typecheck, structure, harness-tests, unit-tests, build, quality-thresholds). Not verified live in-browser — the dev server can't run a second instance while another `next dev`/prod process holds the directory lock on this machine; ask the user to check visually.
+- [x] 2.1 `./harness/verify.sh` green (lint, typecheck, structure, harness-tests, unit-tests, build, quality-thresholds).
+- [x] 2.2 Live-verified: seeded 50 test contracts via the dev API (`26SCROLL-001`..`050`, cleaned up afterward), logged into a real browser session against `pnpm exec next dev -p 3001` + the BE dev Docker stack, scrolled the Hợp đồng list (both "Mặc định" and "Tài chính" views) and the Shipment list — pinned totals bar tracked correctly and matched the inline "Tổng cộng" row's values exactly. This pass is also what surfaced and got fixed: `pin-table-header`'s sticky header never actually engaging (bounded `max-height` needed) and a sticky-column/header z-index collision — see that change's decision log.

@@ -1,5 +1,56 @@
 # Progress Log
 
+## 2026-09-12 — Fix: sticky header never actually stuck to anything (needed a real scroll test to catch)
+
+**Context:** User asked me to seed real test data (50 rows) and actually
+verify the sticky-header/pinned-totals-row work by scrolling, instead of
+trusting the earlier `getComputedStyle` spot-check (which only had 1–4
+sample rows — never enough for the page/table to actually scroll). Good
+call: it surfaced two real bugs neither static check nor the earlier
+1-row check could have caught. See
+`openspec/changes/pin-table-header/`'s decision log for full detail.
+
+**How I tested:** logged into a real browser session against
+`pnpm exec next dev -p 3001` (BE dev Docker stack on :8081), seeded 50
+contracts (`26SCROLL-001`..`050`) via a one-off script hitting
+`POST /api/v1/contracts` directly with the dev Admin token, scrolled the
+Hợp đồng list (both column presets) and Shipment list, then deleted the
+seeded rows again (`DELETE FROM Contracts WHERE ContractNumber LIKE
+'26SCROLL-%'` in the dev MySQL container — safe on this disposable dev
+stack; the FK graph is mostly `ON DELETE CASCADE` from `Contracts`, the
+few `RESTRICT` ones (`Shipments`, `Commissions`, `ContractAnnexes`,
+`PaymentSchedules`) never applied since none of the seeded rows had any).
+
+**Bug 1 — header never stuck at all:** `Table`'s own
+`astryx-table-scroll-wrapper` is `overflow: auto` on *both* axes (needed
+for horizontal scroll on wide tables; the CSS overflow spec forces a
+`visible` axis to `auto` when the other isn't visible, so the two axes
+can't be decoupled). That made the wrapper — not the page — the "nearest
+scrolling ancestor" `position: sticky` resolves against, and since the
+wrapper's own height was never bounded, its `overflow: auto` never
+actually manifested a scrollbar — sticky had nothing to engage against.
+Fixed: `table-scroll-wrapper` theme key gains `max-height: 65vh`, turning
+it into a real internally-scrolling box. The table now scrolls
+independently of the page, with the header pinned to the top of *that*
+box — which also matches what the user asked for ("từ column header trở
+lên trên cố định").
+
+**Bug 2 — sticky-column body cells painted over the header:** the
+sticky-start column's body cells (`useTableStickyColumns`) are also
+`position: sticky` at `z-index: 1`, same as the header cells were — equal
+z-index resolves by DOM order, and `<tbody>` comes after `<thead>`, so a
+scrolled body row's sticky-left cell visually covered the header's own
+label ("Ngày ký" disappeared, its column's date values bled through
+instead). Fixed: `table-header-cell` → `z-index: 2`, `TableHeaderGroupBar`
+→ `z-index: 3` (it overlays the header cells, must win against them too).
+
+**Verified:** `./harness/verify.sh` green. Live: header, "GIÁ TRỊ" group
+label, and the pinned totals bar all stayed correctly positioned through
+sustained scrolling with 50 real rows; pinned bar's totals matched the
+inline "Tổng cộng" row exactly (both showed 812,500.00 USD etc.).
+Shipment list spot-checked too (4 rows, still correct). Test data cleaned
+up from the dev DB afterward — nothing left behind.
+
 ## 2026-09-12 — Fix + add: sticky-header regression fix, and pin the totals row too
 
 **Context:** Live-checking `pin-table-header` (previous entry below)

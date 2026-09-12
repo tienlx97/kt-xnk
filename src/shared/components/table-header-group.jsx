@@ -42,7 +42,10 @@ const styles = stylex.create({
     // header's on-screen position throughout the scroll, not just once
     // it's fully stuck.
     position: 'fixed',
-    zIndex: 1,
+    // Above `table-header-cell`'s `z-index: 2` (`theme.js`) — this bar
+    // paints its "GIÁ TRỊ" label on top of the real header cells it
+    // overlays, so it must win the stacking order against them.
+    zIndex: 3,
   },
   hiddenCaption: {
     visibility: 'hidden',
